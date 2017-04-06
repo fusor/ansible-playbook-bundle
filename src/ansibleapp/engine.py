@@ -6,24 +6,11 @@ import yaml
 from shutil import copyfile
 
 SPEC_FILE = 'ansibleapp.yml'
-
-DAT_DIR = 'dat'
-DAT_PATH = os.path.join(os.path.dirname(__file__), DAT_DIR)
-
+SPEC_LABEL = 'com.redhat.ansibleapp.spec'
 ACTIONS_DIR = os.path.join('ansibleapp', 'actions')
 
-EX_DOCKERFILE = 'ex.Dockerfile'
-EX_AC_DOCKERFILE = 'ex.ac.Dockerfile'
-EX_DOCKERFILE_PATH = os.path.join(DAT_PATH, EX_DOCKERFILE)
-EX_AC_DOCKERFILE_PATH = os.path.join(DAT_PATH, EX_AC_DOCKERFILE)
 
-SPEC_LABEL = 'com.redhat.ansibleapp.spec'
-
-
-def load_dockerfile(ansible_dir_exists):
-    df_path = EX_AC_DOCKERFILE_PATH if ansible_dir_exists \
-        else EX_DOCKERFILE_PATH
-
+def load_dockerfile(df_path):
     with open(df_path, 'r') as dockerfile:
         return dockerfile.readlines()
 
@@ -35,16 +22,31 @@ def write_dockerfile(dockerfile, destination):
 
 
 def insert_encoded_spec(dockerfile, encoded_spec_lines):
-    found_idx = [i for i, line in enumerate(dockerfile) if SPEC_LABEL in line]
-    if not found_idx:
+    apb_spec_idx = [i for i, line in enumerate(dockerfile) if SPEC_LABEL in line][0]
+    end_encoding_idx = [i for i, line in enumerate(dockerfile) if line.endswith('"\n')]
+
+    if end_encoding_idx:
+        # Make sure we grab the correct ending to the encoded message
+        # since multiple lines can end in '"\n'
+        for correct_ending_idx in end_encoding_idx:
+            if correct_ending_idx > apb_spec_idx:
+                end_encoding_idx = correct_ending_idx
+                del dockerfile[apb_spec_idx+1:end_encoding_idx+1]
+                break
+
+    if not apb_spec_idx:
         raise Exception(
             "ERROR: %s missing from dockerfile while inserting spec blob" %
             SPEC_LABEL
         )
 
-    split_idx = found_idx[0] + 1
+    split_idx = apb_spec_idx + 1
 
     dockerfile[split_idx:split_idx] = encoded_spec_lines
+
+    # Add a new line after we add the encoding
+    encoding_offset = apb_spec_idx + len(encoded_spec_lines) + 1
+    dockerfile.insert(encoding_offset, "\n")
 
     return dockerfile
 
@@ -118,7 +120,7 @@ def touch(fname):
         open(fname, 'a').close()
 
 
-def init_actions(project_path, provider, ansible_dir_exists):
+def init_actions(project_path, provider):
     actions_path = os.path.join(project_path, ACTIONS_DIR)
     src_file = 'shipit-%s.yml' % provider
     provision_src_path = os.path.join(project_path, 'ansible', src_file)
@@ -127,6 +129,8 @@ def init_actions(project_path, provider, ansible_dir_exists):
     if not os.path.exists(actions_path):
         os.makedirs(actions_path)
 
+    ansible_dir = os.path.join(project_path, 'ansible')
+    ansible_dir_exists = os.path.exists(ansible_dir)
     if ansible_dir_exists:
         # Only write over provision.yml if the file doesn't already exist
         if not os.path.exists(provision_dest_path):
@@ -136,12 +140,12 @@ def init_actions(project_path, provider, ansible_dir_exists):
               'Assuming manual authoring.')
 
 
-def init_dockerfile(spec_path, dockerfile_path, ansible_dir_exists):
+def init_dockerfile(spec_path, dockerfile_path):
     # TODO: Defensively confirm the strings are encoded
     # the way the code expects
     blob = base64.b64encode(load_spec_str(spec_path))
     dockerfile_out = insert_encoded_spec(
-        load_dockerfile(ansible_dir_exists), make_friendly(blob)
+        load_dockerfile(dockerfile_path), make_friendly(blob)
     )
 
     write_dockerfile(dockerfile_out, dockerfile_path)
@@ -170,11 +174,10 @@ def cmdrun_prepare(**kwargs):
         fmtstr = 'ERROR: Spec file: [ %s ] failed validation'
         raise Exception(fmtstr % spec_path)
 
-    ansible_dir = os.path.join(project, 'ansible')
-    ansible_dir_exists = os.path.exists(ansible_dir)
+    dockerfile_exists = os.path.exists(os.path.join(project, 'Dockerfile'))
 
-    init_actions(project, kwargs['provider'], ansible_dir_exists)
-    init_dockerfile(spec_path, dockerfile_path, ansible_dir_exists)
+    init_actions(project, kwargs['provider'])
+    init_dockerfile(spec_path, dockerfile_path)
 
 
 def cmdrun_build(**kwargs):

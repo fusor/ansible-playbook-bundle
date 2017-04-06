@@ -13,7 +13,6 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages('src'),
     install_requires=reqs,
-    package_data={'ansibleapp': ['dat/ex.Dockerfile', 'dat/ex.ac.Dockerfile']},
     entry_points={
         'console_scripts': ['ansibleapp = ansibleapp.cli:main']
     }
