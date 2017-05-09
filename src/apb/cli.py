@@ -6,12 +6,26 @@ import apb.engine
 
 AVAILABLE_COMMANDS = {
     'help': 'Display this help message',
+    'init': 'Initialize the directory for APB development',
     'prepare': 'Prepare an ansible-container project for APB packaging',
     'build': 'Build and package APB container'
 }
 
 
 def subcmd_build_parser(parser, subcmd):
+    return
+
+
+def subcmd_init_parser(parser, subcmd):
+    subcmd.add_argument(
+        'name', action='store',
+        help=u'Name of APB to initialize', default='sample'
+    )
+
+    subcmd.add_argument(
+        '--force', action='store_true', dest='force',
+        help=u'Force re-init on current directory', default=False
+    )
     return
 
 

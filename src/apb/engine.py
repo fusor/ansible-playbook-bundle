@@ -3,48 +3,77 @@ import uuid
 import base64
 import yaml
 
-from shutil import copyfile
+import shutil
 
-SPEC_FILE = 'apb.yml'
+PLAYBOOKS_DIR = 'playbooks'
+ROLES_DIR = 'roles'
 
 DAT_DIR = 'dat'
 DAT_PATH = os.path.join(os.path.dirname(__file__), DAT_DIR)
 
-ACTIONS_DIR = os.path.join('apb', 'actions')
+SPEC_FILE = 'apb.yml'
+EX_SPEC_FILE = 'ex.apb.yml'
+EX_SPEC_FILE_PATH = os.path.join(DAT_PATH, EX_SPEC_FILE)
 
+DOCKERFILE = 'Dockerfile'
 EX_DOCKERFILE = 'ex.Dockerfile'
-EX_AC_DOCKERFILE = 'ex.ac.Dockerfile'
 EX_DOCKERFILE_PATH = os.path.join(DAT_PATH, EX_DOCKERFILE)
-EX_AC_DOCKERFILE_PATH = os.path.join(DAT_PATH, EX_AC_DOCKERFILE)
 
 SPEC_LABEL = 'com.redhat.apb.spec'
+VERSION_LABEL = 'com.redhat.apb.version'
 
 
-def load_dockerfile(ansible_dir_exists):
-    df_path = EX_AC_DOCKERFILE_PATH if ansible_dir_exists \
-        else EX_DOCKERFILE_PATH
-
+def load_dockerfile(df_path):
     with open(df_path, 'r') as dockerfile:
         return dockerfile.readlines()
 
 
-def write_dockerfile(dockerfile, destination):
-    touch(destination)
+def load_example_specfile():
+    with open(EX_SPEC_FILE_PATH, 'r') as spec_file:
+        return spec_file.readlines()
+
+
+def write_dockerfile(dockerfile, destination, force):
+    touch(destination, force)
     with open(destination, 'w') as outfile:
         outfile.write(''.join(dockerfile))
 
 
+def write_specfile(spec_file, destination, force):
+    touch(destination, force)
+    with open(destination, 'w') as outfile:
+        outfile.write(''.join(spec_file))
+
+
 def insert_encoded_spec(dockerfile, encoded_spec_lines):
-    found_idx = [i for i, line in enumerate(dockerfile) if SPEC_LABEL in line]
-    if not found_idx:
+    apb_spec_idx = [i for i, line in enumerate(dockerfile)
+                    if SPEC_LABEL in line][0]
+    if not apb_spec_idx:
         raise Exception(
             "ERROR: %s missing from dockerfile while inserting spec blob" %
             SPEC_LABEL
         )
 
-    split_idx = found_idx[0] + 1
+    # Set end_spec_idx to a list of all lines ending in a quotation mark
+    end_spec_idx = [i for i, line in enumerate(dockerfile)
+                    if line.endswith('"\n')]
 
+    # Find end of spec label if it already exists
+    if end_spec_idx:
+        for correct_end_idx in end_spec_idx:
+            if correct_end_idx > apb_spec_idx:
+                end_spec_idx = correct_end_idx
+                del dockerfile[apb_spec_idx+1:end_spec_idx+1]
+                break
+
+    split_idx = apb_spec_idx + 1
+    offset = apb_spec_idx + len(encoded_spec_lines) + 1
+
+    # Insert spec label
     dockerfile[split_idx:split_idx] = encoded_spec_lines
+
+    # Insert newline after spec label
+    dockerfile.insert(offset, "\n")
 
     return dockerfile
 
@@ -111,47 +140,74 @@ def make_friendly(blob):
     return flines
 
 
-def touch(fname):
+def touch(fname, force):
     if os.path.exists(fname):
         os.utime(fname, None)
+        if force:
+            os.remove(fname)
+            open(fname, 'a').close()
     else:
         open(fname, 'a').close()
 
 
-def init_actions(project_path, provider, ansible_dir_exists):
-    actions_path = os.path.join(project_path, ACTIONS_DIR)
-    src_file = 'shipit-%s.yml' % provider
-    provision_src_path = os.path.join(project_path, 'ansible', src_file)
-    provision_dest_path = os.path.join(actions_path, 'provision.yaml')
-
-    if not os.path.exists(actions_path):
-        os.makedirs(actions_path)
-
-    if ansible_dir_exists:
-        # Only write over provision.yml if the file doesn't already exist
-        if not os.path.exists(provision_dest_path):
-            copyfile(provision_src_path, provision_dest_path)
-    else:
-        print('NOTE: No ansible dir found at project root.' +
-              'Assuming manual authoring.')
-
-
-def init_dockerfile(spec_path, dockerfile_path, ansible_dir_exists):
+def update_dockerfile(spec_path, dockerfile_path):
     # TODO: Defensively confirm the strings are encoded
     # the way the code expects
     blob = base64.b64encode(load_spec_str(spec_path))
     dockerfile_out = insert_encoded_spec(
-        load_dockerfile(ansible_dir_exists), make_friendly(blob)
+        load_dockerfile(dockerfile_path), make_friendly(blob)
     )
 
-    write_dockerfile(dockerfile_out, dockerfile_path)
+    write_dockerfile(dockerfile_out, dockerfile_path, False)
     print('Finished writing dockerfile.')
+
+
+def cmdrun_init(**kwargs):
+    print("Initializing current directory for an APB")
+    current_path = kwargs['base_path']
+    apb_name = kwargs['name']
+    project = os.path.join(current_path, apb_name)
+
+    if os.path.exists(project):
+        if not kwargs['force']:
+            raise Exception('ERROR: Project directory: [%s] found and force option not specified' % project)
+        shutil.rmtree(project)
+
+    os.mkdir(project)
+
+    spec_path = os.path.join(project, SPEC_FILE)
+    playbooks_path = os.path.join(project, PLAYBOOKS_DIR)
+    roles_path = os.path.join(project, ROLES_DIR)
+    dockerfile_path = os.path.join(os.path.join(project, DOCKERFILE))
+
+    if os.path.exists(spec_path) and not kwargs['force']:
+        raise Exception('ERROR: Spec file: [%s] found and force option not specified' % spec_path)
+
+    specfile_out = load_example_specfile()
+    write_specfile(specfile_out, spec_path, kwargs['force'])
+
+    dockerfile_out = load_dockerfile(EX_DOCKERFILE_PATH)
+    write_dockerfile(dockerfile_out, dockerfile_path, kwargs['force'])
+
+    if os.path.exists(playbooks_path):
+        if not kwargs['force']:
+            raise Exception('ERROR: Playbooks dir: [%s] was found and force option not specified. Forcing a reinit will recreate the directory.' % playbooks_path)
+        shutil.rmtree(playbooks_path)
+
+    os.mkdir(playbooks_path)
+
+    if os.path.exists(roles_path):
+        if not kwargs['force']:
+            raise Exception('ERROR: Roles dir: [%s] was found and force option not specified. Forcing a reinit will recreate the directory.' % role_path)
+        shutil.rmtree(roles_path)
+
+    os.mkdir(roles_path)
 
 
 def cmdrun_prepare(**kwargs):
     project = kwargs['base_path']
     spec_path = os.path.join(project, SPEC_FILE)
-    dockerfile_path = os.path.join(os.path.join(project, 'Dockerfile'))
+    dockerfile_path = os.path.join(os.path.join(project, DOCKERFILE))
 
     if not os.path.exists(spec_path):
         raise Exception('ERROR: Spec file: [ %s ] not found' % spec_path)
@@ -170,11 +226,7 @@ def cmdrun_prepare(**kwargs):
         fmtstr = 'ERROR: Spec file: [ %s ] failed validation'
         raise Exception(fmtstr % spec_path)
 
-    ansible_dir = os.path.join(project, 'ansible')
-    ansible_dir_exists = os.path.exists(ansible_dir)
-
-    init_actions(project, kwargs['provider'], ansible_dir_exists)
-    init_dockerfile(spec_path, dockerfile_path, ansible_dir_exists)
+    update_dockerfile(spec_path, dockerfile_path)
 
 
 def cmdrun_build(**kwargs):
