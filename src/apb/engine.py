@@ -4,6 +4,7 @@ import base64
 import yaml
 
 import shutil
+import docker
 
 PLAYBOOKS_DIR = 'playbooks'
 ROLES_DIR = 'roles'
@@ -63,7 +64,7 @@ def insert_encoded_spec(dockerfile, encoded_spec_lines):
         for correct_end_idx in end_spec_idx:
             if correct_end_idx > apb_spec_idx:
                 end_spec_idx = correct_end_idx
-                del dockerfile[apb_spec_idx+1:end_spec_idx+1]
+                del dockerfile[apb_spec_idx + 1:end_spec_idx + 1]
                 break
 
     split_idx = apb_spec_idx + 1
@@ -180,28 +181,16 @@ def cmdrun_init(**kwargs):
     roles_path = os.path.join(project, ROLES_DIR)
     dockerfile_path = os.path.join(os.path.join(project, DOCKERFILE))
 
-    if os.path.exists(spec_path) and not kwargs['force']:
-        raise Exception('ERROR: Spec file: [%s] found and force option not specified' % spec_path)
+    os.mkdir(playbooks_path)
+    os.mkdir(roles_path)
 
     specfile_out = load_example_specfile()
     write_specfile(specfile_out, spec_path, kwargs['force'])
 
     dockerfile_out = load_dockerfile(EX_DOCKERFILE_PATH)
     write_dockerfile(dockerfile_out, dockerfile_path, kwargs['force'])
-
-    if os.path.exists(playbooks_path):
-        if not kwargs['force']:
-            raise Exception('ERROR: Playbooks dir: [%s] was found and force option not specified. Forcing a reinit will recreate the directory.' % playbooks_path)
-        shutil.rmtree(playbooks_path)
-
-    os.mkdir(playbooks_path)
-
-    if os.path.exists(roles_path):
-        if not kwargs['force']:
-            raise Exception('ERROR: Roles dir: [%s] was found and force option not specified. Forcing a reinit will recreate the directory.' % role_path)
-        shutil.rmtree(roles_path)
-
-    os.mkdir(roles_path)
+    print("Successfully initialized project directory at: %s" % project)
+    print("Please run *apb prepare* inside of this directory after editing files.")
 
 
 def cmdrun_prepare(**kwargs):
@@ -230,4 +219,11 @@ def cmdrun_prepare(**kwargs):
 
 
 def cmdrun_build(**kwargs):
-    raise Exception('ERROR: BUILD NOT YET IMPLEMENTED!')
+    print("Building APB using tag: [%s]" % kwargs['tag'])
+    project = kwargs['base_path']
+    client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
+
+    client.images.build(path=project, tag=kwargs['tag'])
+
+    print("Successfully built APB image: %s" % kwargs['tag'])
+

@@ -13,13 +13,17 @@ AVAILABLE_COMMANDS = {
 
 
 def subcmd_build_parser(parser, subcmd):
+    subcmd.add_argument(
+        'tag', action='store',
+        help=u'Tag of APB to build'
+    )
     return
 
 
 def subcmd_init_parser(parser, subcmd):
     subcmd.add_argument(
         'name', action='store',
-        help=u'Name of APB to initialize', default='sample'
+        help=u'Name of APB to initialize'
     )
 
     subcmd.add_argument(
