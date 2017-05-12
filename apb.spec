@@ -43,6 +43,7 @@ BuildRequires: python-pip
 Requires: PyYAML >= 3.10
 Requires: PyYAML < 4
 %endif
+Requires: docker
 
 
 %description
