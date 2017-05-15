@@ -30,6 +30,15 @@ parameters:
     type: int
     default: 3306
 ```
+Or with an empty parameters field
+```yaml
+name: fusor/etherpad-apb
+description: Note taking web application
+bindable: true
+async: optional
+parameters: []
+```
+        
 
 > TODO: Explain specfile base64 encoding and label stamp
 
