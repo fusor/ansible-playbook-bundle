@@ -32,13 +32,12 @@ parameters:
 ```
 Or with an empty parameters field
 ```yaml
-name: fusor/etherpad-apb
-description: Note taking web application
-bindable: true
+name: example/no-parameters 
+description: Example showing no parameters
+bindable: false
 async: optional
 parameters: []
 ```
-        
 
 > TODO: Explain specfile base64 encoding and label stamp
 
