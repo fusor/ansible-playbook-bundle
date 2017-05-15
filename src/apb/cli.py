@@ -27,8 +27,28 @@ def subcmd_init_parser(parser, subcmd):
     )
 
     subcmd.add_argument(
+        '--organization', '-o', action='store', dest='org',
+        help=u'Organization of APB to publish to', default='ansibleplaybookbundle'
+    )
+
+    subcmd.add_argument(
         '--force', action='store_true', dest='force',
         help=u'Force re-init on current directory', default=False
+    )
+
+    subcmd.add_argument(
+        '--async', action='store', dest='async',
+        help=u'Specify asynchronous operation on application.', default='optional'
+    )
+
+    subcmd.add_argument(
+        '--bindable', action='store_true', dest='bindable',
+        help=u'Make application bindable', default=False
+    )
+
+    subcmd.add_argument(
+        '--param', '-p', action='append', dest='params',
+        help=u'Parameter declaration separated by commas'
     )
     return
 

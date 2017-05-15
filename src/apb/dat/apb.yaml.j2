@@ -1,0 +1,12 @@
+name: {{ apb_dict['apb-name'] }}
+image: {{ apb_dict['organization'] }}/{{ apb_dict['apb-name'] }}
+description: {{ apb_dict['description'] }}
+bindable: {{ apb_dict['bindable'] }}
+async: {{ apb_dict['async'] or 'optional' }}
+parameters: {{ '[]' if not params }}
+{% for param in params -%}
+  - name: {{ param['name'] or 'sample-name' }}
+    description: {{ param['description'] or "This is a sample description" }}
+    type: {{ param['type'] or 'string' }}
+    default: {{ param['default'] or 'sample-default'}}
+{% endfor %}
