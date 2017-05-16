@@ -5,7 +5,7 @@ An **Ansible Playbook Bundle (APB)** is a lightweight application definition (me
 * Metadata contains list of required/optional parameters for use during deployment.
 * Leverages existing investment in Ansible Roles / Playbooks.
 * Actions under a directory with named  **_playbooks_** and metadata defined in **_apb.yml_**.
-* Developer Tooling to drive a guided approach.
+* Developer tooling to drive a guided approach.
 * Easily modified or extended.
 
 ## Installing the ***apb*** tool
@@ -13,7 +13,9 @@ An **Ansible Playbook Bundle (APB)** is a lightweight application definition (me
 [Docker](https://www.docker.com/) must be correctly [installed](https://docs.docker.com/engine/installation/) and running on the system.
 
 ##### RPM Installation
+[TODO]: # (fill in real download link)
 Download from [here](????)
+
 Install using dnf/yum
 ```
 sudo yum install ansible-playbook-bundle
