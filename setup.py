@@ -13,7 +13,7 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages('src'),
     install_requires=reqs,
-    package_data={'apb': ['dat/ex.Dockerfile', 'dat/ex.apb.yml']},
+    package_data={'apb': ['dat/ex.Dockerfile', 'dat/apb.yaml.j2']},
     entry_points={
         'console_scripts': ['apb = apb.cli:main']
     }
