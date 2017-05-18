@@ -41,7 +41,7 @@ Run `apb help` to make sure the tool is installed correctly
 $ apb help
 usage: apb [-h] [--debug] [--project BASE_PATH] {init,help,prepare,build} ...
 
-APB tooling forassisting in building and packaging APBs.
+APB tooling for assisting in building and packaging APBs.
 
 optional arguments:
   -h, --help            show this help message and exit

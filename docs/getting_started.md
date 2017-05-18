@@ -164,7 +164,7 @@ docker run \
 ```
 The environment arguments passed in using the `-e OPENSHIFT_TARGET`, `-e OPENSHIFT_USER`, and `-e OPENSHIFT_PASS`, will be used for the apb container to log in to the OpenShift cluster and are required.  The apb image tag `<docker-org>/my-apb` and action `provision` specify what to do.  The `--extra-vars 'namespace=my-apb'` is used to supply variables to the Ansible playbooks we'll write.  Running the above will output `'provision' NOT IMPLEMENTED`.
 
-To add the provision action, we'll need to add a yaml file `provision.yml` inside the playbooks directory.
+To add the provision action, we'll need to add a yaml file `provision.yml` inside the `playbooks` directory.
 ```
 my-apb/
 ├── apb.yml
@@ -173,7 +173,7 @@ my-apb/
 │   └── provision.yml
 └── roles
 ```
-`provision.yml` is the Ansible playbook that will be run when the **_provision_** action is called from the Ansible Service Broker.  Paste in the following code:
+`playbooks/provision.yml` is the Ansible playbook that will be run when the **_provision_** action is called from the Ansible Service Broker.  Paste in the following code:
 ```yaml
 - name: provision my-apb
   hosts: localhost
@@ -314,12 +314,12 @@ We want to use multiple [pods](https://docs.openshift.org/latest/architecture/co
         port: 80
         target_port: 80
 ```
-The `selector` will allow the hello-world service to use the correct pods to include.  The `ports` will take the target port from the pods and expose them as a single port for the service.  If you build the apb and run the provision command, you will see the the new task in the output.
+The `selector` will allow the hello-world service to use the correct pods to include.  The `ports` will take the target port from the pods and expose them as a single port for the service.  We can target the port specified using it's `name`.  More information is available in the [k8s_v1_service module](https://github.com/ansible/ansible-kubernetes-modules/blob/master/library/k8s_v1_service.py).  If you build the apb and run the provision command, you will see the the new task in the output.
 ```
 TASK [provision-my-apb : create hello-world service] ******************
 changed: [localhost]
 ```
-You can click on the new service under **_Networking_** in the application on the overview page or under **_Applications -> Services_**.  The service's IP address will be shown which you can use to access the load balanced application.  To view the service information from the command line, you can do the following
+You can click on the new service under **_Networking_** in the application on the overview page or under **_Applications -> Services_**.  The service's IP address will be shown which you can use to access the load balanced application.  To view the service information from the command line, you can do the following:
 ```
 oc project my-apb
 oc get services
@@ -340,7 +340,7 @@ We want to allow access to our application through a reliable named [route](http
     spec_port_target_port: web
     to_name: hello-world
 ```
-The `spec_port_target_port` is the name of the target port on the pods selected by the service this route points to.  The `to_name` is name of the service/target that is being referred.
+The `spec_port_target_port` is the name of the target port on the pods selected by the service this route points to.  The `to_name` is name of the service/target that is being referred.  More information is available in the [openshift_v1_route module](https://github.com/ansible/ansible-kubernetes-modules/blob/master/library/openshift_v1_route.py).
 If you build the apb and run the provision command, you will see the the new task in the output.
 ```
 TASK [provision-my-apb : create hello-world route] ******************
@@ -359,5 +359,81 @@ At this point, our hello-world application is fully functional, load balanced, s
 #### Unbind
 
 #### Deprovision
+In the deprovision task, we need to get destroy all resources provisioned from the provision task, usually in reverse order.  The exception is the namespace we created, since users may have added other resources in the project and we may not want to delete resources created by other means.
+
+To add the deprovision action, we'll add a yaml file `deprovision.yml` inside the `playbooks` directory.
+```
+my-apb/
+├── apb.yml
+├── Dockerfile
+├── playbooks
+│   ├── deprovision.yml
+│   └── provision.yml
+└── roles
+    └── provision-my-apb
+        └── tasks
+            └── main.yml
+
+```
+
+Now let's paste in the following code into `playbooks/deprovision.yml`:
+```yaml
+- name: my-apb deprovision
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  roles:
+  - role: ansible.kubernetes-modules
+    install_python_requirements: no
+  - role: deprovision-my-apb
+    playbook_debug: false
+```
+The contents looks the same as the provision task, except it's calling a different role which does the actual work.  Let's create that role now. Create a new file called `main.yml` inside a `roles/deprovision-my-apb` directory.
+```
+mkdir -p roles/deprovision-my-apb/tasks
+touch roles/deprovision-my-apb/tasks/main.yml
+```
+Your directory structure should now look like:
+```
+my-apb/
+├── apb.yml
+├── Dockerfile
+├── playbooks
+│   ├── deprovision.yml
+│   └── provision.yml
+└── roles
+    ├── deprovision-my-apb
+    │   └── tasks
+    │       └── main.yml
+    └── provision-my-apb
+        └── tasks
+            └── main.yml
+```
+Let's paste in the following code in `roles/deprovision-my-apb/tasks/main.yml` and then we'll take a look at it.
+```yaml
+- openshift_v1_route:
+    name: hello-world
+    namespace: '{{ namespace }}'
+    state: absent
+
+- k8s_v1_service:
+    name: hello-world
+    namespace: '{{ namespace }}'
+    state: absent
+
+- openshift_v1_deployment_config:
+    name: hello-world
+    namespace: '{{ namespace }}'
+    state: absent
+```
+In the `provision.yml` created earlier, we created the deployment config, service, then route, so for the **_deprovision_** action, we'll want to delete the resources in reverse.  We do so by identifying the resource by `namespace` and `name` and then marking it as `state: absent`.  That's all there is to it.
+
+[TODO]: # (Currently, the replication controller is being left behind even though it's a dependent resource.  This may be a bug and we need to look into it or else we'll have to add a way to gracefully handle it's deletion)
 
 ### More information
+* [Design](design.md) - overall design of Ansible Playbook Bundles
+* [Developers](developers.md) - in depth explanation of Ansible Playbook Bundles
+* [OpenShift Origin Docs](https://docs.openshift.org/latest/welcome/index.html)
+* The [ansible-kubernetes-modules](https://github.com/ansible/ansible-kubernetes-modules) project.
+* [Example APBs](https://github.com/fusor/apb-examples)
+* [Ansible Service Broker](https://github.com/fusor/ansible-service-broker)
