@@ -28,14 +28,14 @@ an `apb.yaml`, a `Dockerfile`, a `roles` directory, and a `playbooks` directory.
 APB name.
 
 #### Options:
-
+```
 `--organization ORG` specifies an organization name for the APB image on the `Dockerfile`. Defaults to `ansibleplaybookbundle`.
 `--async ASYNC_TOPION` specifies the asynchronous operation of the APB. Defaults to `optional`
 `--bindable` specifies if the APB will be bindable. Defaults to `False`.
 `--param PARAM_STRING`, `-p PARAM_STRING` Specifies which parameters to include by default in `apb.yaml`.
     `PARAM_STRING` contains four options to specify for a parameter separated by a comma. `name`, `type`, `description`, `default`.
     Ex. `apb init my_apb -p name=sample_name,default=foo,type=string,description="sample description"`
-
+```
 ### Prepare
 
 `apb prepare` is a helper that will update the `Dockerfile` with

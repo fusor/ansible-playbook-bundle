@@ -42,14 +42,20 @@ def subcmd_init_parser(parser, subcmd):
     )
 
     subcmd.add_argument(
-        '--bindable', action='store_true', dest='bindable',
-        help=u'Make application bindable', default=False
+        '--not-bindable', action='store_false', dest='bindable',
+        help=u'Make application bindable. Generates binding playbooks as well.', default=True
     )
 
     subcmd.add_argument(
         '--param', '-p', action='append', dest='params',
         help=u'Parameter declaration separated by commas'
     )
+
+    subcmd.add_argument(
+        '--skip', action='append', dest='skip',
+        help=u'Specify which infrastructure to not generate by default'
+    )
+
     return
 
 
