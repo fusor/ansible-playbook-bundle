@@ -56,49 +56,7 @@ bindable: false
 async: optional
 parameters: []
 ```
-
-This spec file will need to be edited for your specific application.
-
-The following is the spec file for `etherpad-apb`
-```yml
-name: apb/etherpad-apb
-description: Note taking web application
-bindable: true
-async: optional
-parameters:
-  - name: hostport
-    description: The host TCP port as the external endpoint
-    type: int
-    default: 9001
-  - name: db_user
-    description: Database User
-    type: string
-  - name: db_pass
-    description: Database Password
-    type: string
-  - name: db_name
-    description: Database Name
-    type: string
-  - name: db_host
-    description: Database service hostname/ip
-    default: mariadb
-    type: string
-  - name: db_port
-    description: Database service port
-    type: int
-    default: 3306
-```
-
-##### Spec File Parameters
-`parameters` section of the specfile; `ParameterObject` array
-
-Field Name | Type | Required | Default | Description
----|---|---|---|---
-name | string| yes |  | The name of the parameter.
-required| bool | no | true | Whether or not the parameter is required.  If `false` and no default is provided, will be omitted from the parameters passed to the APB.
-description | string | yes | | A human readable description of the parameter.
-type | string | yes | | Type of parameter. `bool`, `int`, `float`, `string`, are valid
-default | bool,int,float,string|  no | | An optional default value for the parameter.
+The spec file will need to be edited for your specific application.
 
 #### Actions
 The following are the actions for an APB. At a minimum, an APB must implement the `provision` and `deprovision` actions.
