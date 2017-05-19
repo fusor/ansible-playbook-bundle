@@ -314,7 +314,7 @@ We want to use multiple [pods](https://docs.openshift.org/latest/architecture/co
         port: 80
         target_port: 80
 ```
-The `selector` will allow the hello-world service to use the correct pods to include.  The `ports` will take the target port from the pods and expose them as a single port for the service.  We can target the port specified using it's `name`.  More information is available in the [k8s_v1_service module](https://github.com/ansible/ansible-kubernetes-modules/blob/master/library/k8s_v1_service.py).  If you build the apb and run the provision command, you will see the the new task in the output.
+The `selector` will allow the *hello-world* service to include the correct pods.  The `ports` will take the target port from the pods and expose them as a single port for the service.  We can target the port specified using it's `name`.  More information is available in the [k8s_v1_service module](https://github.com/ansible/ansible-kubernetes-modules/blob/master/library/k8s_v1_service.py).  If you build the apb and run the provision command, you will see the the new task in the output.
 ```
 TASK [provision-my-apb : create hello-world service] ******************
 changed: [localhost]
@@ -337,10 +337,10 @@ We want to allow access to our application through a reliable named [route](http
     labels:
       app: hello-world
       service: hello-world
-    spec_port_target_port: web
     to_name: hello-world
+    spec_port_target_port: web
 ```
-The `spec_port_target_port` is the name of the target port on the pods selected by the service this route points to.  The `to_name` is name of the service/target that is being referred.  More information is available in the [openshift_v1_route module](https://github.com/ansible/ansible-kubernetes-modules/blob/master/library/openshift_v1_route.py).
+The `to_name` is name of the target service.  `spec_port_target_port` refers to the name of the target service's port.  More information is available in the [openshift_v1_route module](https://github.com/ansible/ansible-kubernetes-modules/blob/master/library/openshift_v1_route.py).
 If you build the apb and run the provision command, you will see the the new task in the output.
 ```
 TASK [provision-my-apb : create hello-world route] ******************
@@ -359,7 +359,7 @@ At this point, our hello-world application is fully functional, load balanced, s
 #### Unbind
 
 #### Deprovision
-In the deprovision task, we need to get destroy all resources provisioned from the provision task, usually in reverse order.  The exception is the namespace we created, since users may have added other resources in the project and we may not want to delete resources created by other means.
+In the deprovision task, we need to destroy all provisioned resources, usually in reverse order.  The exception is the namespace we created, since users may have added other resources in the project and we may not want to delete resources created by other means.
 
 To add the deprovision action, we'll add a yaml file `deprovision.yml` inside the `playbooks` directory.
 ```
@@ -388,7 +388,7 @@ Now let's paste in the following code into `playbooks/deprovision.yml`:
   - role: deprovision-my-apb
     playbook_debug: false
 ```
-The contents looks the same as the provision task, except it's calling a different role which does the actual work.  Let's create that role now. Create a new file called `main.yml` inside a `roles/deprovision-my-apb` directory.
+The content looks the same as the provision task, except it's calling a different role which does the actual work.  Let's create that role now. Create a new file called `main.yml` inside a `roles/deprovision-my-apb` directory.
 ```
 mkdir -p roles/deprovision-my-apb/tasks
 touch roles/deprovision-my-apb/tasks/main.yml
@@ -426,9 +426,9 @@ Let's paste in the following code in `roles/deprovision-my-apb/tasks/main.yml` a
     namespace: '{{ namespace }}'
     state: absent
 ```
-In the `provision.yml` created earlier, we created the deployment config, service, then route, so for the **_deprovision_** action, we'll want to delete the resources in reverse.  We do so by identifying the resource by `namespace` and `name` and then marking it as `state: absent`.  That's all there is to it.
+In `provision.yml`, created earlier, we created the deployment config, service, then route. For the **_deprovision_** action, we'll want to delete the resources in reverse order.  We do so by identifying the resource by `namespace` and `name` and then marking it as `state: absent`.  That's all there is to it.
 
-[TODO]: # (Currently, the replication controller is being left behind even though it's a dependent resource.  This may be a bug and we need to look into it or else we'll have to add a way to gracefully handle it's deletion)
+[TODO]: # (Currently, the replication controller is being left behind even though it's a dependent resource.  This may be a bug and we need to look into it or else we'll have to add a way to gracefully handle its deletion)
 
 ### More information
 * [Design](design.md) - overall design of Ansible Playbook Bundles
