@@ -6,18 +6,6 @@
 their APBs to container registries. It enforces best practices and takes
 care of the details so they should be easy to deploy.
 
-## Install
-
-**System installation**:
-
-`sudo pip install -r requirements.txt && sudo python setup.py install`
-
-For non-priviledged installs such as virtualenvs, drop sudo.
-
-**Development**:
-
-`pip install -e $SRC_DIR` will install in editable mode.
-
 ## Commands
 
 ### Init
@@ -36,7 +24,14 @@ APB name.
 `--param PARAM_STRING`, `-p PARAM_STRING` Specifies which parameters to include by default in `apb.yaml`.
     `PARAM_STRING` contains four options to specify for a parameter separated by a comma. `name`, `type`, `description`, `default`.
     Ex. `apb init my_apb -p name=sample_name,default=foo,type=string,description="sample description"`
+`--force` forces reinitialization of project directory if it already exists
+`--skip-provision` will skip generation of provision playbook and role
+`--skip-deprovision` will skip generation of deprovision playbook and role
+`--skip-bind` will skip generation of bind playbook and role
+`--skip-unbind` will skip generation of unbind playbook and role
+`--skip-roles` will skip generation of any roles
 ```
+
 ### Prepare
 
 `apb prepare` is a helper that will update the `Dockerfile` with
@@ -56,3 +51,10 @@ Prepare also expects a specfile, `apb.yaml`, to exist at the project root.
 
 Following `apb prepare`, you should have a Dockerfile and a correctly
 ID'd specfile. Build and publish this container to your preferred registry.
+
+### Build
+
+`apb build` is a helper which will build your APB in the current directory.
+`build` simply expects a Dockerfile in the proper format to be in the current
+working directory. `build` takes one argument which is the tag which will be used
+to tag the built APB Docker image.

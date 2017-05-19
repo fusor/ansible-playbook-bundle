@@ -228,7 +228,7 @@ def update_dockerfile(spec_path, dockerfile_path):
         load_dockerfile(dockerfile_path), make_friendly(blob)
     )
 
-    write_dockerfile(dockerfile_out, dockerfile_path, False)
+    write_file(dockerfile_out, dockerfile_path, False)
     print('Finished writing dockerfile.')
 
 
@@ -310,6 +310,11 @@ def cmdrun_prepare(**kwargs):
 def cmdrun_build(**kwargs):
     print("Building APB using tag: [%s]" % kwargs['tag'])
     project = kwargs['base_path']
+    spec_path = os.path.join(project, SPEC_FILE)
+    dockerfile_path = os.path.join(os.path.join(project, DOCKERFILE))
+
+    # Restamp Dockerfile with base64 encoded spec before building
+    update_dockerfile(spec_path, dockerfile_path)
     client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
 
     client.images.build(path=project, tag=kwargs['tag'])
