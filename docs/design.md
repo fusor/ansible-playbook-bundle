@@ -14,9 +14,9 @@ metadata file to capture information such as parameters to pass into the applica
 APB is broken up into the following steps.
 
   1. [Preparation](#preparation)
-    * [APB init](#apb-initialization)
-    * [Spec File](#spec-file)
-    * [Actions](#actions) (provision, deprovision, bind, unbind)
+     * [APB init](#apb-initialization)
+     * [Spec File](#spec-file)
+     * [Actions](#actions) (provision, deprovision, bind, unbind)
   1. [Build](#build)
   1. [Deploy](#deploy)
 
@@ -27,7 +27,7 @@ APB is broken up into the following steps.
 The first step to creating an APB is to run the `apb init` command, which will create the required skeleton directory structure, and a few required files (e.g. `apb.yml` spec file) for the APB.
 
 ##### Directory Structure
-The following show an example directory structure of an APB.
+The following shows an example directory structure of an APB.
 ```bash
 example-apb/
 ├── Dockerfile
@@ -58,6 +58,27 @@ parameters: []
 ```
 The spec file will need to be edited for your specific application.
 
+For example, the `etherpad-apb` spec file looks as follows:
+```yml
+name: fusor/etherpad-apb
+description: Note taking web application
+bindable: true
+async: optional
+parameters:
+  - name: hostport
+    description: The host TCP port as the external endpoint
+    type: int
+    default: 9001
+  - name: db_user
+    description: Database User 
+    type: string
+```
+
+For an APB that does not have any parameters, `parameters` field would look like:
+```yml
+parameters: []
+```
+
 #### Actions
 The following are the actions for an APB. At a minimum, an APB must implement the `provision` and `deprovision` actions.
  * provision.yml
@@ -69,7 +90,7 @@ The following are the actions for an APB. At a minimum, an APB must implement th
  * unbind.yml
    * Playbook to revoke access to this service
 
-The required named playbooks correspond to methods defined by the Open Service Broker API. For example, when the
+The required named playbooks correspond to methods defined by the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker). For example, when the
 Ansible Service Broker needs to `provision` an APB it will execute the `provision.yml`.
 
 After the required named playbooks have been generated, the files can be used directly to test management of the
