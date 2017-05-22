@@ -29,8 +29,8 @@ def subcmd_init_parser(parser, subcmd):
     )
 
     subcmd.add_argument(
-        '--organization', '-o', action='store', dest='org',
-        help=u'Organization of APB to publish to', default='ansibleplaybookbundle'
+        '--org', '-o', action='store', dest='org',
+        help=u'Organization of APB to publish to', required=True
     )
 
     subcmd.add_argument(

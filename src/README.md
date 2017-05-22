@@ -29,7 +29,7 @@ APB name.
 
 #### Options:
 ```
-`--organization ORG` specifies an organization name for the APB image on the `Dockerfile`. Defaults to `ansibleplaybookbundle`.
+`--org ORGANIZATION` specifies an organization name for the APB image on the `Dockerfile`.
 `--async ASYNC_OPTION` specifies the asynchronous operation of the APB. Defaults to `optional`
          valid options are: ['required', 'optional', 'unsupported']
 `--not-bindable` specifies if the APB will not be bindable by default. Defaults to `False`.
