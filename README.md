@@ -62,7 +62,6 @@ subcommand:
 * [Getting Started](docs/getting_started.md) - step by step tutorial to create an Ansible Playbook Bundle
 * [Design](docs/design.md) - overall design of Ansible Playbook Bundles
 * [Developers](docs/developers.md) - in depth explanation of Ansible Playbook Bundles
-* [ISV](docs/isv.md) - integrating with existing Ansible roles
 
 <a name="links"></a>
 ## Links
