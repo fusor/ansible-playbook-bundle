@@ -3,7 +3,7 @@
 ## Overview
 An [Ansible Playbook Bundle (APB)](https://github.com/fusor/ansible-playbook-bundle)
 borrows several concepts from the [Nulecule](https://github.com/projectatomic/nulecule)
-or [Atomicapp](http://www.projectatomic.io/docs/atomicapp/) project, namely the concept of a short
+and the [Atomicapp](http://www.projectatomic.io/docs/atomicapp/) project, namely the concept of a short
 lived container with the sole purpose of orchestrating the deployment of the intended application. For the case
 of APB, this short lived container is the APB; a container with an Ansible runtime environment
 plus any files required to assist in orchestration such as playbooks, roles, and extra dependencies.

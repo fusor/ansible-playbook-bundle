@@ -10,11 +10,12 @@ In order to create an APB, you will need to start with a skeleton APB directory 
 
 You may create the directory structure yourself, or you can use the `apb init` command to create a simple skeleton structure, and modify it to your needs.  You will need to specify the name of your APB as a minimum input.  Visit the [APB Tooling README](https://github.com/fusor/ansible-playbook-bundle/blob/master/src/README.md) for more information.
 
-Running the `apb init` will create a APB directory structure shown below:
+Run the `apb init` command
 ```bash
 $ apb init my-apb
-
-$ tree my-apb
+```
+The following APB directory structure will be created:
+```bash
 my-apb/
 ├── apb.yml
 ├── Dockerfile
@@ -93,7 +94,6 @@ And a simple `deprovision.yml` may look like this.
 We will also need to create the Ansible roles as specified in the actions. The below directory structure shows what it can look like:
 
 ```bash
-$ tree my-apb
 my-apb/
 ├── apb.yml
 ├── Dockerfile
