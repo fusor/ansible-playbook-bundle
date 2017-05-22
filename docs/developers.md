@@ -15,7 +15,7 @@ Run the `apb init` command
 $ apb init my-apb
 ```
 
-### Directory Structure
+### Initial Directory Structure
 The following APB directory structure will be created:
 ```bash
 my-apb/
@@ -93,6 +93,7 @@ And a simple `deprovision.yml` may look like this.
     command: oc delete project my-apb
 ```
 
+### Updated Directory Structure 
 We will also need to create the Ansible roles as specified in the actions. The below directory structure shows what it can look like:
 
 ```bash
