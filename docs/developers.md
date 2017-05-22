@@ -5,15 +5,17 @@ For completed APB examples, visit [APB Examples Repo](https://github.com/fusor/a
 
 ## Creating Ansible Playbook Bundles (APBs)
 
-### APB Init
 In order to create an APB, you will need to start with a skeleton APB directory structure.  The layout of the [directory structure](design.md#directory-structure) is shown in the [design](design.md) document.
 
+### APB Init
 You may create the directory structure yourself, or you can use the `apb init` command to create a simple skeleton structure, and modify it to your needs.  You will need to specify the name of your APB as a minimum input.  Visit the [APB Tooling README](https://github.com/fusor/ansible-playbook-bundle/blob/master/src/README.md) for more information.
 
 Run the `apb init` command
 ```bash
 $ apb init my-apb
 ```
+
+### Directory Structure
 The following APB directory structure will be created:
 ```bash
 my-apb/
