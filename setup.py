@@ -11,7 +11,7 @@ setup(
     author="Fusor",
     author_email="ansible-service-broker@redhat.com",
     url = 'https://github.com/fusor/ansible-playbook-bundle',
-    download_url = 'https://github.com/fusor/ansible-playbook-bundle/archive/0.1.0.tar.gz',
+    download_url = 'https://github.com/fusor/ansible-playbook-bundle/archive/apb-0.1.0.tar.gz',
     keywords = ['ansible', 'playbook', 'bundle'],
     package_dir={'': 'src'},
     packages=find_packages('src'),
