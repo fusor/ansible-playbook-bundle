@@ -13,8 +13,8 @@ ROLES_DIR = 'roles'
 DAT_DIR = 'dat'
 DAT_PATH = os.path.join(os.path.dirname(__file__), DAT_DIR)
 
-SPEC_FILE = 'apb.yaml'
-EX_SPEC_FILE = 'apb.yaml.j2'
+SPEC_FILE = 'apb.yml'
+EX_SPEC_FILE = 'apb.yml.j2'
 EX_SPEC_FILE_PATH = os.path.join(DAT_PATH, EX_SPEC_FILE)
 SPEC_FILE_PARAM_OPTIONS = ['name', 'description', 'type', 'default']
 
@@ -23,11 +23,11 @@ EX_DOCKERFILE = 'ex.Dockerfile'
 EX_DOCKERFILE_PATH = os.path.join(DAT_PATH, EX_DOCKERFILE)
 
 PLAYBOOKS_DIR = 'playbooks'
-EX_PLAYBOOK_FILE = 'playbook.yaml.j2'
-PROVISION_PLAYBOOK = 'provision.yaml'
-DEPROVISION_PLAYBOOK = 'deprovision.yaml'
-BIND_PLAYBOOK = 'bind.yaml'
-UNBIND_PLAYBOOK = 'unbind.yaml'
+EX_PLAYBOOK_FILE = 'playbook.yml.j2'
+PROVISION_PLAYBOOK = 'provision.yml'
+DEPROVISION_PLAYBOOK = 'deprovision.yml'
+BIND_PLAYBOOK = 'bind.yml'
+UNBIND_PLAYBOOK = 'unbind.yml'
 
 SKIP_OPTIONS = ['provision', 'deprovision', 'bind', 'unbind', 'roles']
 ASYNC_OPTIONS = ['required', 'optional', 'unsupported']
