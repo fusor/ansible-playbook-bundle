@@ -1,18 +1,14 @@
 # Getting Started
 
 1. [Introduction](#introduction-to-ansible-playbook-bundles-apbs)
-
-2. [Development Environment](#development-environment)
-
-3. [Creating Your First APB](#creating-your-first-apb)
+1. [Development Environment](#development-environment)
+1. [Creating Your First APB](#creating-your-first-apb)
     1. [Init](#using-apb-init)
-    2. [Actions](#actions)
+    1. [Actions](#actions)
         * [Provision](#provision)
-        * [Bind](#bind)
-        * [Unbind](#unbind)
         * [Deprovision](#deprovision)
-
-4. [More Information](#more-information)
+        * [Bind](#bind)
+1. [More Information](#more-information)
 
 ## Introduction to Ansible Playbook Bundles (APBs)
 
@@ -78,11 +74,10 @@ git clone git@github.com:fusor/apb-examples.git
 cd hello-world-apb
 apb build
 docker build -t <docker-org>/hello-world-apb .
-docker run -e "OPENSHIFT_TARGET=https://<oc-cluster-host>:<oc-cluster-port>" -e "OPENSHIFT_USER=admin"  -e "OPENSHIFT_PASS=admin" <docker-org>/hello-world-apb provision --extra-vars 'namespace=my-apb'
 docker run \
-    -e "OPENSHIFT_TARGET=https://<oc-cluster-host>:<oc-cluster-port>" \
-    -e "OPENSHIFT_USER=admin" \
-    -e "OPENSHIFT_PASS=admin" \
+    --env "OPENSHIFT_TARGET=https://<oc-cluster-host>:<oc-cluster-port>" \
+    --env "OPENSHIFT_USER=admin" \
+    --env "OPENSHIFT_PASS=admin" \
     <docker-org>/hello-world-apb provision
 ```
 This will deploy a hello-world-apb application to your openshift cluster.  By logging on to your cluster at https://<oc-cluster-host>:<oc-cluster-port>, you can view the project and click on the deployed application.
@@ -93,7 +88,7 @@ In this tutorial, we'll create an APB for a containerized [hello world applicati
 ### Using apb init
 Our first task is to create the skeleton for your app using the apb tool.  The command for this is simple:
 ```
-apb init my-apb
+apb init my-apb --org <docker-org>
 ```
 At this point you will see the following file structure
 ```
@@ -101,7 +96,19 @@ my-apb/
 ├── apb.yml
 ├── Dockerfile
 ├── playbooks
+│   ├── bind.yml
+│   ├── deprovision.yml
+│   ├── provision.yml
+│   └── unbind.yml
 └── roles
+    ├── bind-my-apb
+    │   └── tasks
+    ├── deprovision-my-apb
+    │   └── tasks
+    ├── provision-my-apb
+    │   └── tasks
+    └── unbind-my-apb
+        └── tasks
 ```
 Two files were created at the root directory, an `apb.yml` and a `Dockerfile`.  These are the minimum required for any APB.  For more information, visit the [design doc](https://github.com/fusor/ansible-playbook-bundle/blob/master/docs/design.md).
 ```yaml
@@ -109,8 +116,9 @@ Two files were created at the root directory, an `apb.yml` and a `Dockerfile`.  
 name: my-apb
 image: <docker-org>/my-apb
 description: "My New APB"
-bindable: false
+bindable: true
 async: optional
+parameters: []
 ```
 ```dockerfile
 # Dockerfile
@@ -119,9 +127,8 @@ FROM ansibleplaybookbundle/apb-base
 LABEL "com.redhat.apb.version"="0.1.0"
 LABEL "com.redhat.apb.spec"=\
 
-ADD playbooks /opt/apb/actions
-ADD roles /opt/ansible/roles
-
+COPY playbooks /opt/apb/actions
+COPY roles /opt/ansible/roles
 USER apb
 ```
 
@@ -156,21 +163,21 @@ apb build <docker-org>/my-apb
 
 # run provision task
 docker run \
-    -e "OPENSHIFT_TARGET=https://<oc-cluster-host>:<oc-cluster-port>" \
-    -e "OPENSHIFT_USER=admin" \
-    -e "OPENSHIFT_PASS=admin" \
+    --env "OPENSHIFT_TARGET=https://<oc-cluster-host>:<oc-cluster-port>" \
+    --env "OPENSHIFT_USER=admin" \
+    --env "OPENSHIFT_PASS=admin" \
     <docker-org>/my-apb provision \
-    --extra-vars 'namespace=my-apb'
+    --extra-vars 'namespace=getting-started'
 ```
-The environment arguments passed in using the `-e OPENSHIFT_TARGET`, `-e OPENSHIFT_USER`, and `-e OPENSHIFT_PASS`, will be used for the apb container to log in to the OpenShift cluster and are required.  The apb image tag `<docker-org>/my-apb` and action `provision` specify what to do.  The `--extra-vars 'namespace=my-apb'` is used to supply variables to the Ansible playbooks we'll write.  Running the above will output `'provision' NOT IMPLEMENTED`.
+The environment arguments passed in using the `-e OPENSHIFT_TARGET`, `-e OPENSHIFT_USER`, and `-e OPENSHIFT_PASS`, will be used for the apb container to log in to the OpenShift cluster and are required.  The apb image tag `<docker-org>/my-apb` and action `provision` specify what to do.  The `--extra-vars 'namespace=getting-started'` is used to supply variables to the Ansible playbooks we'll write.  Running the above will output `'provision' NOT IMPLEMENTED`.
 
-To add the provision action, we'll need to add a yaml file `provision.yml` inside the `playbooks` directory.
+To add the provision action, we'll need to edit the yaml file `playbooks/provision.yml`
 ```
 my-apb/
 ├── apb.yml
 ├── Dockerfile
 ├── playbooks
-│   └── provision.yml
+│   └── provision.yml # edit this file
 └── roles
 ```
 `playbooks/provision.yml` is the Ansible playbook that will be run when the **_provision_** action is called from the Ansible Service Broker.  Paste in the following code:
@@ -188,7 +195,7 @@ my-apb/
 
 `provision.yml` is a new Ansible playbook which will execute on `localhost` and execute the role `provision-my-apb`.  This playbook works on it's local container created by the service broker.  The `ansible.kubernetes-modules` role will allow us to use the [ansible-kubernetes-modules](https://github.com/ansible/ansible-kubernetes-modules) to create our OpenShift resources.  The `provision-my-apb` doesn't exist yet, but that's where all the work will go when deploying our hello-world app.  Let's create it now.
 
-First, create a new file called `main.yml` inside a `roles/provision-my-apb` directory.
+First, create a new file called `main.yml` inside a `roles/provision-my-apb/tasks` directory.
 ```
 mkdir -p roles/provision-my-apb/tasks
 touch roles/provision-my-apb/tasks/main.yml
@@ -199,11 +206,20 @@ my-apb/
 ├── apb.yml
 ├── Dockerfile
 ├── playbooks
-│   └── provision.yml
+│   ├── bind.yml
+│   ├── deprovision.yml
+│   ├── provision.yml
+│   └── unbind.yml
 └── roles
-    └── provision-my-apb
+    ├── bind-my-apb
+    │   └── tasks
+    ├── deprovision-my-apb
+    │   └── tasks
+    ├── provision-my-apb
+    │   └── tasks
+    │       └── main.yml  # new file
+    └── unbind-my-apb
         └── tasks
-            └── main.yml
 ```
 
 Rebuilding the APB (`apb build ...`) and running the provision command (`docker run ...`) should output the output from the Ansible playbook with no changes:
@@ -222,7 +238,12 @@ Our first task we'll add to the role is creating a project namespace for our cre
 As you can see, we're using the `namespace` variable passed in from `--extra-vars`, earlier.  Without it, our role would result in an error.  Rebuilding the APB using `apb build <docker-org>/my-apb` and running the provision command will look like the following:
 ```
 $ apb build <docker-org>/my-apb
-$ docker run -e "OPENSHIFT_TARGET=https://<oc-cluster-host>:<oc-cluster-port>" -e "OPENSHIFT_USER=admin"  -e "OPENSHIFT_PASS=admin" <docker-org>/my-apb provision --extra-vars 'namespace=my-apb'
+$ docker run \
+      --env "OPENSHIFT_TARGET=https://<oc-cluster-host>:<oc-cluster-port>" \
+      --env "OPENSHIFT_USER=admin" \
+      --env "OPENSHIFT_PASS=admin" \
+      <docker-org>/my-apb provision \
+      --extra-vars 'namespace=getting-started'
 
 Login successful.
 
@@ -230,7 +251,7 @@ You have access to the following projects and can switch between them with 'oc p
 
     ansible-service-broker
   * default
-    my-apb
+    getting-started
     kube-system
     myproject
     openshift
@@ -251,7 +272,7 @@ ok: [localhost]
 PLAY RECAP *********************************************************************
 localhost                  : ok=1    changed=0    unreachable=0    failed=0
 ```
-You can verify the project was created by running `oc get projects` to get a list or by viewing the projects in the console UI.  Now we have a project named **_my-apb_** for all the resources we'll create in the following sections.
+You can verify the project was created by running `oc get projects` to get a list or by viewing the projects in the console UI.  Now we have a project named **_getting-started_** for all the resources we'll create in the following sections.
 
 ##### Provision - Creating a deployment config
 At the minimum, our APB should deploy the application [pods](https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#pods).  We'll do this by specifying a [deployment config](https://docs.openshift.org/latest/architecture/core_concepts/deployments.html#deployments-and-deployment-configurations).  Add the following to `provision-my-apb/tasks/main.yml` underneath the namespace task.
@@ -289,7 +310,7 @@ changed: [localhost]
 ```
 At this point we can set our current project to hello-world and query for the deployment config and pods to see the running pods
 ```
-oc project my-apb
+oc project getting-started
 oc get dc
 oc describe dc/hello-world
 oc get pods
@@ -321,7 +342,7 @@ changed: [localhost]
 ```
 You can click on the new service under **_Networking_** in the application on the overview page or under **_Applications -> Services_**.  The service's IP address will be shown which you can use to access the load balanced application.  To view the service information from the command line, you can do the following:
 ```
-oc project my-apb
+oc project getting-started
 oc get services
 oc describe services/hello-world
 ```
@@ -348,32 +369,36 @@ changed: [localhost]
 ```
 On the console UI overview page for the hello-world project, you will now see an active and clickable route link listed on the application.  Clicking on the route or visiting the URL will bring up the hello-world app.  From the command line, you can also view the route information.
 ```
-oc project my-apb
+oc project getting-started
 oc get routes
 oc describe routes/hello-world
 ```
 
-At this point, our hello-world application is fully functional, load balanced, scalable, and accessible.
-#### Bind
-
-#### Unbind
+At this point, our hello-world application is fully functional, load balanced, scalable, and accessible.  You can view the finished APB at [apb-examples](https://github.com/fusor/apb-examples/tree/master/hello-world-apb).
 
 #### Deprovision
 In the deprovision task, we need to destroy all provisioned resources, usually in reverse order.  The exception is the namespace we created, since users may have added other resources in the project and we may not want to delete resources created by other means.
 
-To add the deprovision action, we'll add a yaml file `deprovision.yml` inside the `playbooks` directory.
+To add the deprovision action, we'll edit a yaml file `deprovision.yml` inside the `playbooks` directory.
 ```
-my-apb/
+my-apb
 ├── apb.yml
 ├── Dockerfile
 ├── playbooks
-│   ├── deprovision.yml
-│   └── provision.yml
+│   ├── bind.yml
+│   ├── deprovision.yml # edit this file
+│   ├── provision.yml 
+│   └── unbind.yml
 └── roles
-    └── provision-my-apb
+    ├── bind-my-apb
+    │   └── tasks
+    ├── deprovision-my-apb
+    │   └── tasks
+    ├── provision-my-apb
+    │   └── tasks
+    │       └── main.yml
+    └── unbind-my-apb
         └── tasks
-            └── main.yml
-
 ```
 
 Now let's paste in the following code into `playbooks/deprovision.yml`:
@@ -388,7 +413,7 @@ Now let's paste in the following code into `playbooks/deprovision.yml`:
   - role: deprovision-my-apb
     playbook_debug: false
 ```
-The content looks the same as the provision task, except it's calling a different role which does the actual work.  Let's create that role now. Create a new file called `main.yml` inside a `roles/deprovision-my-apb` directory.
+The content looks the same as the provision task, except it's calling a different role which does the actual work.  Let's create that role now. Create a new file called `main.yml` inside a `roles/deprovision-my-apb/tasks` directory.
 ```
 mkdir -p roles/deprovision-my-apb/tasks
 touch roles/deprovision-my-apb/tasks/main.yml
@@ -399,15 +424,21 @@ my-apb/
 ├── apb.yml
 ├── Dockerfile
 ├── playbooks
+│   ├── bind.yml
 │   ├── deprovision.yml
-│   └── provision.yml
+│   ├── provision.yml
+│   └── unbind.yml
 └── roles
+    ├── bind-my-apb
+    │   └── tasks
     ├── deprovision-my-apb
     │   └── tasks
+    │       └── main.yml # new file
+    ├── provision-my-apb
+    │   └── tasks
     │       └── main.yml
-    └── provision-my-apb
+    └── unbind-my-apb
         └── tasks
-            └── main.yml
 ```
 Let's paste in the following code in `roles/deprovision-my-apb/tasks/main.yml` and then we'll take a look at it.
 ```yaml
@@ -429,6 +460,261 @@ Let's paste in the following code in `roles/deprovision-my-apb/tasks/main.yml` a
 In `provision.yml`, created earlier, we created the deployment config, service, then route. For the **_deprovision_** action, we'll want to delete the resources in reverse order.  We do so by identifying the resource by `namespace` and `name` and then marking it as `state: absent`.  That's all there is to it.
 
 [TODO]: # (Currently, the replication controller is being left behind even though it's a dependent resource.  This may be a bug and we need to look into it or else we'll have to add a way to gracefully handle its deletion)
+
+#### Bind
+From the previous sections, we learned how to deploy a standalone application.  However, in most cases applications will need to communicate other applications, often a data source.  In the following sections we'll create Postgres database that the hello-world application can use.  
+
+##### Bind - Prep
+To give us a good starting point, we'll create the necessary files for provision and deprovisioning Postgres with a deployment configuration, service, and persistent volume.  This portion of the tutorial closely follows the [APB example for Postgres](https://github.com/fusor/apb-examples/tree/master/postgresql-apb).
+
+```
+apb init my-pg-apb --org <docker-org>
+touch my-pg-apb/roles/provision-my-pg-apb/tasks/main.yml
+touch my-pg-apb/roles/deprovision-my-pg-apb/tasks/main.yml
+```
+This will create the normal APB file structure and the `tasks/main.yml` file for both provision and deprovision.
+```
+my-pg-apb/
+├── apb.yml
+├── Dockerfile
+├── playbooks
+│   ├── bind.yml
+│   ├── deprovision.yml
+│   ├── provision.yml
+│   └── unbind.yml
+└── roles
+    ├── bind-my-pg-apb
+    │   └── tasks
+    ├── deprovision-my-pg-apb
+    │   └── tasks
+    │       └── main.yml
+    ├── provision-my-pg-apb
+    │   └── tasks
+    │       └── main.yml
+    └── unbind-my-pg-apb
+        └── tasks
+```
+
+Edit the `apb.yml`.  Notice the setting `bindable: true`:
+```yaml
+name: my-pg-apb
+image: <docker-org>/my-pg-apb
+description: My PostgreSQL APB 
+bindable: true
+async: optional
+tags:
+  - database
+metadata:
+  displayName: "postgresql"
+  longDescription: "Deploys a bindable postgres instance"
+  imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Postgresql_elephant.svg/64px-Postgresql_elephant.svg.png"
+  documentationUrl: "https://www.postgresql.org/docs/"
+parameters:
+  - name: namespace
+    description: Namespace to deploy the cluster to
+    type: string
+    default: postgresql-apb
+  - name: postgresql_database
+    description: postgresql database name
+    type: string
+    default: admin
+  - name: postgresql_password
+    description: postgresql database password
+    type: string
+    default: admin
+  - name: postgresql_user
+    description: postgresql database username
+    type: string
+    default: admin
+```
+
+Edit the `playbooks/provision.yml`
+```yaml
+- name: my-pg-apb playbook to provision the application
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  roles:
+  - role: ansible.kubernetes-modules
+    install_python_requirements: no
+  - role: provision-my-pg-apb
+    playbook_debug: false
+
+```
+Edit the `playbooks/deprovision.yml`
+```yaml
+- name: my-pg-apb playbook to deprovision the application
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  roles:
+  - role: ansible.kubernetes-modules
+    install_python_requirements: no
+  - role: deprovision-my-pg-apb
+    playbook_debug: false
+```
+Edit the `roles/provision-my-pg-apb/tasks/main.yml`.  This mirrors our hello-world application in many respects but adds a persistent volume to save data between restarts and various configuration options for the deployment config.
+```yaml
+- name: create namespace
+  openshift_v1_project:
+    name: '{{ namespace }}'
+
+- name: create volumes
+  k8s_v1_persistent_volume_claim:
+    name: postgresql
+    namespace: '{{ namespace }}'
+    state: present
+    access_modes:
+      - ReadWriteOnce
+    resources_requests:
+      storage: 1Gi
+
+- name: create deployment config
+  openshift_v1_deployment_config:
+    name: postgresql
+    namespace: '{{ namespace }}'
+    labels:
+      app: postgresql-apb
+      service: postgresql
+    replicas: 1
+    selector:
+      app: postgresql-apb
+      service: postgresql
+    strategy_type: Rolling
+    strategy_rolling_params:
+      interval_seconds: 1
+      max_surge: 25%
+      max_unavailable: 25%
+      timeout_seconds: 600
+      update_period_seconds: 1
+    spec_template_metadata_labels:
+      app: postgresql-apb
+      service: postgresql
+    containers:
+    - env:
+      - name: POSTGRESQL_PASSWORD
+        value: '{{ postgresql_password }}'
+      - name: POSTGRESQL_USER
+        value: '{{ postgresql_user }}'
+      - name: POSTGRESQL_DATABASE
+        value: '{{ postgresql_database }}'
+      image: docker.io/centos/postgresql-94-centos7
+      image_pull_policy: IfNotPresent
+      name: postgresql
+      ports:
+      - container_port: 5432
+        protocol: TCP
+      resources: {}
+      security_context: {}
+      termination_message_path: /dev/termination-log
+      volume_mounts:
+      - mount_path: /var/lib/pgsql/data
+        name: postgresql
+      working_dir: /
+    dns_policy: ClusterFirst
+    restart_policy: Always
+    termination_grace_period_seconds: 30
+    volumes:
+    - name: postgresql
+      persistent_volume_claim:
+        claim_name: postgresql
+      test: false
+      triggers:
+      - type: ConfigChange
+      
+- name: create service
+  k8s_v1_service:
+    name: postgresql
+    namespace: '{{ namespace }}'
+    state: present
+    labels:
+      app: postgresql-apb
+      service: postgresql
+    selector:
+      app: postgresql-apb
+      service: postgresql
+    ports:
+    - name: port-5432
+      port: 5432
+      protocol: TCP
+      target_port: 5432
+  register: postgres_service      
+```
+Edit the `roles/deprovision-my-pg-apb/tasks/main.yml` and delete the created resources.
+
+[TODO]: # (Find out about leftover replication controllers)
+```yaml
+- k8s_v1_service:
+    name: postgresql
+    namespace: '{{ namespace }}'
+    state: absent
+
+- openshift_v1_deployment_config:
+    name: postgresql
+    namespace: '{{ namespace }}'
+    state: absent
+    
+- k8s_v1_persistent_volume_claim:
+    name: postgresql
+    namespace: '{{ namespace }}'
+    state: absent
+```
+
+At this point, the APB can create a fully functional Postgres database to our cluster.  However, no other application can bind to it and use it.
+
+##### Bind - Encode credentials
+[TODO]: # (Revisit these instructions in the case we hide the implemetation of the bind better)
+To make the Postgres credentials available to other applications, we need to encode them and then store them so that they'll be available.  Edit the `roles/provision-my-pg-apb/tasks/main.yml` and add the following to the very end:
+```yaml
+- name: encode bind credentials
+  shell: 'echo "{\"POSTGRES_HOST\": \"{{ postgres_service.service.spec.cluster_ip }}\", \"POSTGRES_PORT\": \"5432\", \"POSTGRES_USER\": \"{{ postgresql_user }}\", \"POSTGRES_PASSWORD\": \"{{ postgresql_password }}\", \"POSTGRES_DB\": \"{{ postgresql_database }}\"}" | base64 -w 0'
+  register: encoded_bind_credentials
+
+- copy:
+   content: "<BIND_CREDENTIALS>{{ encoded_bind_credentials.stdout }}</BIND_CREDENTIALS>"
+   dest: /etc/ansible-service-broker/bind-creds
+```
+The first task registers the variable `encoded_bind_credentials` with the appropriate encoded string with all the credentials we need to share.  The `debug` task writes the credentials in the encoded format to the deploy log.  This is where the Ansible Service Broker will read and use the credentials by looking for the `BIND_CREDENTIALS` tags.
+  
+To build and run `my-pg-apb` use the following commands.
+```
+apb build <docker-org>/my-pg-apb
+docker run \
+    --env "OPENSHIFT_TARGET=https://<oc-cluster-host>:<oc-cluster-port>" \
+    --env "OPENSHIFT_USER=admin" \
+    --env "OPENSHIFT_PASS=admin" \
+    <docker-org>/my-pg-apb provision \
+    --extra-vars 'namespace=getting-started' \
+    --extra-vars 'postgresql_database=admin' \
+    --extra-vars 'postgresql_password=admin' \
+    --extra-vars 'postgresql_user=admin'
+```
+
+##### Bind - Create a no-op playbook
+No tasks are required to execute a bind.  The Ansible Service Broker will read the information created in the **_provision_** task and use it.  To implement the bind action, all we need to do is implement a no-op playbook.  Create `playbooks/bind.yml` and paste in the following code:
+```yaml
+- name: my-pg-apb playbook to bind the application
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  roles:
+  - role: ansible.kubernetes-modules
+    install_python_requirements: no
+```
+If there are additional actions to run during a bind, we can create a role and add it here. For now, this playbook will run without effect while the bind is executed by the Ansible Service Broker.
+
+##### Bind - Execute from the user interface    
+To test your app, we'll bind a hello-world app to the provisioned Postgres database.  You can use the application previously created in the **_provision_** section of this tutorial or you can use the `hello-world-apb` from ansibleplaybookbundle.
+```
+docker run \
+    --env "OPENSHIFT_TARGET=https://<oc-cluster-host>:<oc-cluster-port>" \
+    --env "OPENSHIFT_USER=admin" \
+    --env "OPENSHIFT_PASS=admin" \
+    ansibleplaybookbundle/hello-world-apb provision \
+    --extra-vars 'namespace=getting-started'
+```
+
+Now, navigate to the getting-started project, you can see both your hello-world application and your Postgres database.  Click on the 3 dot kebab next to the hello-world application to bring up some options.  One of them should be **_Create binding_**.  Select **_Create binding_** and then select the Postgres deployment when given a choice.  After hello-world finishes its rolling deployment, navigating to the hello-world route will display the application and the **_Database information_** section will be filled out.
 
 ### More information
 * [Design](design.md) - overall design of Ansible Playbook Bundles
