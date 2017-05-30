@@ -1,7 +1,9 @@
+import errno
 import os
 import uuid
 import base64
 import yaml
+import string
 
 import shutil
 import docker
@@ -19,15 +21,43 @@ EX_SPEC_FILE_PATH = os.path.join(DAT_PATH, EX_SPEC_FILE)
 SPEC_FILE_PARAM_OPTIONS = ['name', 'description', 'type', 'default']
 
 DOCKERFILE = 'Dockerfile'
-EX_DOCKERFILE = 'ex.Dockerfile'
+EX_DOCKERFILE = 'Dockerfile.j2'
 EX_DOCKERFILE_PATH = os.path.join(DAT_PATH, EX_DOCKERFILE)
 
-PLAYBOOKS_DIR = 'playbooks'
-EX_PLAYBOOK_FILE = 'playbook.yml.j2'
-PROVISION_PLAYBOOK = 'provision.yml'
-DEPROVISION_PLAYBOOK = 'deprovision.yml'
-BIND_PLAYBOOK = 'bind.yml'
-UNBIND_PLAYBOOK = 'unbind.yml'
+ACTION_TEMPLATE_DICT = {
+    'provision': {
+        'playbook_template': 'playbooks/playbook.yml.j2',
+        'playbook_dir': 'playbooks',
+        'playbook_file': 'provision.yml',
+        'role_task_main_template': 'roles/provision/tasks/main.yml.j2',
+        'role_tasks_dir': 'roles/$role_name/tasks',
+        'role_task_main_file': 'main.yml'
+    },
+    'deprovision': {
+        'playbook_template': 'playbooks/playbook.yml.j2',
+        'playbook_dir': 'playbooks',
+        'playbook_file': 'deprovision.yml',
+        'role_task_main_template': 'roles/deprovision/tasks/main.yml.j2',
+        'role_tasks_dir': 'roles/$role_name/tasks',
+        'role_task_main_file': 'main.yml'
+    },
+    'bind': {
+        'playbook_template': 'playbooks/playbook.yml.j2',
+        'playbook_dir': 'playbooks',
+        'playbook_file': 'bind.yml',
+        'role_task_main_template': 'roles/bind/tasks/main.yml.j2',
+        'role_tasks_dir': 'roles/$role_name/tasks',
+        'role_task_main_file': 'main.yml'
+    },
+    'unbind': {
+        'playbook_template': 'playbooks/playbook.yml.j2',
+        'playbook_dir': 'playbooks',
+        'playbook_file': 'unbind.yml',
+        'role_task_main_template': 'roles/unbind/tasks/main.yml.j2',
+        'role_tasks_dir': 'roles/$role_name/tasks',
+        'role_task_main_file': 'main.yml'
+    },
+}
 
 SKIP_OPTIONS = ['provision', 'deprovision', 'bind', 'unbind', 'roles']
 ASYNC_OPTIONS = ['required', 'optional', 'unsupported']
@@ -120,32 +150,50 @@ def insert_encoded_spec(dockerfile, encoded_spec_lines):
     return dockerfile
 
 
-def write_playbook_file(playbooks_path, action_file, template, apb_name, action):
-    action_path = os.path.join(playbooks_path, action_file)
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
+
+def write_playbook(project_dir, apb_name, action):
+    env = Environment(loader=FileSystemLoader(DAT_PATH))
+    template = env.get_template(ACTION_TEMPLATE_DICT[action]['playbook_template'])
     playbook_out = template.render(apb_name=apb_name, action_name=action)
-    write_file(playbook_out, action_path, True)
+
+    playbook_pathname = os.path.join(project_dir,
+                                     ACTION_TEMPLATE_DICT[action]['playbook_dir'],
+                                     ACTION_TEMPLATE_DICT[action]['playbook_file'])
+    mkdir_p(os.path.join(project_dir, ACTION_TEMPLATE_DICT[action]['playbook_dir']))
+    write_file(playbook_out, playbook_pathname, True)
 
 
-def generate_playbook_files(playbooks_path, roles_path, bindable, skip, apb_name):
-    ENV = Environment(loader=FileSystemLoader(DAT_PATH))
-    template = ENV.get_template(EX_PLAYBOOK_FILE)
+def write_role(project_path, apb_name, action):
+    env = Environment(loader=FileSystemLoader(DAT_PATH))
+    template = env.get_template(ACTION_TEMPLATE_DICT[action]['role_task_main_template'])
+    main_out = template.render(apb_name=apb_name, action_name=action)
 
-    playbooks_dict = {
-            'provision': PROVISION_PLAYBOOK,
-            'deprovision': DEPROVISION_PLAYBOOK,
-            'bind': BIND_PLAYBOOK,
-            'unbind': UNBIND_PLAYBOOK
-    }
+    role_name = action + '-' + apb_name
+    role_tasks_dir = string.Template(ACTION_TEMPLATE_DICT[action]['role_tasks_dir']).substitute(role_name=role_name)
+    role_tasks_full_dir = os.path.join(project_path, role_tasks_dir)
 
+    mkdir_p(role_tasks_full_dir)
+    main_filepath= os.path.join(role_tasks_full_dir, ACTION_TEMPLATE_DICT[action]['role_task_main_file'])
+    write_file(main_out, main_filepath, True)
+
+
+def generate_playbook_files(project_path, bindable, skip, apb_name):
     print("Generating playbook files")
 
-    for playbook in playbooks_dict.keys():
-        if not skip[playbook]:
-            write_playbook_file(playbooks_path, playbooks_dict[playbook], template, apb_name, playbook)
+    for action in ACTION_TEMPLATE_DICT.keys():
+        if not skip[action]:
+            write_playbook(project_path, apb_name, action)
             if not skip['roles']:
-                role_name = playbook + '-' + apb_name
-                os.mkdir(os.path.join(roles_path, role_name))
-                os.mkdir(os.path.join(roles_path, role_name, 'tasks'))
+                write_role(project_path, apb_name, action)
 
 
 def gen_spec_id(spec, spec_path):
@@ -262,14 +310,7 @@ def cmdrun_init(**kwargs):
     os.mkdir(project)
 
     spec_path = os.path.join(project, SPEC_FILE)
-    playbooks_path = os.path.join(project, PLAYBOOKS_DIR)
-    roles_path = os.path.join(project, ROLES_DIR)
     dockerfile_path = os.path.join(os.path.join(project, DOCKERFILE))
-
-    os.mkdir(playbooks_path)
-
-    if not skip['roles']:
-        os.mkdir(roles_path)
 
     specfile_out = load_example_specfile(apb_dict, params)
     write_file(specfile_out, spec_path, kwargs['force'])
@@ -277,7 +318,7 @@ def cmdrun_init(**kwargs):
     dockerfile_out = load_dockerfile(EX_DOCKERFILE_PATH)
     write_file(dockerfile_out, dockerfile_path, kwargs['force'])
 
-    generate_playbook_files(playbooks_path, roles_path, bindable, skip, apb_name)
+    generate_playbook_files(project, bindable, skip, apb_name)
     print("Successfully initialized project directory at: %s" % project)
     print("Please run *apb prepare* inside of this directory after editing files.")
 
