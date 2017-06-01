@@ -19,7 +19,9 @@ In this tutorial, we'll walk through the creation of some sample APBs.  We will 
 ## Development Environment
 Before getting started with APBs, we need to get your system set up to create them.
 
-First, install the APB tools as documented in the [README](https://github.com/fusor/ansible-playbook-bundle/blob/master/README.md#install).  To check, you can run `apb help` and check for a valid response.
+First, make sure your system is properly running [OpenShift Origin](https://www.openshift.org/).  You should be able to succesfully execute `oc cluster up`.  Instructions can be found on the Openshift Origin [getting started doc](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md).
+
+Next, install the APB tools as documented in the [README](https://github.com/fusor/ansible-playbook-bundle/blob/master/README.md#install).  To check, you can run `apb help` and check for a valid response.
 ```
 $ apb help
 usage: apb [-h] [--debug] [--project BASE_PATH] {init,help,prepare,build} ...
@@ -40,7 +42,7 @@ subcommand:
     build               Build and package APB container
 ```
 
-Next, create a local development environment with both a [Service Catalog](https://github.com/kubernetes-incubator/service-catalog) and [Ansible Service Broker](https://github.com/fusor/ansible-service-broker).  We will do this using [catasb](https://github.com/fusor/catasb/tree/dev), a collection of scripts which use Ansible to automate the set up of the cluster for you on a local host, ec2, or virtual machines.  The dev branch of this repo is set up for APB development, so we'll need to clone the repo and check out that branch.  For this tutorial we'll be assuming the locally hosted environment which is documented at [https://github.com/fusor/catasb/tree/dev/local](https://github.com/fusor/catasb/blob/dev/local/README.md).  After completing the set up, take note of the OpenShift cluster **host:port** output by the catasb Ansible scripts so you can login using the command line for the remainder of the tutorial.  It will look something like:
+Then, create a local development environment with both a [Service Catalog](https://github.com/kubernetes-incubator/service-catalog) and [Ansible Service Broker](https://github.com/fusor/ansible-service-broker).  You can do this using [catasb](https://github.com/fusor/catasb/tree/dev), a collection of scripts which use Ansible to automate the set up of the cluster for you on a local host, ec2, or virtual machines.  The dev branch of this repo is set up for APB development, so we'll need to clone the repo and check out that branch.  For this tutorial we'll be assuming the locally hosted environment which is documented at [https://github.com/fusor/catasb/tree/dev/local](https://github.com/fusor/catasb/blob/dev/local/README.md).  After completing the set up, take note of the OpenShift cluster **host:port** output by the catasb Ansible scripts so you can login using the command line for the remainder of the tutorial.  It will look something like:
 
 ```
 $ git clone https://github.com/fusor/catasb.git
