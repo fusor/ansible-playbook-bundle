@@ -37,7 +37,7 @@ APB name.
 `apb prepare` is a helper that will update the `Dockerfile` with
 your `apb.yml` file encoded as a base64 label. This allows the spec
 to be accessible to clients via registry APIs without the necessity of downloading
-full images. For example, the [Ansible Service Broker](https://www.github.com/fusor/ansible-service-broker)
+full images. For example, the [Ansible Service Broker](https://www.github.com/openshift/ansible-service-broker)
 will use this data to build an inventory of available APBs in a given
 registry and expose them to an Openshift or Kubernetes cluster.
 

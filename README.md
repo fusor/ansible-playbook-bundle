@@ -1,6 +1,6 @@
 # Ansible Playbook Bundle (APB)
 
-An **Ansible Playbook Bundle (APB)** is a lightweight application definition (meta-container). They are used to define and deploy complex groups of applications, deployment configs, deployments, and services to an [OpenShift Origin](https://github.com/OpenShift/origin) cluster running the [Ansible Service Broker](https://github.com/fusor/ansible-service-broker).  APBs offer more power and simple configuration by leveraging the power of [Ansible](https://www.ansible.com/). APBs have the following features:
+An **Ansible Playbook Bundle (APB)** is a lightweight application definition (meta-container). They are used to define and deploy complex groups of applications, deployment configs, deployments, and services to an [OpenShift Origin](https://github.com/OpenShift/origin) cluster running the [Ansible Service Broker](https://github.com/openshift/ansible-service-broker).  APBs offer more power and simple configuration by leveraging the power of [Ansible](https://www.ansible.com/). APBs have the following features:
 
 * Metadata contains list of required/optional parameters for use during deployment.
 * Leverages existing investment in Ansible Roles / Playbooks.
@@ -65,7 +65,7 @@ subcommand:
 
 <a name="links"></a>
 ## Links
-* Ansible Service Broker [https://github.com/fusor/ansible-service-broker ](https://github.com/fusor/ansible-service-broker)
+* Ansible Service Broker [https://github.com/openshift/ansible-service-broker ](https://github.com/openshift/ansible-service-broker)
 * YouTube channel: [Ansible Service Broker](https://www.youtube.com/channel/UC04eOMIMiV06_RSZPb4OOBw)
 * YouTube channel: [APB](https://www.youtube.com/channel/UCE0uKh7SmjsOL3Zv0jnhgaA)
 

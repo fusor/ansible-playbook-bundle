@@ -42,7 +42,7 @@ subcommand:
     build               Build and package APB container
 ```
 
-Then, create a local development environment with both a [Service Catalog](https://github.com/kubernetes-incubator/service-catalog) and [Ansible Service Broker](https://github.com/fusor/ansible-service-broker).  You can do this using [catasb](https://github.com/fusor/catasb/tree/dev), a collection of scripts which use Ansible to automate the set up of the cluster for you on a local host, ec2, or virtual machines.  The dev branch of this repo is set up for APB development, so we'll need to clone the repo and check out that branch.  For this tutorial we'll be assuming the locally hosted environment which is documented at [https://github.com/fusor/catasb/tree/dev/local](https://github.com/fusor/catasb/blob/dev/local/README.md).  After completing the set up, take note of the OpenShift cluster **host:port** output by the catasb Ansible scripts so you can login using the command line for the remainder of the tutorial.  It will look something like:
+Then, create a local development environment with both a [Service Catalog](https://github.com/kubernetes-incubator/service-catalog) and [Ansible Service Broker](https://github.com/openshift/ansible-service-broker).  You can do this using [catasb](https://github.com/fusor/catasb/tree/dev), a collection of scripts which use Ansible to automate the set up of the cluster for you on a local host, ec2, or virtual machines.  The dev branch of this repo is set up for APB development, so we'll need to clone the repo and check out that branch.  For this tutorial we'll be assuming the locally hosted environment which is documented at [https://github.com/fusor/catasb/tree/dev/local](https://github.com/fusor/catasb/blob/dev/local/README.md).  After completing the set up, take note of the OpenShift cluster **host:port** output by the catasb Ansible scripts so you can login using the command line for the remainder of the tutorial.  It will look something like:
 
 ```
 $ git clone https://github.com/fusor/catasb.git
@@ -724,4 +724,4 @@ Now, navigate to the getting-started project, you can see both your hello-world 
 * [OpenShift Origin Docs](https://docs.openshift.org/latest/welcome/index.html)
 * The [ansible-kubernetes-modules](https://github.com/ansible/ansible-kubernetes-modules) project.
 * [Example APBs](https://github.com/fusor/apb-examples)
-* [Ansible Service Broker](https://github.com/fusor/ansible-service-broker)
+* [Ansible Service Broker](https://github.com/openshift/ansible-service-broker)
