@@ -10,7 +10,8 @@ AVAILABLE_COMMANDS = {
     'help': 'Display this help message',
     'init': 'Initialize the directory for APB development',
     'prepare': 'Prepare an ansible-container project for APB packaging',
-    'build': 'Build and package APB container'
+    'build': 'Build and package APB container',
+    'push': 'Push APB spec to an Ansible Service Broker'
 }
 
 
@@ -69,6 +70,13 @@ def subcmd_prepare_parser(parser, subcmd):
         help=u'Targetted cluster type',
         choices=['openshift', 'kubernetes'],
         default='openshift'
+    )
+
+
+def subcmd_push_parser(parser, subcmd):
+    subcmd.add_argument(
+        'broker_route', action='store',
+        help=u'Route to the Ansible Service Broker'
     )
 
 

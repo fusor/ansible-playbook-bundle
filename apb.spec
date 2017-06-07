@@ -51,6 +51,7 @@ Requires: docker
 Requires: python-docker >= 2.1.0
 Requires: python-docker < 3.0.0
 Requires: python-jinja2 >= 2.7.2
+Requires: python-requests2 >= 2.10.0
 
 %description
 Ansible Playbook Bundle (APB) is a lightweight application definition (meta-containers). APB

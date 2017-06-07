@@ -69,6 +69,7 @@ subcommand:
     help                Display this help message
     prepare             Prepare an ansible-container project for APB packaging
     build               Build and package APB container
+    push                Push the APB spec to an Ansible Service Broker
 
 ```
 
