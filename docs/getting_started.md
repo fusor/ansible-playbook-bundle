@@ -24,7 +24,7 @@ First, make sure your system is properly running [OpenShift Origin](https://www.
 Next, install the APB tools as documented in the [README](https://github.com/fusor/ansible-playbook-bundle/blob/master/README.md#install).  To check, you can run `apb help` and check for a valid response.
 ```
 $ apb help
-usage: apb [-h] [--debug] [--project BASE_PATH] {init,help,prepare,build} ...
+usage: apb [-h] [--debug] [--project BASE_PATH] {push,init,help,prepare,build} ...
 
 APB tooling for assisting in building and packaging APBs.
 
@@ -35,7 +35,8 @@ optional arguments:
                         Specify a path to your project. Defaults to CWD.
 
 subcommand:
-  {init,help,prepare,build}
+  {push,init,help,prepare,build}
+    push                Push APB spec to an Ansible Service Broker
     init                Initialize the directory for APB development
     help                Display this help message
     prepare             Prepare an ansible-container project for APB packaging
@@ -161,7 +162,7 @@ Using the initialized apb from the last section, we can build and run the provis
 <a name="run-provision-cmd">
 ```
 # build the apb image
-apb build <docker-org>/my-apb
+apb build
 
 # run provision task
 docker run \
@@ -239,7 +240,7 @@ Our first task we'll add to the role is creating a project namespace for our cre
 ```
 As you can see, we're using the `namespace` variable passed in from `--extra-vars`, earlier.  Without it, our role would result in an error.  Rebuilding the APB using `apb build <docker-org>/my-apb` and running the provision command will look like the following:
 ```
-$ apb build <docker-org>/my-apb
+$ apb build
 $ docker run \
       --env "OPENSHIFT_TARGET=https://<oc-cluster-host>:<oc-cluster-port>" \
       --env "OPENSHIFT_USER=admin" \
@@ -680,7 +681,7 @@ The first task registers the variable `encoded_bind_credentials` with the approp
   
 To build and run `my-pg-apb` use the following commands.
 ```
-apb build <docker-org>/my-pg-apb
+apb build
 docker run \
     --env "OPENSHIFT_TARGET=https://<oc-cluster-host>:<oc-cluster-port>" \
     --env "OPENSHIFT_USER=admin" \

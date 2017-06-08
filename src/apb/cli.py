@@ -17,7 +17,7 @@ AVAILABLE_COMMANDS = {
 
 def subcmd_build_parser(parser, subcmd):
     subcmd.add_argument(
-        'tag', action='store',
+        '--tag', action='store', dest='tag',
         help=u'Tag of APB to build'
     )
     return
