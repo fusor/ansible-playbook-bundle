@@ -135,6 +135,28 @@ COPY roles /opt/ansible/roles
 USER apb
 ```
 
+We now need to update the `com.redhat.apb.spec` LABEL with a base64 encoded version of apb.yml. To do this we need to run `apb prepare`
+```
+cd my-apb
+apb prepare
+```
+
+```dockerfile
+# Dockerfile
+FROM ansibleplaybookbundle/apb-base
+
+LABEL "com.redhat.apb.version"="0.1.0"
+LABEL "com.redhat.apb.spec"=\
+"aWQ6IDQyZmYxMjM5LTViNmMtNDU3OC1iYmQ1LWExNzY5ZmY0YjY1MApuYW1lOiBteS1hcGIKaW1h\
+Z2U6IGR5bXVycmF5L215LWFwYgpkZXNjcmlwdGlvbjogVGhpcyBpcyBhIHNhbXBsZSBhcHBsaWNh\
+dGlvbiBnZW5lcmF0ZWQgYnkgYXBiIGluaXQKYmluZGFibGU6IFRydWUKYXN5bmM6IG9wdGlvbmFs\
+CnBhcmFtZXRlcnM6IFtdCg=="
+
+COPY playbooks /opt/apb/actions
+COPY roles /opt/ansible/roles
+USER apb
+```
+
 At this point we have a fully formed APB that we can build
 ```
 cd my-apb
