@@ -741,6 +741,24 @@ docker run \
 
 Now, navigate to the getting-started project, you can see both your hello-world application and your Postgres database.  Click on the 3 dot kebab next to the hello-world application to bring up some options.  One of them should be **_Create binding_**.  Select **_Create binding_** and then select the Postgres deployment when given a choice.  After hello-world finishes its rolling deployment, navigating to the hello-world route will display the application and the **_Database information_** section will be filled out.
 
+### Using APB Push
+To test an APB you have built without pushing your image to a registry, you can use `apb push`. This command takes the Ansible Service Broker's route as an argument and will push the base64 encoded spec into the list of available APBs for the Broker to deploy. In order to use this feature, the Ansible Service Broker you are running must be configured to run in development mode. In the [config file](https://github.com/openshift/ansible-service-broker/blob/master/etc/ex.dev.config.yaml#L21), set `devbroker` to `true`. This enables an endpoint to the broker at `/apb/spec` that a user can POST APBs to.
+
+```
+apb push <broker_route>
+```
+
+You should now be able to see your APB in the listed specs available in the Broker.
+
+#### Specifying Route for Broker
+To get the route of the Ansible Service Broker in OpenShift:
+```
+oc project ansible-service-broker
+oc get route
+```
+
+If you are running the Broker manually, you must include the Port as well as IP address the Broker is running.
+
 ### More information
 * [Design](design.md) - overall design of Ansible Playbook Bundles
 * [Developers](developers.md) - in depth explanation of Ansible Playbook Bundles
