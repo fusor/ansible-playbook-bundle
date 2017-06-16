@@ -30,6 +30,9 @@ sudo dnf -y install apb
 ```
 
 ##### Installing from source
+
+###### Installing from source - Python/VirtualEnv
+
 Clone this repo
 ```
 git clone https://github.com/fusor/ansible-playbook-bundle.git
@@ -37,13 +40,17 @@ git clone https://github.com/fusor/ansible-playbook-bundle.git
 Install python-virtualenv, create a virtualenv, and activate it.
 ```
 sudo dnf install -y python-virtualenv
-virtualenv apb
-source apb/bin/activate
+virtualenv /tmp/apb
+source /tmp/apb/bin/activate
 ```
 Install requirements and run the setup script (requires python)
 ```
 pip install -r src/requirements.txt && python setup.py install
 ```
+Reactivate the `apb` virtualenv in other shell sessions using `source /tmp/apb/bin/activate` if needed.
+
+###### Installing from source - Tito
+
 Alternatively you can use [tito](http://github.com/dgoodwin/tito) to install.
 ```bash
 tito build --test --rpm -i

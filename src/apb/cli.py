@@ -31,7 +31,7 @@ def subcmd_init_parser(parser, subcmd):
 
     subcmd.add_argument(
         '--org', '-o', action='store', dest='org',
-        help=u'Organization of APB to publish to', required=True
+        help=u'Organization of APB to publish to'
     )
 
     subcmd.add_argument(
@@ -46,8 +46,8 @@ def subcmd_init_parser(parser, subcmd):
     )
 
     subcmd.add_argument(
-        '--not-bindable', action='store_false', dest='bindable',
-        help=u'Make application not bindable on the spec.', default=True
+        '--bindable', action='store_true', dest='bindable',
+        help=u'Make application bindable on the spec.', default=False
     )
 
     subcmd.add_argument(

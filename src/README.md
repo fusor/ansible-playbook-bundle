@@ -20,7 +20,7 @@ APB name.
 `--org ORGANIZATION` specifies an organization name for the APB image on the `Dockerfile`.
 `--async ASYNC_OPTION` specifies the asynchronous operation of the APB. Defaults to `optional`
          valid options are: ['required', 'optional', 'unsupported']
-`--not-bindable` specifies if the APB will not be bindable by default. Defaults to `False`.
+`--bindable` specifies if the APB will be bindable by default. Defaults to `False`.
 `--param PARAM_STRING`, `-p PARAM_STRING` Specifies which parameters to include by default in `apb.yml`.
     `PARAM_STRING` contains four options to specify for a parameter separated by a comma. `name`, `type`, `description`, `default`.
     Ex. `apb init my_apb -p name=sample_name,default=foo,type=string,description="sample description"`
