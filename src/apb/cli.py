@@ -25,8 +25,8 @@ def subcmd_build_parser(parser, subcmd):
 
 def subcmd_init_parser(parser, subcmd):
     subcmd.add_argument(
-        'name', action='store',
-        help=u'Name of APB to initialize'
+        'tag', action='store',
+        help=u'Tag (org/name) or name of APB to initialize'
     )
 
     subcmd.add_argument(
@@ -71,14 +71,14 @@ def subcmd_prepare_parser(parser, subcmd):
         choices=['openshift', 'kubernetes'],
         default='openshift'
     )
+    return
 
 
 def subcmd_push_parser(parser, subcmd):
     subcmd.add_argument(
-        'broker_route', action='store',
+        '--broker', action='store', dest='broker',
         help=u'Route to the Ansible Service Broker'
     )
-
 
 def subcmd_help_parser(parser, subcmd):
     return
