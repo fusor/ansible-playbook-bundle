@@ -164,27 +164,30 @@ def mkdir_p(path):
 
 def write_playbook(project_dir, apb_name, action):
     env = Environment(loader=FileSystemLoader(DAT_PATH))
-    template = env.get_template(ACTION_TEMPLATE_DICT[action]['playbook_template'])
-    playbook_out = template.render(apb_name=apb_name, action_name=action)
+    templates = ACTION_TEMPLATE_DICT[action]
+    playbook_template = env.get_template(templates['playbook_template'])
+    playbook_out = playbook_template.render(apb_name=apb_name, action_name=action)
 
     playbook_pathname = os.path.join(project_dir,
-                                     ACTION_TEMPLATE_DICT[action]['playbook_dir'],
-                                     ACTION_TEMPLATE_DICT[action]['playbook_file'])
-    mkdir_p(os.path.join(project_dir, ACTION_TEMPLATE_DICT[action]['playbook_dir']))
+                                     templates['playbook_dir'],
+                                     templates['playbook_file'])
+    mkdir_p(os.path.join(project_dir, templates['playbook_dir']))
     write_file(playbook_out, playbook_pathname, True)
 
 
 def write_role(project_path, apb_name, action):
     env = Environment(loader=FileSystemLoader(DAT_PATH))
-    template = env.get_template(ACTION_TEMPLATE_DICT[action]['role_task_main_template'])
+    templates = ACTION_TEMPLATE_DICT[action]
+    template = env.get_template(templates['role_task_main_template'])
     main_out = template.render(apb_name=apb_name, action_name=action)
 
     role_name = action + '-' + apb_name
-    role_tasks_dir = string.Template(ACTION_TEMPLATE_DICT[action]['role_tasks_dir']).substitute(role_name=role_name)
-    role_tasks_full_dir = os.path.join(project_path, role_tasks_dir)
+    dir_tpl = string.Template(templates['role_tasks_dir'])
+    dir = dir_tpl.substitute(role_name=role_name)
+    role_tasks_dir = os.path.join(project_path, dir)
 
-    mkdir_p(role_tasks_full_dir)
-    main_filepath = os.path.join(role_tasks_full_dir, ACTION_TEMPLATE_DICT[action]['role_task_main_file'])
+    mkdir_p(role_tasks_dir)
+    main_filepath = os.path.join(role_tasks_dir, templates['role_task_main_file'])
     write_file(main_out, main_filepath, True)
 
 
@@ -226,6 +229,24 @@ def load_spec_dict(spec_path):
 def load_spec_str(spec_path):
     with open(spec_path, 'r') as spec_file:
         return spec_file.read()
+
+
+def get_spec(project, output="dict"):
+    spec_path = os.path.join(project, SPEC_FILE)
+
+    if not os.path.exists(spec_path):
+        raise Exception('ERROR: Spec file: [ %s ] not found' % spec_path)
+
+    try:
+        if output == 'string':
+            spec = load_spec_str(spec_path)
+        else:
+            spec = load_spec_dict(spec_path)
+    except Exception as e:
+        print('ERROR: Failed to load spec!')
+        raise e
+
+    return spec
 
 
 # NOTE: Splits up an encoded blob into chunks for insertion into Dockerfile
@@ -271,16 +292,8 @@ def touch(fname, force):
 
 
 def update_spec(project):
+    spec = get_spec(project)
     spec_path = os.path.join(project, SPEC_FILE)
-
-    if not os.path.exists(spec_path):
-        raise Exception('ERROR: Spec file: [ %s ] not found' % spec_path)
-
-    try:
-        spec = load_spec_dict(spec_path)
-    except Exception as e:
-        print('ERROR: Failed to load spec!')
-        raise e
 
     # ID specfile if it hasn't already been done
     if 'id' not in spec:
@@ -322,6 +335,49 @@ def get_asb_route():
     return asb_route
 
 
+def broker_request(broker, service_route, method, **kwargs):
+    if broker is None:
+        broker = get_asb_route()
+
+    if broker is None:
+        raise Exception("Could not find route to ansible-service-broker. "
+                        "Use --broker or log into the cluster using \"oc login\"")
+    url = broker + service_route
+    if url.find("http") < 0:
+        url = "http://" + url
+
+    try:
+        response = requests.request(method, url, **kwargs)
+    except Exception as e:
+        print("ERROR: Failed broker request (%s) %s" % (method, url))
+        raise e
+
+    return response
+
+
+def cmdrun_list(**kwargs):
+    response = broker_request(kwargs["broker"], "/v2/catalog", "get")
+
+    if response.status_code != 200:
+        print("Error: Attempt to list APBs in the broker returned status: %d" % response.status_code)
+        print("Unable to list APBs in Ansible Service Broker.")
+        exit(1)
+
+    max_id = 10
+    max_name = 10
+    max_desc = 10
+
+    for service in response.json()['services']:
+        max_id = max(max_id, len(service["id"]))
+        max_name = max(max_name, len(service["name"]))
+        max_desc = max(max_desc, len(service["description"]))
+
+    template = "{id:%d}{name:%d}{description:%d}" % (max_id + 2, max_name + 2, max_desc + 2)
+    print template.format(id="ID", name="NAME", description="DESCRIPTION")
+    for service in response.json()['services']:
+        print template.format(**service)
+
+
 def cmdrun_init(**kwargs):
     current_path = kwargs['base_path']
     bindable = kwargs['bindable']
@@ -343,13 +399,20 @@ def cmdrun_init(**kwargs):
         if len(apb_tag_arr) > 1:
             organization = apb_tag_arr[-2]
         else:
-            raise Exception('Organization must be specified as "apb init org/apb-name" or with the --org flag')
+            raise Exception('Organization must be specified as in '
+                            '"apb init org/apb-name" or with the --org flag')
 
     description = "This is a sample application generated by apb init"
 
-    apb_dict = {'apb-id': str(uuid.uuid4()), 'apb-name': apb_name,
-                'organization': organization, 'description': description,
-                'bindable': bindable, 'async': async}
+    apb_dict = {
+        'apb-id': str(uuid.uuid4()),
+        'apb-name': apb_name,
+        'organization': organization,
+        'description': description,
+        'bindable': bindable,
+        'async': async
+    }
+
     project = os.path.join(current_path, apb_name)
 
     if os.path.exists(project):
@@ -399,42 +462,50 @@ def cmdrun_build(**kwargs):
 
 
 def cmdrun_push(**kwargs):
-    broker = kwargs['broker']
-    if broker is None:
-        broker = get_asb_route()
-
-    if broker is None:
-        raise Exception("Could not find route to ansible-service-broker. "
-                        "Use --broker or log into the cluster using \"oc login\"")
-
-    print("Pushing APB spec to: [%s]" % broker)
     project = kwargs['base_path']
-    spec_path = os.path.join(project, SPEC_FILE)
-
-    if not os.path.exists(spec_path):
-        raise Exception('ERROR: Spec file: [ %s ] not found' % spec_path)
-
-    try:
-        spec = load_spec_str(spec_path)
-    except Exception as e:
-        print('ERROR: Failed to load spec!')
-        raise e
-
+    spec = get_spec(project, 'string')
     blob = base64.b64encode(spec)
-    dataSpec = {'apbSpec': blob}
-    try:
-        r = requests.post(broker + '/apb/spec', data=dataSpec)
-    except Exception as e:
-        # Try again with http in front of the route
-        try:
-            r = requests.post('http://' + broker + '/apb/spec', data=dataSpec)
-        except Exception as e2:
-            print('ERROR: Failed to POST spec to %s' % broker)
-            raise e2
+    data_spec = {'apbSpec': blob}
+    response = broker_request(kwargs["broker"], "/apb/spec", "post", data=data_spec)
 
-    if r.status_code != 200:
-        print("Error: Attempt to add APB to the Broker returned status: %d" % r.status_code)
+    if response.status_code != 200:
+        print("Error: Attempt to add APB to the Broker returned status: %d" % response.status_code)
         print("Unable to add APB to Ansible Service Broker.")
         exit(1)
 
     print("Successfully added APB to Ansible Service Broker")
+
+
+def cmdrun_remove(**kwargs):
+    project = kwargs['base_path']
+
+    if kwargs["all"]:
+        route = "/apb/spec"
+    elif kwargs["id"] is not None:
+        route = "/apb/spec/" + kwargs["id"]
+    else:
+        spec = get_spec(project)
+        if 'id' in spec:
+            route = "/apb/spec/" + spec["id"]
+        else:
+            raise Exception("No APB ID specified.  Use --id or call apb remove from inside the project directory")
+
+    response = broker_request(kwargs["broker"], route, "delete")
+
+    if response.status_code != 204:
+        print("Error: Attempt to remove an APB from Broker returned status: %d" % response.status_code)
+        print("Unable to remove APB from Ansible Service Broker.")
+        exit(1)
+
+    print("Successfully deleted APB")
+
+
+def cmdrun_bootstrap(**kwargs):
+    response = broker_request(kwargs["broker"], "/v2/bootstrap", "post", data={})
+
+    if response.status_code != 200:
+        print("Error: Attempt to bootstrap Broker returned status: %d" % response.status_code)
+        print("Unable to bootstrap Ansible Service Broker.")
+        exit(1)
+
+    print("Successfully bootstrapped Ansible Service Broker")
