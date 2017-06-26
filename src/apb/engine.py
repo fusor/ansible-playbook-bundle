@@ -102,8 +102,8 @@ def convert_params_to_dict(params):
 
 
 def load_example_specfile(apb_dict, params):
-    ENV = Environment(loader=FileSystemLoader(DAT_PATH))
-    template = ENV.get_template(EX_SPEC_FILE)
+    env = Environment(loader=FileSystemLoader(DAT_PATH))
+    template = env.get_template(EX_SPEC_FILE)
 
     if params:
         params = convert_params_to_dict(params)
