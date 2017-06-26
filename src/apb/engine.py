@@ -10,7 +10,7 @@ import shutil
 import docker
 
 from openshift import client as openshift_client, config as openshift_config
-from jinja2 import Environment, FileSystemLoader, Template
+from jinja2 import Environment, FileSystemLoader
 
 ROLES_DIR = 'roles'
 
@@ -184,7 +184,7 @@ def write_role(project_path, apb_name, action):
     role_tasks_full_dir = os.path.join(project_path, role_tasks_dir)
 
     mkdir_p(role_tasks_full_dir)
-    main_filepath= os.path.join(role_tasks_full_dir, ACTION_TEMPLATE_DICT[action]['role_task_main_file'])
+    main_filepath = os.path.join(role_tasks_full_dir, ACTION_TEMPLATE_DICT[action]['role_task_main_file'])
     write_file(main_out, main_filepath, True)
 
 
@@ -421,11 +421,11 @@ def cmdrun_push(**kwargs):
     blob = base64.b64encode(spec)
     dataSpec = {'apbSpec': blob}
     try:
-        r = requests.post(broker+'/apb/spec', data=dataSpec)
+        r = requests.post(broker + '/apb/spec', data=dataSpec)
     except Exception as e:
         # Try again with http in front of the route
         try:
-            r = requests.post('http://'+broker+'/apb/spec', data=dataSpec)
+            r = requests.post('http://' + broker + '/apb/spec', data=dataSpec)
         except Exception as e2:
             print('ERROR: Failed to POST spec to %s' % broker)
             raise e2
