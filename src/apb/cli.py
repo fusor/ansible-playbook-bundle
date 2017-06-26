@@ -1,3 +1,4 @@
+""" cli module which handles all of the commandline parsing """
 import os
 import sys
 import argparse
@@ -15,7 +16,8 @@ AVAILABLE_COMMANDS = {
 }
 
 
-def subcmd_build_parser(parser, subcmd):
+def subcmd_build_parser(subcmd):
+    """ build subcommand """
     subcmd.add_argument(
         '--tag', action='store', dest='tag',
         help=u'Tag of APB to build'
@@ -23,7 +25,8 @@ def subcmd_build_parser(parser, subcmd):
     return
 
 
-def subcmd_init_parser(parser, subcmd):
+def subcmd_init_parser(subcmd):
+    """ init subcommand """
     subcmd.add_argument(
         'tag', action='store',
         help=u'Tag (org/name) or name of APB to initialize'
@@ -64,7 +67,8 @@ def subcmd_init_parser(parser, subcmd):
     return
 
 
-def subcmd_prepare_parser(parser, subcmd):
+def subcmd_prepare_parser(subcmd):
+    """ prepare subcommand """
     subcmd.add_argument(
         '--provider', action='store', dest='provider',
         help=u'Targetted cluster type',
@@ -74,18 +78,21 @@ def subcmd_prepare_parser(parser, subcmd):
     return
 
 
-def subcmd_push_parser(parser, subcmd):
+def subcmd_push_parser(subcmd):
+    """ push subcommand """
     subcmd.add_argument(
         '--broker', action='store', dest='broker',
         help=u'Route to the Ansible Service Broker'
     )
 
 
-def subcmd_help_parser(parser, subcmd):
+def subcmd_help_parser(subcmd):
+    """ help subcommand """
     return
 
 
 def main():
+    """ main """
     parser = argparse.ArgumentParser(
         description=u'APB tooling for '
         u'assisting in building and packaging APBs.'
@@ -110,7 +117,7 @@ def main():
         subparser = subparsers.add_parser(
             subcommand, help=AVAILABLE_COMMANDS[subcommand]
         )
-        globals()['subcmd_%s_parser' % subcommand](parser, subparser)
+        globals()['subcmd_%s_parser' % subcommand](subparser)
 
     args = parser.parse_args()
 
