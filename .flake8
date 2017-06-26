@@ -1,2 +1,3 @@
 [flake8]
-ignore=build,dist
+# E501 line too long > 79 characters
+ignore=build,dist,E501
