@@ -9,7 +9,7 @@ SKIP_OPTIONS = ['provision', 'deprovision', 'bind', 'unbind', 'roles']
 
 AVAILABLE_COMMANDS = {
     'help': 'Display this help message',
-    'list': 'Remove APBs from the target Ansible Service Broker',
+    'list': 'List APBs from the target Ansible Service Broker',
     'init': 'Initialize the directory for APB development',
     'prepare': 'Prepare an ansible-container project for APB packaging',
     'build': 'Build and package APB container',
