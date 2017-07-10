@@ -4,6 +4,7 @@ import uuid
 import base64
 import shutil
 import string
+import subprocess
 import yaml
 import requests
 
@@ -105,15 +106,17 @@ def load_example_specfile(apb_dict, params):
     env = Environment(loader=FileSystemLoader(DAT_PATH))
     template = env.get_template(EX_SPEC_FILE)
 
-    if params:
+    if params and not type(params) is list:
         params = convert_params_to_dict(params)
-    else:
+    elif not params:
         params = []
 
     if apb_dict['dependencies']:
         dependencies = apb_dict['dependencies']
     else:
         dependencies = []
+
+    print(params)
 
     return template.render(apb_dict=apb_dict, params=params, dependencies=dependencies)
 
@@ -299,10 +302,20 @@ def touch(fname, force):
 def update_spec(project):
     spec = get_spec(project)
     spec_path = os.path.join(project, SPEC_FILE)
+    roles_path = os.path.join(project, ROLES_DIR)
 
     # ID specfile if it hasn't already been done
     if 'id' not in spec:
         gen_spec_id(spec, spec_path)
+
+    expected_deps = load_source_dependencies(roles_path)
+    if 'dependencies' not in spec:
+        spec['dependencies'] = []
+
+    current_deps = spec['dependencies']
+    for dep in expected_deps:
+        if dep not in current_deps:
+            spec['dependencies'].append(dep)
 
     if not is_valid_spec(spec):
         fmtstr = 'ERROR: Spec file: [ %s ] failed validation'
@@ -324,6 +337,12 @@ def update_dockerfile(project):
 
     write_file(dockerfile_out, dockerfile_path, False)
     print('Finished writing dockerfile.')
+
+
+def load_source_dependencies(roles_path):
+    print('Trying to guess list of dependencies for APB')
+    output = subprocess.check_output("/bin/grep -R image: "+roles_path+"|awk '{print $3}'", stderr=subprocess.STDOUT, shell=True)
+    return output.split('\n')[:-1]
 
 
 def get_asb_route():
@@ -447,7 +466,29 @@ def cmdrun_init(**kwargs):
 
 def cmdrun_prepare(**kwargs):
     project = kwargs['base_path']
-    update_spec(project)
+    spec_path = os.path.join(project, SPEC_FILE)
+    spec = update_spec(project)
+    spec_fields = ['id', 'name', 'image', 'description',
+                   'bindable', 'async', 'metadata', 'parameters',
+                   'required', 'dependencies']
+    for field in spec_fields:
+        if field not in spec:
+            spec[field] = []
+
+    apb_dict = {
+        'apb-id': spec['id'],
+        'apb-name': spec['name'],
+        'organization': spec['image'].split('/')[0],
+        'description': spec['description'],
+        'bindable': spec['bindable'],
+        'async': spec['async'],
+        'metadata': spec['metadata'],
+        'required': spec['required'],
+        'dependencies': spec['dependencies']
+    }
+
+    specfile_out = load_example_specfile(apb_dict, spec['parameters'])
+    write_file(specfile_out, spec_path, True)
     update_dockerfile(project)
 
 
