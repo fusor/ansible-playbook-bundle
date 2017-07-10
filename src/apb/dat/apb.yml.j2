@@ -4,13 +4,10 @@ image: {{ apb_dict['organization'] }}/{{ apb_dict['apb-name'] }}
 description: {{ apb_dict['description'] }}
 bindable: {{ apb_dict['bindable'] }}
 async: {{ apb_dict['async'] or 'optional' }}
-metadata: {{ '[]' if not apb_dict['metadata'] }}
-  {% if apb_dict['metadata'] -%}
-  displayName: {{ apb_dict['metadata']['displayName'] }}
-  longDescription: {{ apb_dict['metadata']['longDescription'] }}
-  imageUrl: {{ apb_dict['metadata']['imageUrl'] }}
-  documentationUrl: {{ apb_dict['metadata']['documentationUrl'] }}
-  {% endif %}
+metadata: {{ '{}' if not apb_dict['metadata'] }}
+  {% for meta in apb_dict['metadata'].keys() -%}
+  {{ meta }}: {{ apb_dict['metadata'][meta] }}
+  {% endfor %}
 parameters: {{ '[]' if not params }}
   {% for param in params -%}
   - {{ param.keys()[0] or 'sample-name' }}:
@@ -21,8 +18,3 @@ required: {{ '[]' if not apb_dict['required'] }}
   {% for req in apb_dict['required'] -%}
   - {{ req }}
   {% endfor %}
-dependencies: {{ '[]' if not dependencies }}
-  {% for dep in dependencies -%}
-  - {{ dep }}
-  {% endfor %}
-

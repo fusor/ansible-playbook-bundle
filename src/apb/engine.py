@@ -111,14 +111,7 @@ def load_example_specfile(apb_dict, params):
     elif not params:
         params = []
 
-    if apb_dict['dependencies']:
-        dependencies = apb_dict['dependencies']
-    else:
-        dependencies = []
-
-    print(params)
-
-    return template.render(apb_dict=apb_dict, params=params, dependencies=dependencies)
+    return template.render(apb_dict=apb_dict, params=params)
 
 
 def write_file(file_out, destination, force):
@@ -299,7 +292,7 @@ def touch(fname, force):
         open(fname, 'a').close()
 
 
-def update_spec(project):
+def update_spec(project, ignore_deps):
     spec = get_spec(project)
     spec_path = os.path.join(project, SPEC_FILE)
     roles_path = os.path.join(project, ROLES_DIR)
@@ -308,14 +301,19 @@ def update_spec(project):
     if 'id' not in spec:
         gen_spec_id(spec, spec_path)
 
-    expected_deps = load_source_dependencies(roles_path)
-    if 'dependencies' not in spec:
-        spec['dependencies'] = []
+    if not ignore_deps:
+        expected_deps = load_source_dependencies(roles_path)
+        if 'required' not in spec:
+            spec['required'] = []
+        if 'metadata' not in spec:
+            spec['metadata'] = {}
+        if 'dependencies' not in spec['metadata']:
+            spec['metadata']['dependencies'] = []
 
-    current_deps = spec['dependencies']
-    for dep in expected_deps:
-        if dep not in current_deps:
-            spec['dependencies'].append(dep)
+        current_deps = spec['metadata']['dependencies']
+        for dep in expected_deps:
+            if dep not in current_deps:
+                spec['metadata']['dependencies'].append(dep)
 
     if not is_valid_spec(spec):
         fmtstr = 'ERROR: Spec file: [ %s ] failed validation'
@@ -341,7 +339,9 @@ def update_dockerfile(project):
 
 def load_source_dependencies(roles_path):
     print('Trying to guess list of dependencies for APB')
-    output = subprocess.check_output("/bin/grep -R image: "+roles_path+"|awk '{print $3}'", stderr=subprocess.STDOUT, shell=True)
+    output = subprocess.check_output("/bin/grep -R \ image: "+roles_path+"|awk '{print $3}'", stderr=subprocess.STDOUT, shell=True)
+    if "{{" in output or "}}" in output:
+        print("Detected variables being used for dependent image names. Please double check the dependencies in your spec file.")
     return output.split('\n')[:-1]
 
 
@@ -466,14 +466,12 @@ def cmdrun_init(**kwargs):
 
 def cmdrun_prepare(**kwargs):
     project = kwargs['base_path']
+    ignore_deps = kwargs['ignore_deps']
     spec_path = os.path.join(project, SPEC_FILE)
-    spec = update_spec(project)
+    spec = update_spec(project, ignore_deps)
     spec_fields = ['id', 'name', 'image', 'description',
                    'bindable', 'async', 'metadata', 'parameters',
-                   'required', 'dependencies']
-    for field in spec_fields:
-        if field not in spec:
-            spec[field] = []
+                   'required']
 
     apb_dict = {
         'apb-id': spec['id'],
@@ -484,7 +482,6 @@ def cmdrun_prepare(**kwargs):
         'async': spec['async'],
         'metadata': spec['metadata'],
         'required': spec['required'],
-        'dependencies': spec['dependencies']
     }
 
     specfile_out = load_example_specfile(apb_dict, spec['parameters'])
@@ -494,7 +491,8 @@ def cmdrun_prepare(**kwargs):
 
 def cmdrun_build(**kwargs):
     project = kwargs['base_path']
-    spec = update_spec(project)
+    ignore_deps = kwargs['ignore_deps']
+    spec = update_spec(project, ignore_deps)
     update_dockerfile(project)
 
     if not kwargs['tag']:
