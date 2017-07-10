@@ -116,8 +116,6 @@ def load_example_specfile(apb_dict, params):
     else:
         dependencies = []
 
-    print(params)
-
     return template.render(apb_dict=apb_dict, params=params, dependencies=dependencies)
 
 
@@ -299,7 +297,7 @@ def touch(fname, force):
         open(fname, 'a').close()
 
 
-def update_spec(project):
+def update_spec(project, ignore_deps):
     spec = get_spec(project)
     spec_path = os.path.join(project, SPEC_FILE)
     roles_path = os.path.join(project, ROLES_DIR)
@@ -308,14 +306,15 @@ def update_spec(project):
     if 'id' not in spec:
         gen_spec_id(spec, spec_path)
 
-    expected_deps = load_source_dependencies(roles_path)
-    if 'dependencies' not in spec:
-        spec['dependencies'] = []
+    if not ignore_deps:
+        expected_deps = load_source_dependencies(project, roles_path)
+        if 'dependencies' not in spec:
+            spec['dependencies'] = []
 
-    current_deps = spec['dependencies']
-    for dep in expected_deps:
-        if dep not in current_deps:
-            spec['dependencies'].append(dep)
+        current_deps = spec['dependencies']
+        for dep in expected_deps:
+            if dep not in current_deps and not is_jinja_string(dep):
+                spec['dependencies'].append(dep)
 
     if not is_valid_spec(spec):
         fmtstr = 'ERROR: Spec file: [ %s ] failed validation'
@@ -339,11 +338,66 @@ def update_dockerfile(project):
     print('Finished writing dockerfile.')
 
 
-def load_source_dependencies(roles_path):
+def load_source_dependencies(project, roles_path):
     print('Trying to guess list of dependencies for APB')
-    output = subprocess.check_output("/bin/grep -R image: "+roles_path+"|awk '{print $3}'", stderr=subprocess.STDOUT, shell=True)
-    return output.split('\n')[:-1]
+    output = subprocess.check_output("/bin/grep -R \ image: "+roles_path, stderr=subprocess.STDOUT, shell=True)
+    image_raw_list = output.split('\n')[:-1]
+    image_list = []
 
+    for image in image_raw_list:
+        image = image.split('image: ')[-1]
+        image = sub_vars(project, image)
+        # Sometimes a newline is in the image if the variable substitution fails
+        image = image.replace('\n','')
+        if is_jinja_string(image):
+            print("Could not automatically substitute variables for image: " + image)
+            print("Please double check your apb.yaml to ensure dependencies are correct.")
+        image_list.append(image)
+
+    return image_list
+
+
+def is_jinja_string(string):
+    if "{{" in string and "}}" in string:
+        return True
+    return False
+
+
+def sub_vars(project, var_string):
+    if is_jinja_string(var_string):
+        var_name = var_string.split("{{ ")[-1].split(" }}")[0]
+    else:
+        return []
+    spec = get_spec(project)
+    subbed = False
+    # Check if the variable is listed in the spec
+    for param in spec['parameters']:
+        if var_name in param:
+            # Check if we have a default for this param
+            var_value = param[var_name]['default']
+            if var_value != []:
+                var_string = var_string.replace(var_name, var_value)
+                subbed = True
+
+    # Check if variable is listed in the role somewhere
+    roles_path = os.path.join(project, ROLES_DIR)
+    try:
+        output = subprocess.check_output("/bin/grep -R "+var_name+":\  "+roles_path, stderr=subprocess.STDOUT, shell=True)
+    except subprocess.CalledProcessError as e:
+        # Did not find variable in roles directory. Setting output to empty
+        output = []
+    if output:
+        var_value = output.split(var_name+": ")[-1].replace("\"", '')
+        var_string = var_string.replace(var_name, var_value)
+        if is_jinja_string(var_string):
+#            var_string = sub_vars(project, var_string)
+            subbed = True
+            return var_string
+    # Replace Jinja symbols
+    var_string = var_string.replace("\"",'')
+    var_string = var_string.replace("{{ ", '')
+    var_string = var_string.replace(" }}", '')
+    return var_string
 
 def get_asb_route():
     asb_route = None
@@ -466,8 +520,9 @@ def cmdrun_init(**kwargs):
 
 def cmdrun_prepare(**kwargs):
     project = kwargs['base_path']
+    ignore_deps = kwargs['ignore_deps']
     spec_path = os.path.join(project, SPEC_FILE)
-    spec = update_spec(project)
+    spec = update_spec(project, ignore_deps)
     spec_fields = ['id', 'name', 'image', 'description',
                    'bindable', 'async', 'metadata', 'parameters',
                    'required', 'dependencies']
@@ -494,7 +549,8 @@ def cmdrun_prepare(**kwargs):
 
 def cmdrun_build(**kwargs):
     project = kwargs['base_path']
-    spec = update_spec(project)
+    ignore_deps = kwards['ignore_deps']
+    spec = update_spec(project, ignore_deps)
     update_dockerfile(project)
 
     if not kwargs['tag']:
