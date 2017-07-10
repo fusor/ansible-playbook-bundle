@@ -55,25 +55,51 @@ description: "My New APB"
 bindable: false
 async: optional
 parameters: []
+dependencies: []
 ```
 The spec file will need to be edited for your specific application.
 
 For example, the `etherpad-apb` spec file looks as follows:
 ```yml
-name: fusor/etherpad-apb
+name: etherpad-apb
+image: ansibleplaybookbundle/etherpad-apb
 description: Note taking web application
 bindable: true
 async: optional
+metadata:
+  displayName: "Etherpad (APB)"
+  longDescription: "An apb that deploys Etherpad Lite"
+  imageUrl: "https://translatewiki.net/images/thumb/6/6f/Etherpad_lite.svg/200px-Etherpad_lite.svg.png"
+  documentationUrl: "https://github.com/ether/etherpad-lite/wiki"
 parameters:
-  - name: hostport
-    description: The host TCP port as the external endpoint
-    type: int
-    default: 9001
-  - name: db_user
-    description: Database User 
-    type: string
+  - mariadb_name:
+      title: MariaDB Database Name
+      type: string
+      default: etherpad
+  - mariadb_user:
+      title: MariaDB User
+      type: string
+      default: etherpad
+      maxlength: 63
+  - mariadb_password:
+      title: MariaDB Password
+      description: A random alphanumeric string if left blank
+      type: string
+      default: admin
+  - mariadb_root_password:
+      title: Root Password
+      description: root password for mariadb 
+      type: string
+      default: admin
+required:
+  - mariadb_name
+  - mariadb_user
+dependencies:
+  - docker.io/mariadb:latest
+  - docker.io/tvelocity/etherpad-lite:latest
 ```
 
+The `metadata` field is optional and used when integrating with the origin service catalog.
 For an APB that does not have any parameters, `parameters` field would look like:
 ```yml
 parameters: []

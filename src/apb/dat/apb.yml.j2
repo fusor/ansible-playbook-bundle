@@ -10,4 +10,7 @@ parameters: {{ '[]' if not params }}
     description: {{ param['description'] or "This is a sample description" }}
     type: {{ param['type'] or 'string' }}
     default: {{ param['default'] or 'sample-default'}}
+{% endfor %}dependencies: {{ '[]' if not dependencies }}
+{% for dep in dependencies -%}
+  - {{ dep }}
 {% endfor %}

@@ -110,7 +110,12 @@ def load_example_specfile(apb_dict, params):
     else:
         params = []
 
-    return template.render(apb_dict=apb_dict, params=params)
+    if apb_dict['dependencies']:
+        dependencies = apb_dict['dependencies']
+    else:
+        dependencies = []
+
+    return template.render(apb_dict=apb_dict, params=params, dependencies=dependencies)
 
 
 def write_file(file_out, destination, force):
@@ -383,6 +388,7 @@ def cmdrun_init(**kwargs):
     bindable = kwargs['bindable']
     async = kwargs['async']
     params = kwargs['params']
+    dependencies = kwargs['dependencies']
     skip = {
         'provision': kwargs['skip-provision'],
         'deprovision': kwargs['skip-deprovision'],
@@ -410,7 +416,8 @@ def cmdrun_init(**kwargs):
         'organization': organization,
         'description': description,
         'bindable': bindable,
-        'async': async
+        'async': async,
+        'dependencies': dependencies
     }
 
     project = os.path.join(current_path, apb_name)

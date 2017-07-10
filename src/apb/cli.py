@@ -90,6 +90,14 @@ def subcmd_init_parser(subcmd):
         help=u'Parameter declaration separated by commas'
     )
 
+    subcmd.add_argument(
+        '--dep',
+        '-d',
+        action='append',
+        dest='dependencies',
+        help=u'Add image dependency to APB spec'
+    )
+
     for opt in SKIP_OPTIONS:
         subcmd.add_argument(
             '--skip-%s' % opt,
