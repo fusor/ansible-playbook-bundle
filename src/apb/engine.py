@@ -555,7 +555,7 @@ def cmdrun_prepare(**kwargs):
 
 def cmdrun_build(**kwargs):
     project = kwargs['base_path']
-    ignore_deps = kwards['ignore_deps']
+    ignore_deps = kwargs['ignore_deps']
     spec = update_spec(project, ignore_deps)
     update_dockerfile(project)
 
