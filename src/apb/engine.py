@@ -308,13 +308,15 @@ def update_spec(project, ignore_deps):
 
     if not ignore_deps:
         expected_deps = load_source_dependencies(project, roles_path)
-        if 'dependencies' not in spec:
-            spec['dependencies'] = []
+        if 'metadata' not in spec:
+            spec['metadata'] = {}
+        if 'dependencies' not in spec['metadata']:
+            spec['metadata']['dependencies'] = []
 
-        current_deps = spec['dependencies']
+        current_deps = spec['metadata']['dependencies']
         for dep in expected_deps:
             if dep not in current_deps and not is_jinja_string(dep):
-                spec['dependencies'].append(dep)
+                spec['metadata']['dependencies'].append(dep)
 
     if not is_valid_spec(spec):
         fmtstr = 'ERROR: Spec file: [ %s ] failed validation'
@@ -346,7 +348,8 @@ def load_source_dependencies(project, roles_path):
 
     for image in image_raw_list:
         image = image.split('image: ')[-1]
-        image = sub_vars(project, image)
+        if is_jinja_string(image):
+            image = sub_vars(project, image)
         # Sometimes a newline is in the image if the variable substitution fails
         image = image.replace('\n','')
         if is_jinja_string(image):
@@ -375,8 +378,8 @@ def sub_vars(project, var_string):
         if var_name in param:
             # Check if we have a default for this param
             var_value = param[var_name]['default']
-            if var_value != []:
-                var_string = var_string.replace(var_name, var_value)
+            if var_value != [] and var_name in var_string:
+                var_string = var_string.replace(var_name, str(var_value))
                 subbed = True
 
     # Check if variable is listed in the role somewhere
@@ -525,10 +528,13 @@ def cmdrun_prepare(**kwargs):
     spec = update_spec(project, ignore_deps)
     spec_fields = ['id', 'name', 'image', 'description',
                    'bindable', 'async', 'metadata', 'parameters',
-                   'required', 'dependencies']
+                   'required']
     for field in spec_fields:
         if field not in spec:
-            spec[field] = []
+            if field == 'metadata':
+                spec[field] = {}
+            else:
+                spec[field] = []
 
     apb_dict = {
         'apb-id': spec['id'],
@@ -539,7 +545,7 @@ def cmdrun_prepare(**kwargs):
         'async': spec['async'],
         'metadata': spec['metadata'],
         'required': spec['required'],
-        'dependencies': spec['dependencies']
+        'dependencies': spec['metadata']['dependencies']
     }
 
     specfile_out = load_example_specfile(apb_dict, spec['parameters'])
