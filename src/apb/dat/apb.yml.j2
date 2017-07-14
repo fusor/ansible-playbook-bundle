@@ -6,10 +6,10 @@ bindable: {{ apb_dict['bindable'] }}
 async: {{ apb_dict['async'] or 'optional' }}
 metadata:{{ ' {}' if not apb_dict['metadata'] }}
   {% if apb_dict['metadata'] -%}
-  displayName: {{ apb_dict['metadata']['displayName'] }}
-  longDescription: {{ apb_dict['metadata']['longDescription'] }}
-  imageUrl: {{ apb_dict['metadata']['imageUrl'] }}
-  documentationUrl: {{ apb_dict['metadata']['documentationUrl'] }}
+  displayName: {{ apb_dict['metadata']['displayName'] if apb_dict['metadata']['displayName'] else '[]'}}
+  longDescription: {{ apb_dict['metadata']['longDescription'] if apb_dict['metadata']['longDescription'] else '[]' }}
+  imageUrl: {{ apb_dict['metadata']['imageUrl'] if apb_dict['metadata']['imageUrl'] else '[]' }}
+  documentationUrl: {{ apb_dict['metadata']['documentationUrl'] if apb_dict['metadata']['documentationUrl'] else '[]' }}
   dependencies:{{ ' []' if not dependencies }}
     {% for dep in dependencies -%}
     - {{ dep }}
