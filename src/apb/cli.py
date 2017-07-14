@@ -38,6 +38,14 @@ def subcmd_build_parser(subcmd):
         dest='tag',
         help=u'Tag of APB to build'
     )
+
+    subcmd.add_argument(
+        '--ignore-dependencies',
+        action='store_true',
+        dest='ignore_deps',
+        help=u'Ignore smart dependency tracking',
+        default=False
+    )
     return
 
 
@@ -90,6 +98,14 @@ def subcmd_init_parser(subcmd):
         help=u'Parameter declaration separated by commas'
     )
 
+    subcmd.add_argument(
+        '--dep',
+        '-d',
+        action='append',
+        dest='dependencies',
+        help=u'Add image dependency to APB spec'
+    )
+
     for opt in SKIP_OPTIONS:
         subcmd.add_argument(
             '--skip-%s' % opt,
@@ -111,6 +127,14 @@ def subcmd_prepare_parser(subcmd):
         help=u'Targetted cluster type',
         choices=['openshift', 'kubernetes'],
         default='openshift'
+    )
+
+    subcmd.add_argument(
+        '--ignore-dependencies',
+        action='store_true',
+        dest='ignore_deps',
+        help=u'Ignore smart dependency tracking',
+        default=False
     )
     return
 
