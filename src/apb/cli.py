@@ -27,6 +27,12 @@ def subcmd_list_parser(subcmd):
         dest='broker',
         help=u'Route to the Ansible Service Broker'
     )
+    subcmd.add_argument(
+        '-k',
+        action='store_false',
+        dest='verify',
+        help=u'Use insecure connection to Ansible Service Broker'
+    )
     return
 
 
@@ -147,6 +153,12 @@ def subcmd_push_parser(subcmd):
         dest='broker',
         help=u'Route to the Ansible Service Broker'
     )
+    subcmd.add_argument(
+        '-k',
+        action='store_false',
+        dest='verify',
+        help=u'Use insecure connection to Ansible Service Broker'
+    )
     return
 
 
@@ -171,6 +183,12 @@ def subcmd_remove_parser(subcmd):
         dest='id',
         help=u'ID of APB to remove'
     )
+    subcmd.add_argument(
+        '-k',
+        action='store_false',
+        dest='verify',
+        help=u'Use insecure connection to Ansible Service Broker'
+    )
     return
 
 
@@ -181,6 +199,12 @@ def subcmd_bootstrap_parser(subcmd):
         action='store',
         dest='broker',
         help=u'Route to the Ansible Service Broker'
+    )
+    subcmd.add_argument(
+        '-k',
+        action='store_false',
+        dest='verify',
+        help=u'Use insecure connection to Ansible Service Broker'
     )
     return
 

@@ -366,9 +366,10 @@ def broker_request(broker, service_route, method, **kwargs):
     if broker is None:
         raise Exception("Could not find route to ansible-service-broker. "
                         "Use --broker or log into the cluster using \"oc login\"")
+
     url = broker + service_route
     if url.find("http") < 0:
-        url = "http://" + url
+        url = "https://" + url
 
     try:
         response = requests.request(method, url, **kwargs)
@@ -380,7 +381,7 @@ def broker_request(broker, service_route, method, **kwargs):
 
 
 def cmdrun_list(**kwargs):
-    response = broker_request(kwargs["broker"], "/v2/catalog", "get")
+    response = broker_request(kwargs["broker"], "/v2/catalog", "get", verify=kwargs["verify"])
 
     if response.status_code != 200:
         print("Error: Attempt to list APBs in the broker returned status: %d" % response.status_code)
@@ -512,7 +513,7 @@ def cmdrun_push(**kwargs):
     spec = get_spec(project, 'string')
     blob = base64.b64encode(spec)
     data_spec = {'apbSpec': blob}
-    response = broker_request(kwargs["broker"], "/apb/spec", "post", data=data_spec)
+    response = broker_request(kwargs["broker"], "/apb/spec", "post", data=data_spec, verify=kwargs["verify"])
 
     if response.status_code != 200:
         print("Error: Attempt to add APB to the Broker returned status: %d" % response.status_code)
@@ -536,7 +537,7 @@ def cmdrun_remove(**kwargs):
         else:
             raise Exception("No APB ID specified.  Use --id or call apb remove from inside the project directory")
 
-    response = broker_request(kwargs["broker"], route, "delete")
+    response = broker_request(kwargs["broker"], route, "delete", kwargs["verifY"])
 
     if response.status_code != 204:
         print("Error: Attempt to remove an APB from Broker returned status: %d" % response.status_code)
@@ -547,7 +548,7 @@ def cmdrun_remove(**kwargs):
 
 
 def cmdrun_bootstrap(**kwargs):
-    response = broker_request(kwargs["broker"], "/v2/bootstrap", "post", data={})
+    response = broker_request(kwargs["broker"], "/v2/bootstrap", "post", data={}, verify=kwargs["verify"])
 
     if response.status_code != 200:
         print("Error: Attempt to bootstrap Broker returned status: %d" % response.status_code)
