@@ -46,10 +46,10 @@ def subcmd_build_parser(subcmd):
     )
 
     subcmd.add_argument(
-        '--ignore-dependencies',
+        '--include-dependencies',
         action='store_true',
-        dest='ignore_deps',
-        help=u'Ignore smart dependency tracking',
+        dest='include_deps',
+        help=u'Include smart dependency tracking',
         default=False
     )
     return
@@ -136,10 +136,10 @@ def subcmd_prepare_parser(subcmd):
     )
 
     subcmd.add_argument(
-        '--ignore-dependencies',
+        '--include-dependencies',
         action='store_true',
-        dest='ignore_deps',
-        help=u'Ignore smart dependency tracking',
+        dest='include_deps',
+        help=u'Include smart dependency tracking',
         default=False
     )
     return

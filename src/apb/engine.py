@@ -292,7 +292,7 @@ def touch(fname, force):
         open(fname, 'a').close()
 
 
-def update_spec(project, ignore_deps):
+def update_spec(project, include_deps):
     spec = get_spec(project)
     spec_path = os.path.join(project, SPEC_FILE)
     roles_path = os.path.join(project, ROLES_DIR)
@@ -301,7 +301,7 @@ def update_spec(project, ignore_deps):
     if 'id' not in spec:
         gen_spec_id(spec, spec_path)
 
-    if not ignore_deps:
+    if include_deps:
         expected_deps = load_source_dependencies(roles_path)
         if 'required' not in spec:
             spec['required'] = []
@@ -437,7 +437,8 @@ def cmdrun_init(**kwargs):
         'description': description,
         'bindable': bindable,
         'async': async,
-        'dependencies': dependencies
+        'dependencies': dependencies,
+        'metadata': {}
     }
 
     project = os.path.join(current_path, apb_name)
@@ -467,9 +468,9 @@ def cmdrun_init(**kwargs):
 
 def cmdrun_prepare(**kwargs):
     project = kwargs['base_path']
-    ignore_deps = kwargs['ignore_deps']
+    include_deps = kwargs['include_deps']
     spec_path = os.path.join(project, SPEC_FILE)
-    spec = update_spec(project, ignore_deps)
+    spec = update_spec(project, include_deps)
     spec_fields = ['id', 'name', 'image', 'description',
                    'bindable', 'async', 'metadata', 'parameters',
                    'required']
@@ -492,8 +493,8 @@ def cmdrun_prepare(**kwargs):
 
 def cmdrun_build(**kwargs):
     project = kwargs['base_path']
-    ignore_deps = kwargs['ignore_deps']
-    spec = update_spec(project, ignore_deps)
+    include_deps = kwargs['include_deps']
+    spec = update_spec(project, include_deps)
     update_dockerfile(project)
 
     if not kwargs['tag']:
