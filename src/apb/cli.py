@@ -52,6 +52,15 @@ def subcmd_build_parser(subcmd):
         help=u'Include smart dependency tracking',
         default=False
     )
+
+    subcmd.add_argument(
+        '--skip-spec-update',
+        action='store_true',
+        dest='skip_spec_update',
+        help=u'Skip updating the spec',
+        default=False
+    )
+
     return
 
 
@@ -142,6 +151,15 @@ def subcmd_prepare_parser(subcmd):
         help=u'Include smart dependency tracking',
         default=False
     )
+
+    subcmd.add_argument(
+        '--skip-spec-update',
+        action='store_true',
+        dest='skip_spec_update',
+        help=u'Skip updating the spec',
+        default=False
+    )
+
     return
 
 
@@ -159,6 +177,7 @@ def subcmd_push_parser(subcmd):
         dest='verify',
         help=u'Use insecure connection to Ansible Service Broker'
     )
+
     return
 
 

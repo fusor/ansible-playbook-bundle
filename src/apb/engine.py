@@ -469,32 +469,38 @@ def cmdrun_init(**kwargs):
 def cmdrun_prepare(**kwargs):
     project = kwargs['base_path']
     include_deps = kwargs['include_deps']
+    skip_spec_update = kwargs['skip_spec_update']
     spec_path = os.path.join(project, SPEC_FILE)
-    spec = update_spec(project, include_deps)
-    spec_fields = ['id', 'name', 'image', 'description',
-                   'bindable', 'async', 'metadata', 'parameters',
-                   'required']
 
-    apb_dict = {
-        'apb-id': spec['id'],
-        'apb-name': spec['name'],
-        'organization': spec['image'].split('/')[0],
-        'description': spec['description'],
-        'bindable': spec['bindable'],
-        'async': spec['async'],
-        'metadata': spec['metadata'],
-        'required': spec['required'],
-    }
+    if not skip_spec_update:
+        spec = update_spec(project, include_deps)
+        spec_fields = ['id', 'name', 'image', 'description',
+                       'bindable', 'async', 'metadata', 'parameters',
+                       'required']
 
-    specfile_out = load_example_specfile(apb_dict, spec['parameters'])
-    write_file(specfile_out, spec_path, True)
+        apb_dict = {
+            'apb-id': spec['id'],
+            'apb-name': spec['name'],
+            'organization': spec['image'].split('/')[0],
+            'description': spec['description'],
+            'bindable': spec['bindable'],
+            'async': spec['async'],
+            'metadata': spec['metadata'],
+            'required': spec['required'],
+        }
+
+        specfile_out = load_example_specfile(apb_dict, spec['parameters'])
+        write_file(specfile_out, spec_path, True)
     update_dockerfile(project)
 
 
 def cmdrun_build(**kwargs):
     project = kwargs['base_path']
     include_deps = kwargs['include_deps']
-    spec = update_spec(project, include_deps)
+    skip_spec_update = kwargs['skip_spec_update']
+
+    if not skip_spec_update:
+        spec = update_spec(project, include_deps)
     update_dockerfile(project)
 
     if not kwargs['tag']:
