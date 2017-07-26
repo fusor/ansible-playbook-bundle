@@ -54,8 +54,12 @@ image: <docker-org>/my-apb
 description: "My New APB"
 bindable: false
 async: optional
-parameters: []
-dependencies: []
+metadata: {}
+plans:
+  - name: default
+    description: Sample description
+    metadata: {}
+    parameters: []
 ```
 The spec file will need to be edited for your specific application.
 
@@ -64,39 +68,44 @@ For example, the `etherpad-apb` spec file looks as follows:
 name: etherpad-apb
 image: ansibleplaybookbundle/etherpad-apb
 description: Note taking web application
-bindable: true
+bindable: True
 async: optional
-metadata:
-  displayName: "Etherpad (APB)"
-  longDescription: "An apb that deploys Etherpad Lite"
-  imageUrl: "https://translatewiki.net/images/thumb/6/6f/Etherpad_lite.svg/200px-Etherpad_lite.svg.png"
-  documentationUrl: "https://github.com/ether/etherpad-lite/wiki"
-parameters:
-  - mariadb_name:
-      title: MariaDB Database Name
-      type: string
-      default: etherpad
-  - mariadb_user:
-      title: MariaDB User
-      type: string
-      default: etherpad
-      maxlength: 63
-  - mariadb_password:
-      title: MariaDB Password
-      description: A random alphanumeric string if left blank
-      type: string
-      default: admin
-  - mariadb_root_password:
-      title: Root Password
-      description: root password for mariadb 
-      type: string
-      default: admin
-required:
-  - mariadb_name
-  - mariadb_user
-dependencies:
-  - docker.io/mariadb:latest
-  - docker.io/tvelocity/etherpad-lite:latest
+metadata: 
+  documentationUrl: https://github.com/ether/etherpad-lite/wiki
+  imageUrl: https://translatewiki.net/images/thumb/6/6f/Etherpad_lite.svg/200px-Etherpad_lite.svg.png
+  dependencies: ['docker.io/mariadb:latest', 'docker.io/tvelocity/etherpad-lite:latest']
+  displayName: Etherpad (APB)
+  longDescription: An apb that deploys Etherpad Lite
+plans:
+  - name: default
+    description: A single etherpad application with no DB
+    free: true
+    metadata:
+      displayName: Default
+      longDescription: This plan provides a single Etherpad application with no database
+      cost: $0.00
+    parameters:
+      - name: mariadb_name
+        required: true
+        default: etherpad
+        type: string
+        title: MariaDB Database Name
+      - name: mariadb_user
+        required: true
+        default: etherpad
+        title: MariaDB User
+        type: string
+        maxlength: 63
+      - name: mariadb_password
+        default: admin
+        type: string
+        description: A random alphanumeric string if left blank
+        title: MariaDB Password
+      - name: mariadb_root_password
+        default: admin
+        type: string
+        description: root password for mariadb
+        title: Root Password
 ```
 
 The `metadata` field is optional and used when integrating with the origin service catalog.
