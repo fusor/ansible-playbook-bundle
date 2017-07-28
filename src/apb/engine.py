@@ -544,7 +544,7 @@ def cmdrun_remove(**kwargs):
         else:
             raise Exception("No APB ID specified.  Use --id or call apb remove from inside the project directory")
 
-    response = broker_request(kwargs["broker"], route, "delete", kwargs["verifY"])
+    response = broker_request(kwargs["broker"], route, "delete", verify=kwargs["verify"])
 
     if response.status_code != 204:
         print("Error: Attempt to remove an APB from Broker returned status: %d" % response.status_code)
