@@ -5,11 +5,12 @@ import base64
 import shutil
 import string
 import subprocess
-import yaml
+import ruamel.yaml
 import requests
 
 import docker
 
+from ruamel.yaml import YAML
 from openshift import client as openshift_client, config as openshift_config
 from jinja2 import Environment, FileSystemLoader
 
@@ -194,7 +195,7 @@ def is_valid_spec(spec):
 
 def load_spec_dict(spec_path):
     with open(spec_path, 'r') as spec_file:
-        return yaml.load(spec_file.read())
+        return YAML().load(spec_file.read())
 
 
 def load_spec_str(spec_path):
@@ -262,28 +263,26 @@ def touch(fname, force):
         open(fname, 'a').close()
 
 
-def update_spec(project, include_deps):
+def update_deps(project):
     spec = get_spec(project)
     spec_path = os.path.join(project, SPEC_FILE)
     roles_path = os.path.join(project, ROLES_DIR)
 
-    if include_deps:
-        expected_deps = load_source_dependencies(roles_path)
-        if 'metadata' not in spec:
-            spec['metadata'] = {}
-        if 'dependencies' not in spec['metadata']:
-            spec['metadata']['dependencies'] = []
-
-        current_deps = spec['metadata']['dependencies']
-        for dep in expected_deps:
-            if dep not in current_deps:
-                spec['metadata']['dependencies'].append(dep)
+    expected_deps = load_source_dependencies(roles_path)
+    if 'metadata' not in spec:
+        spec['metadata'] = {}
+    if 'dependencies' not in spec['metadata']:
+        spec['metadata']['dependencies'] = []
+    current_deps = spec['metadata']['dependencies']
+    for dep in expected_deps:
+        if dep not in current_deps:
+            spec['metadata']['dependencies'].append(dep)
 
     if not is_valid_spec(spec):
         fmtstr = 'ERROR: Spec file: [ %s ] failed validation'
         raise Exception(fmtstr % spec_path)
 
-    return spec
+    return ruamel.yaml.dump(spec, Dumper=ruamel.yaml.RoundTripDumper)
 
 
 def update_dockerfile(project):
@@ -428,19 +427,20 @@ def cmdrun_init(**kwargs):
 
 def cmdrun_prepare(**kwargs):
     project = kwargs['base_path']
+    roles_path = os.path.join(project, ROLES_DIR)
+    spec_path = os.path.join(project, SPEC_FILE)
     include_deps = kwargs['include_deps']
     # Removing dependency work for now
+    if include_deps:
+        spec = update_deps(project)
+        write_file(spec, spec_path, True)
 
     update_dockerfile(project)
 
 
 def cmdrun_build(**kwargs):
     project = kwargs['base_path']
-    include_deps = kwargs['include_deps']
-    skip_spec_update = kwargs['skip_spec_update']
 
-    if not skip_spec_update:
-        spec = update_spec(project, include_deps)
     update_dockerfile(project)
 
     if not kwargs['tag']:
