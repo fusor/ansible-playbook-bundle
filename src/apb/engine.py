@@ -267,14 +267,8 @@ def update_spec(project, include_deps):
     spec_path = os.path.join(project, SPEC_FILE)
     roles_path = os.path.join(project, ROLES_DIR)
 
-    # ID specfile if it hasn't already been done
-    if 'id' not in spec:
-        gen_spec_id(spec, spec_path)
-
     if include_deps:
         expected_deps = load_source_dependencies(roles_path)
-        if 'required' not in spec:
-            spec['required'] = []
         if 'metadata' not in spec:
             spec['metadata'] = {}
         if 'dependencies' not in spec['metadata']:
@@ -435,28 +429,8 @@ def cmdrun_init(**kwargs):
 def cmdrun_prepare(**kwargs):
     project = kwargs['base_path']
     include_deps = kwargs['include_deps']
-    skip_spec_update = kwargs['skip_spec_update']
-    spec_path = os.path.join(project, SPEC_FILE)
+    # Removing dependency work for now
 
-    if not skip_spec_update:
-        spec = update_spec(project, include_deps)
-        spec_fields = ['id', 'name', 'image', 'description',
-                       'bindable', 'async', 'metadata', 'parameters',
-                       'required']
-
-        apb_dict = {
-            'apb-id': spec['id'],
-            'apb-name': spec['name'],
-            'organization': spec['image'].split('/')[0],
-            'description': spec['description'],
-            'bindable': spec['bindable'],
-            'async': spec['async'],
-            'metadata': spec['metadata'],
-            'required': spec['required'],
-        }
-
-        specfile_out = load_example_specfile(apb_dict, spec['parameters'])
-        write_file(specfile_out, spec_path, True)
     update_dockerfile(project)
 
 
