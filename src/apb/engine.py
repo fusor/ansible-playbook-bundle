@@ -440,6 +440,7 @@ def cmdrun_prepare(**kwargs):
 
 def cmdrun_build(**kwargs):
     project = kwargs['base_path']
+    spec = get_spec(project)
 
     update_dockerfile(project)
 

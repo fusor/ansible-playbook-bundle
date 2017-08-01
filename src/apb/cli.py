@@ -46,14 +46,6 @@ def subcmd_build_parser(subcmd):
         help=u'Tag of APB to build'
     )
 
-    subcmd.add_argument(
-        '--include-dependencies',
-        action='store_true',
-        dest='include_deps',
-        help=u'Include smart dependency tracking',
-        default=False
-    )
-
     return
 
 
