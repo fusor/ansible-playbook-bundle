@@ -28,10 +28,11 @@ def subcmd_list_parser(subcmd):
         help=u'Route to the Ansible Service Broker'
     )
     subcmd.add_argument(
-        '-k',
-        action='store_false',
+        '--secure',
+        action='store_true',
         dest='verify',
-        help=u'Use insecure connection to Ansible Service Broker'
+        help=u'Use secure connection to Ansible Service Broker',
+        default=False
     )
     return
 
@@ -50,14 +51,6 @@ def subcmd_build_parser(subcmd):
         action='store_true',
         dest='include_deps',
         help=u'Include smart dependency tracking',
-        default=False
-    )
-
-    subcmd.add_argument(
-        '--skip-spec-update',
-        action='store_true',
-        dest='skip_spec_update',
-        help=u'Skip updating the spec',
         default=False
     )
 
@@ -106,14 +99,6 @@ def subcmd_init_parser(subcmd):
     )
 
     subcmd.add_argument(
-        '--param',
-        '-p',
-        action='append',
-        dest='params',
-        help=u'Parameter declaration separated by commas'
-    )
-
-    subcmd.add_argument(
         '--dep',
         '-d',
         action='append',
@@ -152,14 +137,6 @@ def subcmd_prepare_parser(subcmd):
         default=False
     )
 
-    subcmd.add_argument(
-        '--skip-spec-update',
-        action='store_true',
-        dest='skip_spec_update',
-        help=u'Skip updating the spec',
-        default=False
-    )
-
     return
 
 
@@ -172,10 +149,11 @@ def subcmd_push_parser(subcmd):
         help=u'Route to the Ansible Service Broker'
     )
     subcmd.add_argument(
-        '-k',
-        action='store_false',
+        '--secure',
+        action='store_true',
         dest='verify',
-        help=u'Use insecure connection to Ansible Service Broker'
+        help=u'Use secure connection to Ansible Service Broker',
+        default=False
     )
 
     return
@@ -203,10 +181,11 @@ def subcmd_remove_parser(subcmd):
         help=u'ID of APB to remove'
     )
     subcmd.add_argument(
-        '-k',
-        action='store_false',
+        '--secure',
+        action='store_true',
         dest='verify',
-        help=u'Use insecure connection to Ansible Service Broker'
+        help=u'Use secure connection to Ansible Service Broker',
+        default=False
     )
     return
 
@@ -220,10 +199,11 @@ def subcmd_bootstrap_parser(subcmd):
         help=u'Route to the Ansible Service Broker'
     )
     subcmd.add_argument(
-        '-k',
-        action='store_false',
+        '--secure',
+        action='store_true',
         dest='verify',
-        help=u'Use insecure connection to Ansible Service Broker'
+        help=u'Use secure connection to Ansible Service Broker',
+        default=False
     )
     return
 

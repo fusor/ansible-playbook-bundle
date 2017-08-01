@@ -1,20 +1,12 @@
-id: {{ apb_dict['apb-id'] }}
-name: {{ apb_dict['apb-name'] }}
-image: {{ apb_dict['organization'] }}/{{ apb_dict['apb-name'] }}
+name: {{ apb_dict['name'] }}
+image: {{ apb_dict['image'] }}
 description: {{ apb_dict['description'] }}
 bindable: {{ apb_dict['bindable'] }}
 async: {{ apb_dict['async'] or 'optional' }}
-metadata: {{ '{}' if not apb_dict['metadata'] }}
-  {% for meta in apb_dict['metadata'].keys() -%}
-  {{ meta }}: {{ apb_dict['metadata'][meta] }}
-  {% endfor %}
-parameters: {{ '[]' if not params }}
-  {% for param in params -%}
-  - {{ param.keys()[0] or 'sample-name' }}:
-      {% for pair in param.values()[0].keys() -%}{{ pair }}: {{ param[param.keys()[0]][pair] }}
-      {% endfor %}
-  {% endfor %}
-required: {{ '[]' if not apb_dict['required'] }}
-  {% for req in apb_dict['required'] -%}
-  - {{ req }}
-  {% endfor %}
+metadata: {}
+plans:
+  - name: default
+    description: This default plan deploys {{ apb_dict['name'] }}
+    free: True
+    metadata: {}
+    parameters: []
