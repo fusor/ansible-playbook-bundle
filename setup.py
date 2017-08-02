@@ -6,7 +6,7 @@ reqs = [str(ir.req) for ir in install_reqs]
 
 setup(
     name="apb",
-    version="0.2.0",
+    version="0.2.1",
     description="Tooling for managing Ansible Playbook Bundle (APB) projects",
     author="Fusor",
     author_email="ansible-service-broker@redhat.com",
