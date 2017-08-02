@@ -34,6 +34,14 @@ def subcmd_list_parser(subcmd):
         help=u'Use secure connection to Ansible Service Broker',
         default=False
     )
+    subcmd.add_argument(
+        '--verbose',
+        '-v',
+        action='store_true',
+        dest='verbose',
+        help=u'Output verbose spec information from Ansible Service Broker',
+        default=False
+    )
     return
 
 

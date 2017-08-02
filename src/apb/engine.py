@@ -7,6 +7,8 @@ import string
 import subprocess
 import ruamel.yaml
 import requests
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 import docker
 
@@ -134,11 +136,11 @@ def mkdir_p(path):
             raise
 
 
-def write_playbook(project_dir, apb_name, action):
+def write_playbook(project_dir, apb_dict, action):
     env = Environment(loader=FileSystemLoader(DAT_PATH))
     templates = ACTION_TEMPLATE_DICT[action]
     playbook_template = env.get_template(templates['playbook_template'])
-    playbook_out = playbook_template.render(apb_name=apb_name, action_name=action)
+    playbook_out = playbook_template.render(apb_dict=apb_dict, action_name=action)
 
     playbook_pathname = os.path.join(project_dir,
                                      templates['playbook_dir'],
@@ -147,13 +149,13 @@ def write_playbook(project_dir, apb_name, action):
     write_file(playbook_out, playbook_pathname, True)
 
 
-def write_role(project_path, apb_name, action):
+def write_role(project_path, apb_dict, action):
     env = Environment(loader=FileSystemLoader(DAT_PATH))
     templates = ACTION_TEMPLATE_DICT[action]
     template = env.get_template(templates['role_task_main_template'])
-    main_out = template.render(apb_name=apb_name, action_name=action)
+    main_out = template.render(apb_dict=apb_dict, action_name=action)
 
-    role_name = action + '-' + apb_name
+    role_name = action + '-' + apb_dict['name']
     dir_tpl = string.Template(templates['role_tasks_dir'])
     dir = dir_tpl.substitute(role_name=role_name)
     role_tasks_dir = os.path.join(project_path, dir)
@@ -163,14 +165,14 @@ def write_role(project_path, apb_name, action):
     write_file(main_out, main_filepath, True)
 
 
-def generate_playbook_files(project_path, bindable, skip, apb_name):
+def generate_playbook_files(project_path, skip, apb_dict):
     print("Generating playbook files")
 
     for action in ACTION_TEMPLATE_DICT.keys():
         if not skip[action]:
-            write_playbook(project_path, apb_name, action)
+            write_playbook(project_path, apb_dict, action)
             if not skip['roles']:
-                write_role(project_path, apb_name, action)
+                write_role(project_path, apb_dict, action)
 
 
 def gen_spec_id(spec, spec_path):
@@ -351,26 +353,72 @@ def cmdrun_list(**kwargs):
         print("Unable to list APBs in Ansible Service Broker.")
         exit(1)
 
+    services = response.json()['services']
+
+    if not services:
+        print("No APBs found")
+    elif kwargs["verbose"]:
+        print_verbose_list(services)
+    else:
+        print_list(services)
+
+
+def print_list(services):
     max_id = 10
     max_name = 10
     max_desc = 10
 
-    for service in response.json()['services']:
+    for service in services:
         max_id = max(max_id, len(service["id"]))
         max_name = max(max_name, len(service["name"]))
         max_desc = max(max_desc, len(service["description"]))
 
     template = "{id:%d}{name:%d}{description:%d}" % (max_id + 2, max_name + 2, max_desc + 2)
-    print template.format(id="ID", name="NAME", description="DESCRIPTION")
-    for service in response.json()['services']:
-        print template.format(**service)
+    print(template.format(id="ID", name="NAME", description="DESCRIPTION"))
+    for service in services:
+        print(template.format(**service))
+
+
+def print_verbose_list(services):
+    for service in services:
+        print_service(service)
+
+
+def print_service(service):
+    cmap = ruamel.yaml.comments.CommentedMap()
+    cmap['name'] = service['name']
+    cmap['id'] = service['id']
+    cmap['description'] = service['description']
+    cmap['bindable'] = service['bindable']
+    cmap['metadata'] = service['metadata']
+    cmap['plans'] = pretty_plans(service['plans'])
+
+    print(ruamel.yaml.dump(cmap, Dumper=ruamel.yaml.RoundTripDumper))
+
+
+def pretty_plans(plans):
+    pp = []
+    for plan in plans:
+        cmap = ruamel.yaml.comments.CommentedMap()
+        cmap['name'] = plan['name']
+        cmap['description'] = plan['description']
+        cmap['free'] = plan['free']
+        cmap['metadata'] = plan['metadata']
+
+        try:
+            plan_params = plan['schemas']['service_instance']['create']['parameters']['properties']
+        except KeyError:
+            plan_params = []
+
+        cmap['parameters'] = plan_params
+        pp.append(cmap)
+    return pp
 
 
 def cmdrun_init(**kwargs):
     current_path = kwargs['base_path']
     bindable = kwargs['bindable']
     async = kwargs['async']
-    dependencies = kwargs['dependencies']
     skip = {
         'provision': kwargs['skip-provision'],
         'deprovision': kwargs['skip-deprovision'],
@@ -420,7 +468,7 @@ def cmdrun_init(**kwargs):
     dockerfile_out = load_dockerfile(EX_DOCKERFILE_PATH)
     write_file(dockerfile_out, dockerfile_path, kwargs['force'])
 
-    generate_playbook_files(project, bindable, skip, apb_name)
+    generate_playbook_files(project, skip, apb_dict)
     print("Successfully initialized project directory at: %s" % project)
     print("Please run *apb prepare* inside of this directory after editing files.")
 
@@ -472,18 +520,12 @@ def cmdrun_push(**kwargs):
 
 
 def cmdrun_remove(**kwargs):
-    project = kwargs['base_path']
-
     if kwargs["all"]:
         route = "/apb/spec"
     elif kwargs["id"] is not None:
         route = "/apb/spec/" + kwargs["id"]
     else:
-        spec = get_spec(project)
-        if 'id' in spec:
-            route = "/apb/spec/" + spec["id"]
-        else:
-            raise Exception("No APB ID specified.  Use --id or call apb remove from inside the project directory")
+        raise Exception("No APB ID specified.  Use --id.")
 
     response = broker_request(kwargs["broker"], route, "delete", verify=kwargs["verify"])
 

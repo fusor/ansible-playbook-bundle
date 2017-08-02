@@ -1,9 +1,10 @@
-- name: {{ apb_name }} playbook to {{ action_name }} the application
+- name: {{ apb_dict['name'] }} playbook to {{ action_name }} the application
   hosts: localhost
   gather_facts: false
   connection: local
   roles:
   - role: ansible.kubernetes-modules
     install_python_requirements: no
-  - role: {{ action_name }}-{{ apb_name }}
+  - role: ansibleplaybookbundle.asb-modules
+  - role: {{ action_name }}-{{ apb_dict['name'] }}
     playbook_debug: false

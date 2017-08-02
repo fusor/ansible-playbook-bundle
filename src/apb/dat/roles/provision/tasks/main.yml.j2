@@ -1,5 +1,5 @@
 ##############################################################################
-## Provision {{ apb_name }}
+## Provision {{ apb_dict['name'] }}
 ## This role executes much of the needed functionality to provision an
 ## application using an Ansible Playbook Bundle.  Included in the comments
 ## below are some sample resources for getting started deploying an application
@@ -15,22 +15,22 @@
 ##############################################################################
 #- name: create deployment config
 #  openshift_v1_deployment_config:
-#    name: {{ apb_name }}
+#    name: {{ apb_dict['name'] }}
 #    namespace: '{% raw %}{{ namespace }}{% endraw %}'
 #    labels:
-#      app: {{ apb_name }}
-#      service: {{ apb_name }}
+#      app: {{ apb_dict['name'] }}
+#      service: {{ apb_dict['name'] }}
 #    replicas: 1
 #    selector:
-#      app: {{ apb_name }}
-#      service: {{ apb_name }}
+#      app: {{ apb_dict['name'] }}
+#      service: {{ apb_dict['name'] }}
 #    spec_template_metadata_labels:
-#      app: {{ apb_name }}
-#      service: {{ apb_name }}
+#      app: {{ apb_dict['name'] }}
+#      service: {{ apb_dict['name'] }}
 #    containers:
 #    - env:
 #      image: docker.io/ansibleplaybookbundle/hello-world:latest # replace with your application image
-#      name: {{ apb_name }}
+#      name: {{ apb_dict['name'] }}
 #      ports:
 #      - container_port: 80
 #        protocol: TCP
@@ -41,16 +41,16 @@
 ## set of replicated pods in order to proxy the connections it receives to them.
 ## https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#services
 ##############################################################################
-#- name: create {{ apb_name }} service
+#- name: create {{ apb_dict['name'] }} service
 #  k8s_v1_service:
-#    name: {{ apb_name }}
+#    name: {{ apb_dict['name'] }}
 #    namespace: '{% raw %}{{ namespace }}{% endraw %}'
 #    labels:
-#      app: {{ apb_name }}
-#      service: {{ apb_name }}
+#      app: {{ apb_dict['name'] }}
+#      service: {{ apb_dict['name'] }}
 #    selector:
-#      app: {{ apb_name }}
-#      service: {{ apb_name }}
+#      app: {{ apb_dict['name'] }}
+#      service: {{ apb_dict['name'] }}
 #    ports:
 #      - name: web
 #        port: 80
@@ -63,12 +63,27 @@
 ## selector, and an optional security configuration.
 ## https://docs.openshift.org/latest/architecture/core_concepts/routes.html
 ##############################################################################
-#- name: create {{ apb_name }} route
+#- name: create {{ apb_dict['name'] }} route
 #  openshift_v1_route:
-#    name: {{ apb_name }}
+#    name: {{ apb_dict['name'] }}
 #    namespace: '{% raw %}{{ namespace }}{% endraw %}'
 #    spec_port_target_port: web
 #    labels:
-#      app: {{ apb_name }}
-#      service: {{ apb_name }}
-#    to_name: {{ apb_name }}
+#      app: {{ apb_dict['name'] }}
+#      service: {{ apb_dict['name'] }}
+#    to_name: {{ apb_dict['name'] }}
+
+
+{% if apb_dict['bindable'] %}
+##############################################################################
+## Bindable services must make credentials available to the Ansible Service
+## Broker during the provision stage.  They will later be made available to
+## applications after a binding is created.
+## https://github.com/kubernetes-incubator/service-catalog/blob/master/docs/design.md#using-a-service-instance
+##############################################################################
+#- name: encode bind credentials
+#  asb_encode_binding:
+#    fields:
+#      ENV_VAR_1: value1
+#      ENV_VAR_2: value2
+{% endif %}
