@@ -3,3 +3,4 @@ docker>=2.1.0,<3.0.0
 openshift>=0.0.1
 Jinja2>=2.7.2
 requests>=2.6.0
+ruamel.yaml>=0.15
