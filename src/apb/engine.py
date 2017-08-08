@@ -15,6 +15,7 @@ import docker
 from ruamel.yaml import YAML
 from openshift import client as openshift_client, config as openshift_config
 from jinja2 import Environment, FileSystemLoader
+from kubernetes import client as kubernetes_client
 
 ROLES_DIR = 'roles'
 
@@ -323,6 +324,21 @@ def get_asb_route():
         asb_route = None
     return asb_route
 
+def delete_controller_manager_pod():
+    pod_name = None
+    try:
+        openshift_config.load_kube_config()
+        api = kubernetes_client.CoreV1Api()
+        pod_list = api.list_namespaced_pod('service-catalog')
+        for pod in pod_list.items:
+            if pod.metadata.name.find('controller-manager-') >= 0:
+                pod_name = pod.metadata.name
+    except Exception as e:
+        pod_name = None
+
+    if pod_name:
+        api.delete_namespaced_pod(pod_name, 'service-catalog', kubernetes_client.V1DeleteOptions())
+
 
 def broker_request(broker, service_route, method, **kwargs):
     if broker is None:
@@ -515,6 +531,9 @@ def cmdrun_push(**kwargs):
         print("Error: Attempt to add APB to the Broker returned status: %d" % response.status_code)
         print("Unable to add APB to Ansible Service Broker.")
         exit(1)
+
+    # Temporary workaround to delete controller_manager pod to catch new APB
+    delete_controller_manager_pod()
 
     print("Successfully added APB to Ansible Service Broker")
 
