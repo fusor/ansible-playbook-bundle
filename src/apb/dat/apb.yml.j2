@@ -3,7 +3,8 @@ image: {{ apb_dict['image'] }}
 description: {{ apb_dict['description'] }}
 bindable: {{ apb_dict['bindable'] }}
 async: {{ apb_dict['async'] or 'optional' }}
-metadata: {}
+metadata:
+  displayName: {{ apb_dict['app_name'] }}
 plans:
   - name: default
     description: This default plan deploys {{ apb_dict['name'] }}

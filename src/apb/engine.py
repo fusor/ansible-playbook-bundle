@@ -6,6 +6,7 @@ import shutil
 import string
 import subprocess
 import ruamel.yaml
+import json
 import requests
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -373,10 +374,65 @@ def cmdrun_list(**kwargs):
 
     if not services:
         print("No APBs found")
+    elif kwargs["output"] == 'json':
+        print_json_list(services)
     elif kwargs["verbose"]:
         print_verbose_list(services)
     else:
         print_list(services)
+
+
+def print_json_list(services):
+    print json.dumps(services, indent=4, sort_keys=True)
+
+
+def print_verbose_list(services):
+    for service in services:
+        print_service(service)
+
+
+def print_service(service):
+    cmap = ruamel.yaml.comments.CommentedMap()
+
+    if 'name' in service:
+        cmap['name'] = service['name']
+    if 'id' in service:
+        cmap['id'] = service['id']
+    if 'description' in service:
+        cmap['description'] = service['description']
+    if 'bindable' in service:
+        cmap['bindable'] = service['bindable']
+    if 'metadata' in service:
+        cmap['metadata'] = service['metadata']
+    if 'plans' in service:
+        cmap['plans'] = pretty_plans(service['plans'])
+
+    print(ruamel.yaml.dump(cmap, Dumper=ruamel.yaml.RoundTripDumper))
+
+
+def pretty_plans(plans):
+    pp = []
+    if plans is None:
+        return
+    for plan in plans:
+        cmap = ruamel.yaml.comments.CommentedMap()
+        if 'name' in plan:
+            cmap['name'] = plan['name']
+        if 'description' in plan:
+            cmap['description'] = plan['description']
+        if 'free' in plan:
+            cmap['free'] = plan['free']
+        if 'metadata' in plan:
+            cmap['metadata'] = plan['metadata']
+
+        try:
+            plan_params = plan['schemas']['service_instance']['create']['parameters']['properties']
+        except KeyError:
+            plan_params = []
+
+        cmap['parameters'] = plan_params
+        pp.append(cmap)
+    return pp
 
 
 def print_list(services):
@@ -395,42 +451,6 @@ def print_list(services):
         print(template.format(**service))
 
 
-def print_verbose_list(services):
-    for service in services:
-        print_service(service)
-
-
-def print_service(service):
-    cmap = ruamel.yaml.comments.CommentedMap()
-    cmap['name'] = service['name']
-    cmap['id'] = service['id']
-    cmap['description'] = service['description']
-    cmap['bindable'] = service['bindable']
-    cmap['metadata'] = service['metadata']
-    cmap['plans'] = pretty_plans(service['plans'])
-
-    print(ruamel.yaml.dump(cmap, Dumper=ruamel.yaml.RoundTripDumper))
-
-
-def pretty_plans(plans):
-    pp = []
-    for plan in plans:
-        cmap = ruamel.yaml.comments.CommentedMap()
-        cmap['name'] = plan['name']
-        cmap['description'] = plan['description']
-        cmap['free'] = plan['free']
-        cmap['metadata'] = plan['metadata']
-
-        try:
-            plan_params = plan['schemas']['service_instance']['create']['parameters']['properties']
-        except KeyError:
-            plan_params = []
-
-        cmap['parameters'] = plan_params
-        pp.append(cmap)
-    return pp
-
-
 def cmdrun_init(**kwargs):
     current_path = kwargs['base_path']
     bindable = kwargs['bindable']
@@ -445,6 +465,10 @@ def cmdrun_init(**kwargs):
 
     apb_tag_arr = kwargs['tag'].split('/')
     apb_name = apb_tag_arr[-1]
+    if apb_name.lower().endswith("-apb"):
+        app_name = apb_name[:-4]
+    else:
+        app_name = apb_name
 
     organization = kwargs['org']
     if organization is None:
@@ -458,6 +482,7 @@ def cmdrun_init(**kwargs):
 
     apb_dict = {
         'name': apb_name,
+        'app_name': app_name,
         'image': organization+'/'+apb_name,
         'description': description,
         'bindable': bindable,

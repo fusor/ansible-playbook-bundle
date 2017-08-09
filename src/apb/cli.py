@@ -42,6 +42,15 @@ def subcmd_list_parser(subcmd):
         help=u'Output verbose spec information from Ansible Service Broker',
         default=False
     )
+    subcmd.add_argument(
+        '--output',
+        '-o',
+        action='store',
+        dest='output',
+        help=u'Specify verbose output format in yaml (default) or json',
+        default='optional',
+        choices=['yaml', 'json']
+    )
     return
 
 

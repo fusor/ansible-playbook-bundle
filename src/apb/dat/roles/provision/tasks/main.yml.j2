@@ -1,5 +1,5 @@
 ##############################################################################
-## Provision {{ apb_dict['name'] }}
+## Provision {{ apb_dict['app_name'] }}
 ## This role executes much of the needed functionality to provision an
 ## application using an Ansible Playbook Bundle.  Included in the comments
 ## below are some sample resources for getting started deploying an application
@@ -15,24 +15,24 @@
 ##############################################################################
 #- name: create deployment config
 #  openshift_v1_deployment_config:
-#    name: {{ apb_dict['name'] }}
+#    name: {{ apb_dict['app_name'] }}
 #    namespace: '{% raw %}{{ namespace }}{% endraw %}'
 #    labels:
-#      app: {{ apb_dict['name'] }}
-#      service: {{ apb_dict['name'] }}
+#      app: {{ apb_dict['app_name'] }}
+#      service: {{ apb_dict['app_name'] }}
 #    replicas: 1
 #    selector:
-#      app: {{ apb_dict['name'] }}
-#      service: {{ apb_dict['name'] }}
+#      app: {{ apb_dict['app_name'] }}
+#      service: {{ apb_dict['app_name'] }}
 #    spec_template_metadata_labels:
-#      app: {{ apb_dict['name'] }}
-#      service: {{ apb_dict['name'] }}
+#      app: {{ apb_dict['app_name'] }}
+#      service: {{ apb_dict['app_name'] }}
 #    containers:
 #    - env:
 #      image: docker.io/ansibleplaybookbundle/hello-world:latest # replace with your application image
-#      name: {{ apb_dict['name'] }}
+#      name: {{ apb_dict['app_name'] }}
 #      ports:
-#      - container_port: 80
+#      - container_port: 8080
 #        protocol: TCP
 
 
@@ -41,20 +41,20 @@
 ## set of replicated pods in order to proxy the connections it receives to them.
 ## https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#services
 ##############################################################################
-#- name: create {{ apb_dict['name'] }} service
+#- name: create {{ apb_dict['app_name'] }} service
 #  k8s_v1_service:
-#    name: {{ apb_dict['name'] }}
+#    name: {{ apb_dict['app_name'] }}
 #    namespace: '{% raw %}{{ namespace }}{% endraw %}'
 #    labels:
-#      app: {{ apb_dict['name'] }}
-#      service: {{ apb_dict['name'] }}
+#      app: {{ apb_dict['app_name'] }}
+#      service: {{ apb_dict['app_name'] }}
 #    selector:
-#      app: {{ apb_dict['name'] }}
-#      service: {{ apb_dict['name'] }}
+#      app: {{ apb_dict['app_name'] }}
+#      service: {{ apb_dict['app_name'] }}
 #    ports:
 #      - name: web
 #        port: 80
-#        target_port: 80
+#        target_port: 8080
 
 
 ##############################################################################
@@ -63,15 +63,15 @@
 ## selector, and an optional security configuration.
 ## https://docs.openshift.org/latest/architecture/core_concepts/routes.html
 ##############################################################################
-#- name: create {{ apb_dict['name'] }} route
+#- name: create {{ apb_dict['app_name'] }} route
 #  openshift_v1_route:
-#    name: {{ apb_dict['name'] }}
+#    name: {{ apb_dict['app_name'] }}
 #    namespace: '{% raw %}{{ namespace }}{% endraw %}'
-#    spec_port_target_port: web
 #    labels:
-#      app: {{ apb_dict['name'] }}
-#      service: {{ apb_dict['name'] }}
-#    to_name: {{ apb_dict['name'] }}
+#      app: {{ apb_dict['app_name'] }}
+#      service: {{ apb_dict['app_name'] }}
+#    to_name: {{ apb_dict['app_name'] }}
+#    spec_port_target_port: web
 
 
 {% if apb_dict['bindable'] %}
