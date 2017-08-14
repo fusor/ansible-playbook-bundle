@@ -41,7 +41,7 @@ Example
    - role: ansible.kubernetes-modules
      install_python_requirements: no
  
-   tasks:
+   post_tasks:
    # Include the default values needed for provision from test role.
    - name: Load default variables for testing
      include_vars: test_defaults.yaml
@@ -52,8 +52,13 @@ Example
 
 
 ### Verify Roles
-Verify roles should use the fail module to fail.
-
-
-## Using Verify Roles In Automated Testing
-We will probably need to add a harness like bind_creds to retrieve exit code, and logs on failure for an automated process to pull these out of the apb container before it is destroyed?
+Example verify role.
+```yaml
+---
+ - name: url check for media wiki
+   uri:
+     url: "http://{{ route.route.spec.host }}"
+     return_content: yes
+   register: webpage
+   failed_when: webpage.status != 200
+```
