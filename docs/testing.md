@@ -1,11 +1,14 @@
 ## Testing APB Image
 
-### Why would we want to test the image?
-The reason that we would want to be able to integration test APB's is that they have underlying images that could have been changed and would potentially cause the APB to fail. This means that to test the APB we would like to give the author the ability to verify certain actions by calling actions with default params.
+### Motivation
+As the ecosystem of APBs grows we want to facilitate a means for performing a basic sanity check to ensure that an APB is working as the author intended. The basic concept is to package an integration test with the APB code which will contain all of the needed parameters for the actions that the test playbook will run. 
+*Note: we are focusing on a basic provision to start other actions should be added in the future.*
 
 ### Design
-The base APB entrypoint will learn the test action. The test action will be a user defined playbook. 
-To include the testing of an APB just add the playbook ```test.yml```
+The base APB entry point will learn the test action. The test action will be a user defined playbook. 
+* To include the testing of an APB just add the playbook ```test.yml```
+* The defaults for the test will be in the ```vars/```` directory of the playbooks.
+* The ```verify_<name>``` role should be in the roles folder. Should be a normal [ansible role](http://docs.ansible.com/ansible/latest/playbooks_reuse_roles.html).
 ```bash
 my-apb/
 ├── apb.yml
@@ -24,11 +27,8 @@ my-apb/
             └── main.yml
 ```
 
-### Running the test
-To the run the test, you should only need to run ```oc run <name you want> --image <image> -- test```
-
 ### Writing a ```test.yaml``` action
-To orchastrate the testing of an APB it is suggested to use the include_vars and include_roles.
+To orchestrate the testing of an APB it is suggested to use the [include_vars](http://docs.ansible.com/ansible/latest/include_vars_module.html) and [include_role](http://docs.ansible.com/ansible/latest/include_role_module.html) modules.
 Example
 ```yaml
  - name: test rhscl-postgresql-apb
@@ -45,13 +45,17 @@ Example
    # Include the default values needed for provision from test role.
    - name: Load default variables for testing
      include_vars: test_defaults.yaml
-  - name: Run the provisio role.
-    include_role:
-        name: rhscl-postgresql-apb-openshift
+   - name: Run the provisio role.
+     include_role:
+       name: rhscl-postgresql-apb-openshift
+   - name: Verify the provision.
+     include_role:
+       name: verify_rhscl-postgresql-apb-openshift
 ```
 
 
 ### Verify Roles
+Verify roles will allow the author to determine if the provision has failed or succeeded. 
 Example verify role.
 ```yaml
 ---
@@ -62,3 +66,4 @@ Example verify role.
    register: webpage
    failed_when: webpage.status != 200
 ```
+
