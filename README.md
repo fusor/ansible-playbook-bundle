@@ -98,7 +98,7 @@ subcommand:
 
 ## Initialize skeleton APB application example
 ```
-apb init my_apb --async=optional --bindable --org my_organization
+apb init my_apb --async=optional --bindable
 ```
 
 This gives us the following example apb.yaml 
