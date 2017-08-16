@@ -81,16 +81,11 @@ parameters: []
 New `parameters` can be added to the spec file as shown below:
 ```yaml
 parameters:
-  - mariadb_name:                   # name of the parameter
+  - name: mariadb_name              # name of the parameter
     title: MariaDB Database Name    # title/description (shown in the UI)
     type: string                    # type of the parameter (e.g. string, int, enum)
-    default: etherpad               # default value 
-```
-
-If a parameter is required, list the parameter name in the `required` section as shown below:
-```yaml
-required:
- - mariadb_name
+    default: etherpad               # default value
+    required: true
 ```
 
 ### Adding optional variables to an Ansible playbook bundle via environment variables
@@ -197,7 +192,11 @@ $ apb prepare
 We can now build the APB by running from the parent directory:
 
 ```bash
-$ docker build -t <docker-org>/my-apb .
+$ apb build
+```
+or
+```bash
+$ apb build --tag <registry-prefix>/<docker-org>/my-apb
 ```
 
 ### Deploy
@@ -210,3 +209,73 @@ $ docker run \
     <docker-org>/my-apb <action>
 ```
 where `<action>` is either `provision` or `deprovision`.
+
+# Tips and Tricks
+
+## Working with the restriced scc
+When building an OpenShift image, it is important that we do not have our application running as the root user when at all possible. When running under the restriced security context, the application image is launched with a random UID. This will cause problems if your application folder is owned by the root user. A good way to work around this is to add a user to the root group and make the application folder owned by the root group. A very good article on how to support Arbitrary User IDs is shown [here](https://docs.openshift.org/latest/creating_images/guidelines.html#openshift-origin-specific-guidelines). The following is a Dockerfile example of a node app running in `/usr/src`. This command would be run after the application is installed in `/usr/src` and the associated environment variables set.
+
+```Dockerfile
+ENV USER_NAME=haste \
+    USER_UID=1001 \
+    HOME=/usr/src
+
+RUN useradd -u ${USER_UID} -r -g 0 -M -d /usr/src -b /usr/src -s /sbin/nologin -c "<username> user" ${USER_NAME} \
+               && chown -R ${USER_NAME}:0 /usr/src \
+               && chmod -R g=u /usr/src /etc/passwd
+USER 1001
+```
+
+## Using a ConfigMap within an APB
+One common use case for ConfigMaps is when the parameters of an APB will be used within a configuration file of an application or service. The ConfigMap module allows you to mount a ConfigMap into a pod as a volume which can be used to store the config file. This approach allows you to also leverage the power Ansible's `template` module to create a ConfigMap out of APB paramters. The following is an example of creating a ConfigMap from a jinja template mounted into a pod as a volume.
+
+```yaml
+- name: Create hastebin config from template
+  template:
+    src: config.js.j2
+    dest: /tmp/config.js
+
+- name: Create hastebin configmap
+  shell: oc create configmap haste-config --from-file=haste-config=/tmp/config.js
+
+---snip
+
+- name: create deployment config
+  openshift_v1_deployment_config:
+    name: hastebin
+    namespace: '{{ namespace }}'
+    labels:
+      app: hastebin
+      service: hastebin
+    replicas: 1
+    selector:
+      app: hastebin
+      service: hastebin
+    spec_template_metadata_labels:
+      app: hastebin
+      service: hastebin
+    containers:
+    - env:
+      image: docker.io/dymurray/hastebin:latest
+      name: hastebin
+      ports:
+      - container_port: 7777
+        protocol: TCP
+      volumeMounts:
+        - mountPath: /usr/src/haste-server/config
+          name: config
+    - env:
+      image: docker.io/modularitycontainers/memcached:latest
+      name: memcached
+      ports:
+      - container_port: 11211
+        protocol: TCP
+    volumes:
+      - name: config
+        configMap:
+          name: haste-config
+          items:
+            - key: haste-config
+              path: config.js
+
+```
