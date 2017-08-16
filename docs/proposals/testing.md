@@ -2,7 +2,12 @@
 
 ### Motivation
 As the ecosystem of APBs grows we want to facilitate a means for performing a basic sanity check to ensure that an APB is working as the author intended. The basic concept is to package an integration test with the APB code which will contain all of the needed parameters for the actions that the test playbook will run. 
-*Note: we are focusing on a basic provision to start other actions should be added in the future.*
+
+### Limitation Of Proposal
+This proposal and subsequent examples are focusing on testing the provision action. We will be adding other actions in the future. 
+
+The intention of this design is to check that an APB passes a basic sanity check before publishing to the service catalog. The initial proposal is to be used by CI or another process to check the APB before it is published. This proposal is not meant to be testing a live service. OpenShift provides the ability to test a live service using [liveness and readiness probes](https://docs.openshift.org/latest/dev_guide/application_health.html), which you can add when provisioning. 
+
 
 ### Design
 The base APB entry point will be able to find and run the test action. The test action will be a user defined playbook. 
@@ -56,7 +61,7 @@ Example
 
 
 ### Verify Roles
-Verify roles will allow the author to determine if the provision has failed or succeeded. 
+Verify roles will allow the author to determine if the provision has failed or succeeded. Verify roles could use 
 Example verify role.
 ```yaml
 ---
