@@ -3,6 +3,10 @@ This document will describe the steps taken to make [testing](testing.md) APB's 
 
 This is highly in flux and we should not be tied to this design if we find problems with it later.
 
+#### Goals
+* To make the development of `test.yml` easier.
+* To give an overview of how I will implement the first example APB for testing.
+
 #### Design
 The base APB entry point will be able to find and run the test action. The test action will be a user defined playbook. 
 
