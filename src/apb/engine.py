@@ -195,64 +195,43 @@ def gen_spec_id(spec, spec_path):
 
 
 def is_valid_spec(spec):
-    if 'name' not in spec:
-        print("Spec is not valid. `name` field not found.")
+    error = False
+    spec_keys = ['name', 'description', 'bindable', 'async', 'metadata', 'plans']
+    for key in spec_keys:
+        if key not in spec:
+            print("Spec is not valid. `%s` field not found." % key)
+            error = True
+    if error:
         return False
 
-    if 'description' not in spec:
-        print("Spec is not valid. `description` field not found.")
-        return False
+    if spec['async'] not in ASYNC_OPTIONS:
+        print("Spec is not valid. %s is not a valid `async` option." % spec['async'])
+        error = True
 
-    if 'bindable' not in spec:
-        print("Spec is not valid. `bindable` field not found.")
-        return False
+    if not isinstance(spec['metadata'], dict):
+        print("Spec is not valid. `metadata` field is invalid.")
+        error = True
 
-    if 'async' not in spec:
-        print("Spec is not valid. `async` field not found.")
-        return False
-    else:
-        if spec['async'] not in ASYNC_OPTIONS:
-            print("Spec is not valid. %s is not a valid `async` option." % spec['async'])
+    for plan in spec['plans']:
+        plan_keys = ['description', 'free', 'metadata', 'parameters']
+        if 'name' not in plan:
+            print("Spec is not valid. Plan name not found.")
             return False
 
-    if 'metadata' not in spec:
-        print("Spec is not valid. `metadata` field not found.")
+        for key in plan_keys:
+            if key not in plan:
+                print("Spec is not valid. Plan %s is missing a `%s` field." % (plan['name'], key))
+                return False
+
+        if not isinstance(plan['metadata'], dict):
+            print("Spec is not valid. Plan %s's `metadata` field is invalid." % plan['name'])
+            error = True
+
+        if not isinstance(plan['parameters'], list):
+            print("Spec is not valid. Plan %s's `parameters` field is invalid." % plan['name'])
+            error = True
+    if error:
         return False
-    elif not isinstance(spec['metadata'], dict):
-        print("Spec is not valid. `metadata` field is invalid.")
-        return False
-
-    if 'plans' not in spec:
-        print("Spec is not valid. `plans` field not found.")
-        return False
-    else:
-        for plan in spec['plans']:
-            if 'name' not in plan:
-                print("Spec is not valid. Plan name not found.")
-                return False
-
-            if 'description' not in plan:
-                print("Spec is not valid. Plan %s is missing a `description` field." % plan['name'])
-                return False
-
-            if 'free' not in plan:
-                print("Spec is not valid. Plan %s is missing a `free` field." % plan['name'])
-                return False
-
-            if 'metadata' not in plan:
-                print("Spec is not valid. Plan %s is missing a `metadata` field." % plan['name'])
-                return False
-            elif not isinstance(plan['metadata'], dict):
-                print("Spec is not valid. Plan %s's `metadata` field is invalid." % plan['name'])
-                return False
-
-            if 'parameters' not in plan:
-                print("Spec is not valid. Plan %s is missing a `parameters` field." % plan['name'])
-                return False
-            elif not isinstance(plan['parameters'], list):
-                print("Spec is not valid. Plan %s's `parameters` field is invalid." % plan['name'])
-                return False
-
     return True
 
 
