@@ -195,8 +195,64 @@ def gen_spec_id(spec, spec_path):
 
 
 def is_valid_spec(spec):
-    # TODO: Implement
-    # NOTE: spec is a loaded spec
+    if 'name' not in spec:
+        print("Spec is not valid. `name` field not found.")
+        return False
+
+    if 'description' not in spec:
+        print("Spec is not valid. `description` field not found.")
+        return False
+
+    if 'bindable' not in spec:
+        print("Spec is not valid. `bindable` field not found.")
+        return False
+
+    if 'async' not in spec:
+        print("Spec is not valid. `async` field not found.")
+        return False
+    else:
+        if spec['async'] not in ASYNC_OPTIONS:
+            print("Spec is not valid. %s is not a valid `async` option." % spec['async'])
+            return False
+
+    if 'metadata' not in spec:
+        print("Spec is not valid. `metadata` field not found.")
+        return False
+    elif not isinstance(spec['metadata'], dict):
+        print("Spec is not valid. `metadata` field is invalid.")
+        return False
+
+    if 'plans' not in spec:
+        print("Spec is not valid. `plans` field not found.")
+        return False
+    else:
+        for plan in spec['plans']:
+            if 'name' not in plan:
+                print("Spec is not valid. Plan name not found.")
+                return False
+
+            if 'description' not in plan:
+                print("Spec is not valid. Plan %s is missing a `description` field." % plan['name'])
+                return False
+
+            if 'free' not in plan:
+                print("Spec is not valid. Plan %s is missing a `free` field." % plan['name'])
+                return False
+
+            if 'metadata' not in plan:
+                print("Spec is not valid. Plan %s is missing a `metadata` field." % plan['name'])
+                return False
+            elif not isinstance(plan['metadata'], dict):
+                print("Spec is not valid. Plan %s's `metadata` field is invalid." % plan['name'])
+                return False
+
+            if 'parameters' not in plan:
+                print("Spec is not valid. Plan %s is missing a `parameters` field." % plan['name'])
+                return False
+            elif not isinstance(plan['parameters'], list):
+                print("Spec is not valid. Plan %s's `parameters` field is invalid." % plan['name'])
+                return False
+
     return True
 
 
@@ -526,6 +582,10 @@ def cmdrun_prepare(**kwargs):
     if include_deps:
         spec = update_deps(project)
         write_file(spec, spec_path, True)
+
+    if not is_valid_spec(get_spec(project)):
+        print("Error! Spec failed validation check. Not updating Dockerfile.")
+        exit(1)
 
     update_dockerfile(project)
 
