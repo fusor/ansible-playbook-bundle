@@ -579,6 +579,10 @@ def cmdrun_build(**kwargs):
         tag = spec['image']
     else:
         tag = kwargs['tag']
+
+    if kwargs['registry']:
+        tag = kwargs['registry'] + '/' + tag
+
     print("Building APB using tag: [%s]" % tag)
 
     client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')

@@ -63,6 +63,13 @@ def subcmd_build_parser(subcmd):
         help=u'Tag of APB to build'
     )
 
+    subcmd.add_argument(
+        '--registry',
+        action='store',
+        dest='registry',
+        help=u'Registry prefix of APB to prepend to tag'
+    )
+
     return
 
 
