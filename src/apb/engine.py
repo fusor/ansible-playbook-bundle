@@ -20,6 +20,7 @@ from ruamel.yaml import YAML
 from openshift import client as openshift_client, config as openshift_config
 from jinja2 import Environment, FileSystemLoader
 from kubernetes import client as kubernetes_client
+from kubernetes.client.rest import ApiException
 
 ROLES_DIR = 'roles'
 
@@ -363,6 +364,7 @@ def get_asb_route():
         asb_route = None
     return asb_route
 
+
 def delete_controller_manager_pod():
     pod_name = None
     try:
@@ -377,6 +379,119 @@ def delete_controller_manager_pod():
 
     if pod_name:
         api.delete_namespaced_pod(pod_name, 'service-catalog', kubernetes_client.V1DeleteOptions())
+
+
+def create_role_binding():
+    try:
+        openshift_config.load_kube_config()
+        api = openshift_client.OapiApi()
+        role_binding = {
+            'apiVersion': 'v1',
+            'kind': 'RoleBinding',
+            'groupNames': [],
+            'metadata': {
+                'name': 'service-account-1',
+                'namespace': 'default',
+            },
+            'subjects': [{
+                'kind': 'ServiceAccount',
+                'name': 'service-account-1',
+                'namespace': 'default',
+            }],
+            'roleRef': {
+                'name': 'cluster-admin',
+            },
+        }
+        api.create_namespaced_role_binding("default", role_binding)
+    except Exception as e:
+        api = openshift_client.OapiApi()
+        # HACK: this is printing an error but is still actaully creating the
+        # role binding.
+        # print("failed -%s" % e)
+
+    print("Created Role Binding")
+
+
+def create_service_account():
+    try:
+        openshift_config.load_kube_config()
+        api = kubernetes_client.CoreV1Api()
+        service_account = {
+            'apiVersion': 'v1',
+            'kind': 'ServiceAccount',
+            'metadata': {
+                'name':'service-account-1',
+                'namespace': 'default',
+            },
+        }
+        api.create_namespaced_service_account("default", service_account)
+        print("Created Serice Account")
+    except Exception as e:
+        pod_name = None
+        print("failed - %s" % e)
+
+
+def create_image_pod(image_name):
+    try:
+        openshift_config.load_kube_config()
+        api = kubernetes_client.CoreV1Api()
+        pod_manifest = {
+            'apiVersion': 'v1',
+            'kind': 'Pod',
+            'metadata': {
+                'name': "test",
+            },
+            'spec': {
+                'containers': [{
+                    'image': image_name,
+                    'imagePullPolicy': 'IfNotPresent',
+                    'name': 'test',
+                    'command': ['entrypoint.sh', 'test']
+                }],
+                'restartPolicy': 'Never',
+                'serviceAccountName': 'service-account-1',
+            }
+
+        }
+        create_service_account()
+        create_role_binding()
+        api.create_namespaced_pod("default", pod_manifest)
+        print("Created Pod")
+    except Exception as e:
+        pod_name = None
+        print("failed - %s" % e)
+
+
+def retrieve_test_result():
+    cont = True
+    count = 0
+    while cont:
+        try:
+            count += 1
+            openshift_config.load_kube_config()
+            api = kubernetes_client.CoreV1Api()
+            api_response = api.connect_post_namespaced_pod_exec("test", "default", command="/usr/bin/test-retrieval", tty=False)
+            if "non-zero exit code" not in api_response:
+                return api_response
+        except ApiException as e:
+            if count >= 50:
+                cont = False
+        except Exception as e:
+            print("execption: %s" % e)
+            cont = False
+
+
+def clean_up_image_run():
+    try:
+        openshift_config.load_kube_config()
+        api = kubernetes_client.CoreV1Api()
+        oapi = openshift_client.OapiApi()
+        body = kubernetes_client.V1DeleteOptions()
+        api.delete_namespaced_service_account("service-account-1", "default", body)
+        api.delete_namespaced_pod("test", "default", body)
+        oapi.delete_namespaced_role_binding("service-account-1", "default", body)
+    except Exception as e:
+        print("unable to clean up image - %s" % e)
 
 
 def broker_request(broker, service_route, method, **kwargs):
@@ -632,3 +747,39 @@ def cmdrun_bootstrap(**kwargs):
         exit(1)
 
     print("Successfully bootstrapped Ansible Service Broker")
+
+
+def cmdrun_test(**kwargs):
+    project = kwargs['base_path']
+    spec = get_spec(project)
+
+    update_dockerfile(project)
+
+    if not kwargs['tag']:
+        tag = spec['image']
+    else:
+        tag = kwargs['tag']
+    print("Building APB using tag: [%s]" % tag)
+
+    client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
+    client.images.build(path=project, tag=tag)
+
+    print("Successfully built APB image: %s" % tag)
+
+    # run image that was just created.
+    create_image_pod(tag)
+    test_result = retrieve_test_result()
+    test_results = []
+    if test_result is None:
+        print("Unable to retrieve test result.")
+        return
+    else:
+        test_results = test_result.splitlines()
+
+    if len(test_results) > 0 and "0" in test_results[0]:
+        print("Test successfully passed")
+    elif len(test_results) == 0:
+        print("Unable to retrieve test result.")
+    else:
+        print(test_result)
+    clean_up_image_run()

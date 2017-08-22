@@ -15,7 +15,8 @@ AVAILABLE_COMMANDS = {
     'build': 'Build and package APB container',
     'push': 'Push local APB spec to an Ansible Service Broker',
     'remove': 'Remove APBs from the target Ansible Service Broker',
-    'bootstrap': 'Tell Ansible Service Broker to reload APBs from the container repository'
+    'bootstrap': 'Tell Ansible Service Broker to reload APBs from the container repository',
+    'test': 'Test the APB'
 }
 
 
@@ -213,6 +214,16 @@ def subcmd_bootstrap_parser(subcmd):
         dest='verify',
         help=u'Use secure connection to Ansible Service Broker',
         default=False
+    )
+    return
+
+def subcmd_test_parser(subcmd):
+    """ bootstrap subcommand """
+    subcmd.add_argument(
+        '--tag',
+        action='store',
+        dest='tag',
+        help=u'Tag of APB to build'
     )
     return
 
