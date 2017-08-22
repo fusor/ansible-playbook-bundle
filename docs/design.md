@@ -109,10 +109,31 @@ plans:
 ```
 
 The `metadata` field is optional and used when integrating with the origin service catalog.
-For an APB that does not have any parameters, `parameters` field would look like:
+
+APB's with no parameters would define the `parameters` field as follows:
 ```yml
 parameters: []
 ```
+
+Each item in the `parameters` section can have several fields.  `name` is required.  The order of the parameters will be displayed in sequential order in the form in the OpenShift UI.
+```yaml
+parameters:
+  - name: my_param
+    title: My Parameter
+    type: enum
+    enum: ['X', 'Y', 'Z']
+    required: True
+    default: X
+    display_type: select
+    display_group: Group 1
+```
+* `name`: Unique name of the parameter passed into the APB
+* `title`: Displayed label in the UI.
+* `type`: Data type of the parameters as specified by [json-schema](http://json-schema.org/) such as `string`, `number`, `int`, `boolean`, or `enum`.  Default input field type in the UI will be assigned if no `display_type` is assigned.
+* `required`: Whether or not the parameter is required for APB execution.  Required field in UI.
+* `default`: Default value assigned to the parameter.
+* `display_type`: Display type for the UI.  For example, you can override a string input as a `password` to hide it in the UI.  Accepted fields include `text`, `textarea`, `number`, `password`, `checkbox`, `select`, `radios`, `radios-inline`, `radiobuttons`.
+* `display_group`: will cause a parameter to display in groups with adjacent parameters with matching display_group fields.  In the above example, adding another field below with the `display_group: User Information` will visually group them together in the UI.
 
 #### Actions
 The following are the actions for an APB. At a minimum, an APB must implement the `provision` and `deprovision` actions.

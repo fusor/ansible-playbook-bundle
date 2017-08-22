@@ -71,23 +71,6 @@ plans:
         title: Root Password
 ```
 
-#### Parameters
-
-APB's with no parameters would define the `parameters` field as follows:
-```yml
-parameters: []
-```
-
-New `parameters` can be added to the spec file as shown below:
-```yaml
-parameters:
-  - name: mariadb_name              # name of the parameter
-    title: MariaDB Database Name    # title/description (shown in the UI)
-    type: string                    # type of the parameter (e.g. string, int, enum)
-    default: etherpad               # default value
-    required: true
-```
-
 ### Adding optional variables to an Ansible playbook bundle via environment variables
 
 To pass variables into an APB, you will need to escape the variable substitution in your `.yml` files. For example, the below is a section of the [main.yml](https://github.com/fusor/apb-examples/blob/master/etherpad-apb/roles/provision-etherpad-apb/tasks/main.yml#L89) in the [etherpad-apb](https://github.com/fusor/apb-examples/tree/master/etherpad-apb):
