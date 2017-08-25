@@ -15,6 +15,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 import docker
+import docker.errors
 
 from ruamel.yaml import YAML
 from openshift import client as openshift_client, config as openshift_config
@@ -585,8 +586,12 @@ def cmdrun_build(**kwargs):
 
     print("Building APB using tag: [%s]" % tag)
 
-    client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
-    client.images.build(path=project, tag=tag)
+    try:
+        client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
+        client.images.build(path=project, tag=tag)
+    except docker.errors.DockerException as e:
+        print("Error accessing the docker API. Is the daemon running?")
+        raise
 
     print("Successfully built APB image: %s" % tag)
 
