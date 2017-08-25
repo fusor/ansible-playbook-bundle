@@ -124,6 +124,8 @@ The following are the actions for an APB. At a minimum, an APB must implement th
    * Playbook to grant access to another service to use this service, i.e. generates credentials
  * unbind.yml
    * Playbook to revoke access to this service
+ * test.yml
+   * Playbook to test the the APB is vaild. This is an optional action.
 
 The required named playbooks correspond to methods defined by the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker). For example, when the
 Ansible Service Broker needs to `provision` an APB it will execute the `provision.yml`.

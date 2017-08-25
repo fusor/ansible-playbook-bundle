@@ -8,6 +8,7 @@
         * [Provision](#provision)
         * [Deprovision](#deprovision)
         * [Bind](#bind)
+        * [Test](#test)
 1. [More Information](#more-information)
 
 ## Introduction to Ansible Playbook Bundles (APBs)
@@ -179,7 +180,7 @@ ID                   NAME                    DESCRIPTION
 Visiting the OpenShift console UI at https://<oc-cluster-host>:<oc-cluster-port> will now display the new Ansible Playbook Bundle named my-test-apb in the catalog under the **_All_** tab.
 
 ### Actions
-The brand new APB created in the last section doesn't do very much.  For that, we'll have to add some actions.  The actions supported are [provision](#provision), [deprovision](#deprovision), [bind](#bind), and [unbind](#unbind).  We'll add each of these actions in the following sections.
+The brand new APB created in the last section doesn't do very much.  For that, we'll have to add some actions.  The actions supported are [provision](#provision), [deprovision](#deprovision), [bind](#bind), [unbind](#unbind), and [test](#test).  We'll add each of these actions in the following sections.
 
 Before we begin, make sure you're logged in through the command line.
 ```
@@ -645,7 +646,50 @@ Now, navigate to the project, you can see both your hello-world application and 
 
 ![bind-pg-hello](images/bind-pg-hello.png)
 
+#### Test
+The intention the [test action](proposals/testing.md) is to check that an APB passes a basic sanity check before publishing to the service catalog. This is not meant to be testing a live service. OpenShift provides the ability to test a live service using [liveness and readiness probes](https://docs.openshift.org/latest/dev_guide/application_health.html), which you can add when provisioning. 
 
+To add the test action to your APB, you just need to create a test.yml in the playbooks directory like this.
+
+```bash
+my-apb/
+├── ...
+├── playbooks/
+    ├── test.yml  
+    └── ...
+```
+
+The actual implementation of the test is left to you, the APB author. We have added some features to help with the implementation of testing. We have outlined an initial proposal of [best practices](proposals/testing_implementation), but as stated this still in flux, and encourage feedback on what works for you and what does not. 
+
+##### APB Test
+We have added a test command, `apb test` which can be used to run the test action. The test action will build the image, start up a pod as if you were being run by the service broker, and will retrieve the test results if any were saved. The status of pod after execution has finished will determine the status of the test. If the pod is in an error state, then something failed and we will tell you that the test was unsuccessful.
+
+##### asb_save_test_result Module
+`asb_save_test_result` [moudule](https://github.com/fusor/ansible-asb-modules) will allow you to save test results and allows the `apb test` command to return them. The APB pod will stay alive, for the tool to retrieve test results.
+Example: 
+```yaml
+---
+ - name: url check for media wiki
+   uri:
+     url: "http://{{ route.route.spec.host }}"
+     return_content: yes
+   register: webpage
+   
+  - name: Save failure for the web page
+    asb_save_test_result:
+      fail: true
+      msg: "Could not reach route and retrieve a 200 status code. Recieved status - {{ webpage.status }}"
+    when: webpage.status != 200
+  
+  - fail:
+      msg: "Could not reach route and retrieve a 200 status code. Recieved status - {{ webpage.status }}"
+    when: webpage.status != 200
+  
+  - name: Save test pass
+    asb_save_test_result:
+      fail: false
+    when: webpage.status == 200
+```
 ### Using APB Push
 To test an APB you have built without pushing your image to a registry, you can use `apb push`. This command takes the Ansible Service Broker's route as an argument and will push the base64 encoded spec into the list of available APBs for the Broker to deploy. In order to use this feature, the Ansible Service Broker you are running must be configured to run in development mode. In the [config file](https://github.com/openshift/ansible-service-broker/blob/master/etc/ex.dev.config.yaml#L21), set `devbroker` to `true`. This enables an endpoint to the broker at `/apb/spec` that a user can POST APBs to.
 
