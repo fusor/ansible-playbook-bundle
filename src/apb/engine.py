@@ -405,7 +405,7 @@ def create_role_binding():
         api.create_namespaced_role_binding("default", role_binding)
     except Exception as e:
         api = openshift_client.OapiApi()
-        # HACK: this is printing an error but is still actaully creating the
+        # HACK: this is printing an error but is still actually creating the
         # role binding.
         # print("failed -%s" % e)
 
