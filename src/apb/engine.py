@@ -781,6 +781,7 @@ def cmdrun_test(**kwargs):
     test_results = []
     if test_result is None:
         print("Unable to retrieve test result.")
+        clean_up_image_run()
         return
     else:
         test_results = test_result.splitlines()
@@ -791,4 +792,5 @@ def cmdrun_test(**kwargs):
         print("Unable to retrieve test result.")
     else:
         print(test_result)
+
     clean_up_image_run()
