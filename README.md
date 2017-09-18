@@ -129,12 +129,12 @@ This gives us the following example apb.yaml
 name: my-apb
 image: my-org/my-apb
 description: "my-apb description"
-bindable: false
+bindable: True
 async: optional
 metadata: {}
 plans:
   - name: my-plan
     description: "my-plan description"
-    free: true
+    free: True
     metadata: {}
     parameters: []
