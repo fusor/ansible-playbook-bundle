@@ -16,9 +16,10 @@
 * 0.x.x APBs are < ASB 3.6 
 * Image tags should match whatever version number we choose. This would be a pro for versioning APBs in the same vein as ASB. i.e. 3.7 ASB can launch images tagged with 3.7.
 * Could introduce minor version bump prior to 3.7 release
+
 ###Versioning use cases
-Bindable apps and broker support
-Post 3.7 we intend to use ‘launch_apb_on_bind’ which means that binding functionality will completely change. Broker should be able to support old binding mechanism with <1.X.X APBs and all 1.X.X APBs should follow new binding format.
-Changes to APB spec
-As the APB spec grows and the OSB spec changes we will need to continually change the APB spec. Locking down the spec to a versioning format where minor version bumps won’t break functionality will help as we grow and more people adopt the APB spec.
->>
+* Bindable apps and broker support
+* Post 3.7 we intend to use ‘launch_apb_on_bind’ which means that binding functionality will completely change.
+  * Broker should be able to support old binding mechanism with <1.X.X APBs and all 1.X.X APBs should follow new binding format.
+* Changes to APB spec
+  * As the APB spec grows and the OSB spec changes we will need to continually change the APB spec. Locking down the spec to a versioning format where minor version bumps won’t break functionality will help as we grow and more people adopt the APB spec.
