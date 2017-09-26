@@ -23,3 +23,10 @@
   * Broker should be able to support old binding mechanism with <1.X.X APBs and all 1.X.X APBs should follow new binding format.
 * Changes to APB spec
   * As the APB spec grows and the OSB spec changes we will need to continually change the APB spec. Locking down the spec to a versioning format where minor version bumps won’t break functionality will help as we grow and more people adopt the APB spec.
+
+
+### Implementation Suggestion:
+* We change APB version to x.y
+* We bump APB version to 1.0
+* APB with version 1.y works with broker 1.y.z
+* Any minor changes to the spec bumps APB minor version and an associated minor bump for broker
