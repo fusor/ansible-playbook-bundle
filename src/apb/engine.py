@@ -389,7 +389,6 @@ def create_role_binding():
         role_binding = {
             'apiVersion': 'v1',
             'kind': 'RoleBinding',
-            'groupNames': [],
             'metadata': {
                 'name': 'service-account-1',
                 'namespace': 'default',
