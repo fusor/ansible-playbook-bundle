@@ -14,18 +14,18 @@ An **Ansible Playbook Bundle (APB)** is a lightweight application definition (me
 
 ##### Running from a container
 
-Create an alias in your .bashrc or somewhere else sane for your shell:  
+Create an alias in your .bashrc or somewhere else sane for your shell:
 `alias apb='docker run --rm --privileged -v $PWD:/mnt -v $HOME/.kube:/.kube -v /var/run/docker.sock:/var/run/docker.sock -u $UID docker.io/ansibleplaybookbundle/apb'`
 
-You should be able to start working by running 'apb init *org/repo*. The first run in particular may take awhile to return while the image is pulled.
+You should be able to start working by running `apb init my_apb`. The first run in particular may take awhile to return while the image is pulled.
 
-If you would prefer to use atomic rather than an alias this is also possible:  
-`atomic run docker.io/ansibleplaybookbundle/apb init foo/bar`
+If you would prefer to use atomic rather than an alias this is also possible:
+`atomic run docker.io/ansibleplaybookbundle/apb init my_apb`
 
-There are three tags to choose from:  
-**latest**: more stable, less frequent releases  
-**nightly**: following upstream commits, installed from RPM  
-**canary**: following upstream commits, installed from source build  
+There are three tags to choose from:
+- **latest**: more stable, less frequent releases
+- **nightly**: following upstream commits, installed from RPM
+- **canary**: following upstream commits, installed from source build
 
 ##### RPM Installation
 
@@ -113,7 +113,6 @@ subcommand:
 * [Design](docs/design.md) - overall design of Ansible Playbook Bundles
 * [Developers](docs/developers.md) - in depth explanation of Ansible Playbook Bundles
 
-<a name="links"></a>
 ## Links
 * Ansible Service Broker [https://github.com/openshift/ansible-service-broker ](https://github.com/openshift/ansible-service-broker)
 * YouTube channel: [Ansible Service Broker](https://www.youtube.com/channel/UC04eOMIMiV06_RSZPb4OOBw)
@@ -121,13 +120,12 @@ subcommand:
 
 ## Initialize skeleton APB application example
 ```
-apb init my_apb --async=optional --bindable --org my_organization
+apb init my_apb --async=optional --bindable
 ```
 
-This gives us the following example apb.yaml 
+This gives us the following example apb.yaml
 ```
 name: my-apb
-image: my-org/my-apb
 description: "my-apb description"
 bindable: True
 async: optional
