@@ -100,14 +100,6 @@ def subcmd_init_parser(subcmd):
     )
 
     subcmd.add_argument(
-        '--org',
-        '-o',
-        action='store',
-        dest='org',
-        help=u'Organization of APB to publish to'
-    )
-
-    subcmd.add_argument(
         '--force',
         action='store_true',
         dest='force',
