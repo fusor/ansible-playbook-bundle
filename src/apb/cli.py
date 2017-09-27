@@ -52,6 +52,22 @@ def subcmd_list_parser(subcmd):
         default='optional',
         choices=['yaml', 'json']
     )
+    subcmd.add_argument(
+        '--username',
+        '-u',
+        action='store',
+        default=None,
+        dest='basic_auth_username',
+        help=u'Specify the basic auth parameters to be used'
+    )
+    subcmd.add_argument(
+        '--password',
+        '-p',
+        action='store',
+        default=None,
+        dest='basic_auth_password',
+        help=u'Specify the basic auth parameters to be used'
+    )
     return
 
 
@@ -172,7 +188,22 @@ def subcmd_push_parser(subcmd):
         help=u'Use secure connection to Ansible Service Broker',
         default=False
     )
-
+    subcmd.add_argument(
+        '--username',
+        '-u',
+        action='store',
+        default=None,
+        dest='basic_auth_username',
+        help=u'Specify the basic auth parameters to be used'
+    )
+    subcmd.add_argument(
+        '--password',
+        '-p',
+        action='store',
+        default=None,
+        dest='basic_auth_password',
+        help=u'Specify the basic auth parameters to be used'
+    )
     return
 
 
@@ -204,6 +235,22 @@ def subcmd_remove_parser(subcmd):
         help=u'Use secure connection to Ansible Service Broker',
         default=False
     )
+    subcmd.add_argument(
+        '--username',
+        '-u',
+        action='store',
+        default=None,
+        dest='basic_auth_username',
+        help=u'Specify the basic auth parameters to be used'
+    )
+    subcmd.add_argument(
+        '--password',
+        '-p',
+        action='store',
+        default=None,
+        dest='basic_auth_password',
+        help=u'Specify the basic auth parameters to be used'
+    )
     return
 
 
@@ -222,7 +269,24 @@ def subcmd_bootstrap_parser(subcmd):
         help=u'Use secure connection to Ansible Service Broker',
         default=False
     )
+    subcmd.add_argument(
+        '--username',
+        '-u',
+        action='store',
+        default=None,
+        dest='basic_auth_username',
+        help=u'Specify the basic auth parameters to be used'
+    )
+    subcmd.add_argument(
+        '--password',
+        '-p',
+        action='store',
+        default=None,
+        dest='basic_auth_password',
+        help=u'Specify the basic auth parameters to be used'
+    )
     return
+
 
 def subcmd_test_parser(subcmd):
     """ bootstrap subcommand """

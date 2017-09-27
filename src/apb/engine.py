@@ -502,12 +502,22 @@ def broker_request(broker, service_route, method, **kwargs):
         raise Exception("Could not find route to ansible-service-broker. "
                         "Use --broker or log into the cluster using \"oc login\"")
 
-    url = broker + service_route
+    url = broker + "/ansible-service-broker" + service_route
     if url.find("http") < 0:
         url = "https://" + url
 
     try:
-        response = requests.request(method, url, **kwargs)
+        openshift_config.load_kube_config()
+        token = openshift_client.configuration.api_key['authorization']
+        headers = {}
+        if kwargs['basic_auth_username'] is not None and kwargs['basic_auth_password'] is not None:
+            headers = {'Authorization': "Basic " +
+                       base64.b64encode("{0}:{1}".format(kwargs['basic_auth_username'],
+                                                         kwargs['basic_auth_password']))
+                       }
+        else:
+            headers = {'Authorization': token}
+        response = requests.request(method, url, verify=kwargs["verify"], headers=headers)
     except Exception as e:
         print("ERROR: Failed broker request (%s) %s" % (method, url))
         raise e
@@ -516,7 +526,11 @@ def broker_request(broker, service_route, method, **kwargs):
 
 
 def cmdrun_list(**kwargs):
-    response = broker_request(kwargs["broker"], "/v2/catalog", "get", verify=kwargs["verify"])
+    response = broker_request(kwargs['broker'], "/v2/catalog", "get",
+                              verify=kwargs["verify"],
+                              basic_auth_username=kwargs.get("basic_auth_username"),
+                              basic_auth_password=kwargs.get("basic_auth_password"))
+
 
     if response.status_code != 200:
         print("Error: Attempt to list APBs in the broker returned status: %d" % response.status_code)
@@ -715,7 +729,7 @@ def cmdrun_push(**kwargs):
     spec = get_spec(project, 'string')
     blob = base64.b64encode(spec)
     data_spec = {'apbSpec': blob}
-    response = broker_request(kwargs["broker"], "/apb/spec", "post", data=data_spec, verify=kwargs["verify"])
+    response = broker_request(kwargs["broker"], "/apb/spec", "post", data=data_spec, **kwargs)
 
     if response.status_code != 200:
         print("Error: Attempt to add APB to the Broker returned status: %d" % response.status_code)
@@ -736,7 +750,7 @@ def cmdrun_remove(**kwargs):
     else:
         raise Exception("No APB ID specified.  Use --id.")
 
-    response = broker_request(kwargs["broker"], route, "delete", verify=kwargs["verify"])
+    response = broker_request(kwargs["broker"], route, "delete", **kwargs)
 
     if response.status_code != 204:
         print("Error: Attempt to remove an APB from Broker returned status: %d" % response.status_code)
@@ -747,7 +761,7 @@ def cmdrun_remove(**kwargs):
 
 
 def cmdrun_bootstrap(**kwargs):
-    response = broker_request(kwargs["broker"], "/v2/bootstrap", "post", data={}, verify=kwargs["verify"])
+    response = broker_request(kwargs["broker"], "/v2/bootstrap", "post", data={}, **kwargs)
 
     if response.status_code != 200:
         print("Error: Attempt to bootstrap Broker returned status: %d" % response.status_code)
