@@ -17,6 +17,7 @@ In this tutorial, we'll walk through the creation of some sample APBs.  We will 
 
 *Note:  For the remainder of this tutorial, substitute your own information for items marked in brackets, for example `<host>:<port>` might need to be replaced with `172.17.0.1.nip.io:8443`.*
 
+**Note: If you are using a 3.6 version of the catalog, you must use `--username admin --password` for the list, push, remove and bootstrap commands**
 ## Development Environment
 
 Before getting started with APBs, we need to get your system set up to create them.
