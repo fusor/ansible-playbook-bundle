@@ -517,7 +517,8 @@ def broker_request(broker, service_route, method, **kwargs):
                        }
         else:
             headers = {'Authorization': token}
-        response = requests.request(method, url, verify=kwargs["verify"], headers=headers)
+        response = requests.request(method, url, verify=kwargs["verify"],
+                                    headers=headers, data=kwargs.get("data"))
     except Exception as e:
         print("ERROR: Failed broker request (%s) %s" % (method, url))
         raise e
@@ -729,6 +730,7 @@ def cmdrun_push(**kwargs):
     spec = get_spec(project, 'string')
     blob = base64.b64encode(spec)
     data_spec = {'apbSpec': blob}
+    print(spec)
     response = broker_request(kwargs["broker"], "/apb/spec", "post", data=data_spec,
                               verify=kwargs["verify"],
                               basic_auth_username=kwargs.get("basic_auth_username"),
