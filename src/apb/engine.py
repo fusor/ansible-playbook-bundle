@@ -729,7 +729,10 @@ def cmdrun_push(**kwargs):
     spec = get_spec(project, 'string')
     blob = base64.b64encode(spec)
     data_spec = {'apbSpec': blob}
-    response = broker_request(kwargs["broker"], "/apb/spec", "post", data=data_spec, **kwargs)
+    response = broker_request(kwargs["broker"], "/apb/spec", "post", data=data_spec,
+                              verify=kwargs["verify"],
+                              basic_auth_username=kwargs.get("basic_auth_username"),
+                              basic_auth_password=kwargs.get("basic_auth_password"))
 
     if response.status_code != 200:
         print("Error: Attempt to add APB to the Broker returned status: %d" % response.status_code)
@@ -750,7 +753,10 @@ def cmdrun_remove(**kwargs):
     else:
         raise Exception("No APB ID specified.  Use --id.")
 
-    response = broker_request(kwargs["broker"], route, "delete", **kwargs)
+    response = broker_request(kwargs["broker"], route, "delete",
+                              verify=kwargs["verify"],
+                              basic_auth_username=kwargs.get("basic_auth_username"),
+                              basic_auth_password=kwargs.get("basic_auth_password"))
 
     if response.status_code != 204:
         print("Error: Attempt to remove an APB from Broker returned status: %d" % response.status_code)
@@ -761,7 +767,10 @@ def cmdrun_remove(**kwargs):
 
 
 def cmdrun_bootstrap(**kwargs):
-    response = broker_request(kwargs["broker"], "/v2/bootstrap", "post", data={}, **kwargs)
+    response = broker_request(kwargs["broker"], "/v2/bootstrap", "post", data={},
+                              verify=kwargs["verify"],
+                              basic_auth_username=kwargs.get("basic_auth_username"),
+                              basic_auth_password=kwargs.get("basic_auth_password"))
 
     if response.status_code != 200:
         print("Error: Attempt to bootstrap Broker returned status: %d" % response.status_code)
