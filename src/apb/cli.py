@@ -9,6 +9,7 @@ SKIP_OPTIONS = ['provision', 'deprovision', 'bind', 'unbind', 'roles']
 
 AVAILABLE_COMMANDS = {
     'help': 'Display this help message',
+    'relist': 'Relist the APBs available within the Service Catalog',
     'list': 'List APBs from the target Ansible Service Broker',
     'init': 'Initialize the directory for APB development',
     'prepare': 'Prepare an ansible-container project for APB packaging',
@@ -204,6 +205,20 @@ def subcmd_push_parser(subcmd):
         dest='basic_auth_password',
         help=u'Specify the basic auth password to be used'
     )
+    subcmd.add_argument(
+        '--no-relist',
+        action='store_true',
+        dest='no_relist',
+        help=u'Do not relist the catalog after pushing an apb to the broker',
+        default=False
+    )
+    subcmd.add_argument(
+        '--broker-name',
+        action='store',
+        dest='broker_name',
+        help=u'Name of the ServiceBroker k8s resource',
+        default=u'ansible-service-broker'
+    )
     return
 
 
@@ -270,6 +285,13 @@ def subcmd_bootstrap_parser(subcmd):
         default=False
     )
     subcmd.add_argument(
+        '--no-relist',
+        action='store_true',
+        dest='no_relist',
+        help=u'Do not relist the catalog after bootstrapping the broker',
+        default=False
+    )
+    subcmd.add_argument(
         '--username',
         '-u',
         action='store',
@@ -285,16 +307,58 @@ def subcmd_bootstrap_parser(subcmd):
         dest='basic_auth_password',
         help=u'Specify the basic auth password to be used'
     )
+    subcmd.add_argument(
+        '--broker-name',
+        action='store',
+        dest='broker_name',
+        help=u'Name of the ServiceBroker k8s resource',
+        default=u'ansible-service-broker'
+    )
     return
 
 
 def subcmd_test_parser(subcmd):
-    """ bootstrap subcommand """
+    """ test subcommand """
     subcmd.add_argument(
         '--tag',
         action='store',
         dest='tag',
         help=u'Tag of APB to build'
+    )
+    return
+
+
+def subcmd_relist_parser(subcmd):
+    """ relist subcommand """
+    subcmd.add_argument(
+        '--broker-name',
+        action='store',
+        dest='broker_name',
+        help=u'Name of the ServiceBroker k8s resource',
+        default=u'ansible-service-broker'
+    )
+    subcmd.add_argument(
+        '--secure',
+        action='store_true',
+        dest='verify',
+        help=u'Use secure connection to Ansible Service Broker',
+        default=False
+    )
+    subcmd.add_argument(
+        '--username',
+        '-u',
+        action='store',
+        default=None,
+        dest='basic_auth_username',
+        help=u'Specify the basic auth username to be used'
+    )
+    subcmd.add_argument(
+        '--password',
+        '-p',
+        action='store',
+        default=None,
+        dest='basic_auth_password',
+        help=u'Specify the basic auth password to be used'
     )
     return
 

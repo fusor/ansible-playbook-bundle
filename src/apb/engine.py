@@ -366,20 +366,63 @@ def get_asb_route():
     return asb_route
 
 
-def delete_controller_manager_pod():
-    pod_name = None
+def broker_resource_url(host, broker_name):
+    return "{}/apis/servicecatalog.k8s.io/v1alpha1/servicebrokers/{}".format(host, broker_name)
+
+
+def relist_service_broker(kwargs):
     try:
         openshift_config.load_kube_config()
-        api = kubernetes_client.CoreV1Api()
-        pod_list = api.list_namespaced_pod('service-catalog')
-        for pod in pod_list.items:
-            if pod.metadata.name.find('controller-manager-') >= 0:
-                pod_name = pod.metadata.name
-    except Exception as e:
-        pod_name = None
+        token = openshift_client.configuration.api_key['authorization']
+        cluster_host = openshift_client.configuration.host
+        broker_name = kwargs['broker_name']
+        headers = {}
+        if kwargs['basic_auth_username'] is not None and kwargs['basic_auth_password'] is not None:
+            headers = {'Authorization': "Basic " +
+                       base64.b64encode("{0}:{1}".format(kwargs['basic_auth_username'],
+                                                         kwargs['basic_auth_password']))
+                       }
+        else:
+            headers = {'Authorization': token}
 
-    if pod_name:
-        api.delete_namespaced_pod(pod_name, 'service-catalog', kubernetes_client.V1DeleteOptions())
+        response = requests.request("get",
+                broker_resource_url(cluster_host, broker_name),
+                verify=kwargs['verify'], headers=headers)
+
+        if response.status_code != 200:
+            errMsg = "Received non-200 status code while retrieving broker: {}\n".format(broker_name) + \
+                "Response body:\n" + \
+                str(response.text)
+            raise Exception(errMsg)
+
+        spec = response.json().get('spec', None)
+        if spec == None:
+            errMsg = "Spec not found in broker reponse. Response body: \n{}".format(response.text)
+            raise Exception(errMsg)
+
+        relist_requests = spec.get('relistRequests', None)
+        if relist_requests == None:
+            errMsg = "relistRequests not found within the spec of broker: {}\n".format(broker_name) + \
+                    "Are you sure you are using a ServiceCatalog of >= v0.0.21?"
+            raise Exception(errMsg)
+
+        inc_relist_requests = relist_requests + 1
+
+        headers['Content-Type'] = 'application/strategic-merge-patch+json'
+        response = requests.request("patch",
+                broker_resource_url(cluster_host, broker_name),
+                json={'spec': {'relistRequests': inc_relist_requests}},
+                verify=kwargs['verify'], headers=headers)
+
+        if response.status_code != 200:
+            errMsg = "Received non-200 status code while patching relistRequests of broker: {}\n".format(broker_name) + \
+                "Response body:\n" + \
+                str(response.text)
+            raise Exception(errMsg)
+
+        print("Successfully relisted the Service Catalog")
+    except Exception as e:
+        print("Relist failure: {}".format(e))
 
 
 def create_role_binding():
@@ -551,7 +594,7 @@ def cmdrun_list(**kwargs):
 
 
 def print_json_list(services):
-    print json.dumps(services, indent=4, sort_keys=True)
+    print(json.dumps(services, indent=4, sort_keys=True))
 
 
 def print_verbose_list(services):
@@ -725,6 +768,10 @@ def cmdrun_build(**kwargs):
     print("Successfully built APB image: %s" % tag)
 
 
+def cmdrun_relist(**kwargs):
+    relist_service_broker(kwargs)
+
+
 def cmdrun_push(**kwargs):
     project = kwargs['base_path']
     spec = get_spec(project, 'string')
@@ -741,10 +788,10 @@ def cmdrun_push(**kwargs):
         print("Unable to add APB to Ansible Service Broker.")
         exit(1)
 
-    # Temporary workaround to delete controller_manager pod to catch new APB
-    delete_controller_manager_pod()
-
     print("Successfully added APB to Ansible Service Broker")
+
+    if not kwargs['no_relist']:
+        relist_service_broker(kwargs)
 
 
 def cmdrun_remove(**kwargs):
@@ -781,6 +828,8 @@ def cmdrun_bootstrap(**kwargs):
 
     print("Successfully bootstrapped Ansible Service Broker")
 
+    if not kwargs['no_relist']:
+        relist_service_broker(kwargs)
 
 def cmdrun_test(**kwargs):
     project = kwargs['base_path']
