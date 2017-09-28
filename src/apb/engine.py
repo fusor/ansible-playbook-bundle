@@ -508,7 +508,6 @@ def broker_request(broker, service_route, method, **kwargs):
 
     try:
         openshift_config.load_kube_config()
-        token = openshift_client.configuration.api_key['authorization']
         headers = {}
         if kwargs['basic_auth_username'] is not None and kwargs['basic_auth_password'] is not None:
             headers = {'Authorization': "Basic " +
@@ -516,6 +515,7 @@ def broker_request(broker, service_route, method, **kwargs):
                                                          kwargs['basic_auth_password']))
                        }
         else:
+            token = openshift_client.configuration.api_key.get("authorization", "")
             headers = {'Authorization': token}
         response = requests.request(method, url, verify=kwargs["verify"],
                                     headers=headers, data=kwargs.get("data"))
