@@ -36,3 +36,12 @@
 * Move version.go into its own version pkg including apbversion.go
 * in adapter.go run a check if version is in acceptable range
 * Do not add image if version is not in acceptable range.
+
+### Example of a breaking change - Major Version Bump
+* Changing the yaml format
+* Addition/deletion of required fields
+
+### Example of a non-breaking change - Minor Version Bump
+* Spelling change of a field
+* Addition/deletion of optional fields
+* Additon/deltions of options to an optional/required field
