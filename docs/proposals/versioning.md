@@ -28,10 +28,11 @@
 ### Implementation Suggestion:
 * We change APB version to x.y
 * We bump APB version to 1.0
-* APB with version 1.y works with broker 1.y.z
-* Any minor changes to the spec bumps APB minor version and an associated minor bump for broker
-*
+* Broker has configured acceptable range of APB version.
+* Broker does a check if APB version is in acceptable range before bootstrapping.
+* Broker version is NOT tied directly to APB spec version.
+
 ### Broker Source changes
-* Move version.go into its own version pkg?
-* in adapter.go run a check if majorVersion matches brokerMajorVersion
-* Do not add image if major versions don't match
+* Move version.go into its own version pkg including apbversion.go
+* in adapter.go run a check if version is in acceptable range
+* Do not add image if version is not in acceptable range.
