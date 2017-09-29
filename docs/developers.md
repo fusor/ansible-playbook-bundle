@@ -24,7 +24,7 @@ my-apb/
 ├── playbooks/
 └── roles/
 ```
-### Spec File
+### Spec File (Version 1.0)
 The `apb init` will auto generate a spec file.  You must edit this spec file to fit your application. The following is the spec file for [etherpad-apb](https://github.com/fusor/apb-examples/blob/master/etherpad-apb/apb.yml).  More examples can be found in the [apb-examples repo](https://github.com/fusor/apb-examples)
 
 ```yml
@@ -262,3 +262,18 @@ One common use case for ConfigMaps is when the parameters of an APB will be used
               path: config.js
 
 ```
+
+# APB Spec Versioning
+We are using semantic versioning with the format of x.y where x is a major release and y is a minor release.
+
+## Major Version Bump
+We will increment the major version whenever an API breaking change is introduced to the APB spec. Some examples include:
+* Introduction/deletion of a required field
+* Changing the yaml format
+* New features
+
+## Minor Version Bump
+We will increment the minor version whenever a non-breaking change is introduced to the APB spec. Some examples include:
+* Introduction/deletion of an optional field
+* Spelling change
+* Introduction of new options to an existing field
