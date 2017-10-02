@@ -150,9 +150,13 @@ RUN chmod -R g=u /opt/{ansible,apb}
 USER apb
 ```
 
-At this point we have a fully formed APB that we can build.  If you skipped the apb prepare, apb build will still prepare the apb before building the image.
+At this point we have a fully formed APB that we can build.  If you skipped the apb prepare, apb build will still prepare the apb before building the image. You can optionally specify the organization (ie. ansibleplaybookbundle) here.
 ```bash
+# Example without organization
 $ apb build
+
+# Example with organization
+$ apb build --org=ansibleplaybookbundle
 ```
 
 At this point, you can push the new APB directly to the Ansible Service Broker.

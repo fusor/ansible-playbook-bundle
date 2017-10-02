@@ -88,6 +88,14 @@ def subcmd_build_parser(subcmd):
         help=u'Registry prefix of APB to prepend to tag'
     )
 
+    subcmd.add_argument(
+        '--org',
+        '-o',
+        action='store',
+        dest='org',
+        help=u'Organization of APB to publish to'
+    )
+
     return
 
 

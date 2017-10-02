@@ -744,6 +744,9 @@ def cmdrun_build(**kwargs):
     else:
         tag = kwargs['tag']
 
+    if kwargs['org']:
+        tag = kwargs['org'] + '/' + tag
+
     if kwargs['registry']:
         tag = kwargs['registry'] + '/' + tag
 
