@@ -29,13 +29,13 @@
 * We change APB version to x.y
 * We bump APB version to 1.0
 * Broker has configured acceptable range of APB version.
-* Broker does a check if APB version is in acceptable range before bootstrapping.
+* Broker does a check if APB version is in acceptable range during validation of bootstrap.
 * Broker version is NOT tied directly to APB spec version.
 
 ### Broker Source changes
 * Move version.go into its own version pkg including apbversion.go
-* in adapter.go run a check if version is in acceptable range
-* Do not add image if version is not in acceptable range.
+* in registry.go run a check if version is in acceptable range on the spec file
+* Do not validate image if version is not in acceptable range.
 
 ### Example of a breaking change - Major Version Bump
 * Changing the yaml format

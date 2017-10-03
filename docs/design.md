@@ -45,10 +45,11 @@ example-apb/
     └── unbind.yml
 ```
 
-#### Spec File
+#### Spec File Version 1.0
 
 The `apb init` will create an example APB Spec `apb.yml` File as shown below:
 ```yml
+version: 1.0
 name: my-apb
 image: <docker-org>/my-apb
 description: "My New APB"
@@ -65,6 +66,7 @@ The spec file will need to be edited for your specific application.
 
 For example, the `etherpad-apb` spec file looks as follows:
 ```yml
+version: 1.0
 name: etherpad-apb
 image: ansibleplaybookbundle/etherpad-apb
 description: Note taking web application
