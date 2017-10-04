@@ -329,9 +329,9 @@ def update_deps(project):
     return ruamel.yaml.dump(spec, Dumper=ruamel.yaml.RoundTripDumper)
 
 
-def update_dockerfile(project):
+def update_dockerfile(project, dockerfile):
     spec_path = os.path.join(project, SPEC_FILE)
-    dockerfile_path = os.path.join(os.path.join(project, DOCKERFILE))
+    dockerfile_path = os.path.join(os.path.join(project, dockerfile))
 
     # TODO: Defensively confirm the strings are encoded
     # the way the code expects
@@ -720,7 +720,12 @@ def cmdrun_prepare(**kwargs):
     project = kwargs['base_path']
     roles_path = os.path.join(project, ROLES_DIR)
     spec_path = os.path.join(project, SPEC_FILE)
+    dockerfile = DOCKERFILE
     include_deps = kwargs['include_deps']
+
+    if kwargs['dockerfile']:
+        dockerfile = kwargs['dockerfile']
+
     # Removing dependency work for now
     if include_deps:
         spec = update_deps(project)
@@ -730,14 +735,13 @@ def cmdrun_prepare(**kwargs):
         print("Error! Spec failed validation check. Not updating Dockerfile.")
         exit(1)
 
-    update_dockerfile(project)
+    update_dockerfile(project, dockerfile)
 
 
 def cmdrun_build(**kwargs):
     project = kwargs['base_path']
+    dockerfile = "Dockerfile"
     spec = get_spec(project)
-
-    update_dockerfile(project)
 
     if not kwargs['tag']:
         tag = spec['name']
@@ -750,11 +754,16 @@ def cmdrun_build(**kwargs):
     if kwargs['registry']:
         tag = kwargs['registry'] + '/' + tag
 
+    if kwargs['dockerfile']:
+        dockerfile = kwargs['dockerfile']
+
+    update_dockerfile(project, dockerfile)
+
     print("Building APB using tag: [%s]" % tag)
 
     try:
         client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
-        client.images.build(path=project, tag=tag)
+        client.images.build(path=project, tag=tag, dockerfile=dockerfile)
     except docker.errors.DockerException as e:
         print("Error accessing the docker API. Is the daemon running?")
         raise
@@ -829,7 +838,7 @@ def cmdrun_test(**kwargs):
     project = kwargs['base_path']
     spec = get_spec(project)
 
-    update_dockerfile(project)
+    update_dockerfile(project, DOCKERFILE)
 
     if not kwargs['tag']:
         tag = spec['name']

@@ -96,6 +96,14 @@ def subcmd_build_parser(subcmd):
         help=u'Organization of APB to publish to'
     )
 
+    subcmd.add_argument(
+        '--dockerfile',
+        '-d',
+        action='store',
+        dest='dockerfile',
+        help=u'Name of Dockerfile to build with'
+    )
+
     return
 
 
@@ -169,6 +177,14 @@ def subcmd_prepare_parser(subcmd):
         dest='include_deps',
         help=u'Include smart dependency tracking',
         default=False
+    )
+
+    subcmd.add_argument(
+        '--dockerfile',
+        '-d',
+        action='store',
+        dest='dockerfile',
+        help=u'Name of Dockerfile to build with'
     )
 
     return
