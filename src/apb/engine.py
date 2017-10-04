@@ -745,6 +745,9 @@ def cmdrun_prepare(**kwargs):
 def cmdrun_build(**kwargs):
     project = kwargs['base_path']
     spec = get_spec(project)
+    if 'version' not in spec:
+        print("APB spec does not have a listed version. Please update apb.yml")
+        exit(1)
 
     update_dockerfile(project)
 
