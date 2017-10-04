@@ -98,7 +98,7 @@ def subcmd_build_parser(subcmd):
 
     subcmd.add_argument(
         '--dockerfile',
-        '-d',
+        '-f',
         action='store',
         dest='dockerfile',
         help=u'Name of Dockerfile to build with'
@@ -181,7 +181,7 @@ def subcmd_prepare_parser(subcmd):
 
     subcmd.add_argument(
         '--dockerfile',
-        '-d',
+        '-f',
         action='store',
         dest='dockerfile',
         help=u'Name of Dockerfile to build with'
