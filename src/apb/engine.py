@@ -658,7 +658,7 @@ def print_list(services):
 
     template = "{id:%d}{name:%d}{description:%d}" % (max_id + 2, max_name + 2, max_desc + 2)
     print(template.format(id="ID", name="NAME", description="DESCRIPTION"))
-    for service in services:
+    for service in sorted(services, lambda s:s['name']):
         print(template.format(**service))
 
 
