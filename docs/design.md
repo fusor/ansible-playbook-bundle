@@ -64,50 +64,44 @@ plans:
 ```
 The spec file will need to be edited for your specific application.
 
-For example, the `etherpad-apb` spec file looks as follows:
+For example, a spec file could look as follows:
 ```yml
 version: 1.0
-name: etherpad-apb
-image: ansibleplaybookbundle/etherpad-apb
-description: Note taking web application
+name: my-sample-apb
+description: A sample APB 
 bindable: True
 async: optional
-metadata: 
-  documentationUrl: https://github.com/ether/etherpad-lite/wiki
-  imageUrl: https://translatewiki.net/images/thumb/6/6f/Etherpad_lite.svg/200px-Etherpad_lite.svg.png
-  dependencies: ['docker.io/mariadb:latest', 'docker.io/tvelocity/etherpad-lite:latest']
-  displayName: Etherpad (APB)
-  longDescription: An apb that deploys Etherpad Lite
+metadata:
+  displayName: My Sample APB
+  dependencies: ['docker.io/myorg/my-image-dependency']
+  providerDisplayName: "Red Hat, Inc."
 plans:
   - name: default
-    description: A single etherpad application with no DB
-    free: true
+    description: A sample APB
+    free: True
     metadata:
       displayName: Default
-      longDescription: This plan provides a single Etherpad application with no database
+      longDescription: A longer description of a sample APB
       cost: $0.00
     parameters:
-      - name: mariadb_name
-        required: true
-        default: etherpad
+      - name: sample_param_1
+        title: Sample Provision Param 1
         type: string
-        title: MariaDB Database Name
-      - name: mariadb_user
-        required: true
-        default: etherpad
-        title: MariaDB User
+        required: True
+        default: "Fill in the input field"
+        display_type: textarea
+        display_group: Group 1
+      - name: sample_param_2
+        title: Sample Provision Param 2
         type: string
-        maxlength: 63
-      - name: mariadb_password
-        default: admin
+        display_group: Group 1
+    bind_parameters:
+      - name: sample_bind_param_1
+        title: Sample Binding Parameter 1
         type: string
-        description: A random alphanumeric string if left blank
-        title: MariaDB Password
-      - name: mariadb_root_password
-        default: admin
+      - name: sample_bind_param_2
+        title: Sample Binding Parameter 2
         type: string
-        description: root password for mariadb
-        title: Root Password
 ```
 
 The `metadata` field is optional and used when integrating with the origin service catalog.
@@ -136,6 +130,8 @@ parameters:
 * `default`: Default value assigned to the parameter.
 * `display_type`: Display type for the UI.  For example, you can override a string input as a `password` to hide it in the UI.  Accepted fields include `text`, `textarea`, `password`, `checkbox`, `select`.
 * `display_group`: will cause a parameter to display in groups with adjacent parameters with matching `display_group` fields.  In the above example, adding another field below with `display_group: Group 1` will visually group them together in the UI under the heading "Group 1".
+
+*__NOTE:__* `bind_parameters` is an __EXPERIMENTAL__ feature.  The `bind_parameters` are not required and will not be used when executing the bind action by default.  Currently, running bind returns encoded values from the provision action.  In order to use `bind_parameters` and execute the bind playbook, ASB must enable the feature using `LAUNCH_APB_ON_BIND=true`.  In addition, Kubernetes has not yet implemented [asynchronous binding](https://github.com/kubernetes-incubator/service-catalog/issues/1209), but it is expected in the near future.  Until then, if the binding is not created quickly, the request will time out with unexpected results.
 
 #### Actions
 The following are the actions for an APB. At a minimum, an APB must implement the `provision` and `deprovision` actions.
