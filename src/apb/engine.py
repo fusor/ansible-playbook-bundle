@@ -541,11 +541,11 @@ def get_broker_url(broker_name, **kwargs):
     broker = broker_resource(broker_name, **kwargs)
     return broker['url']
 
-def broker_request(url, service_route, method, broker_name=None, **kwargs):
-    if broker_name and not url:
-        url = get_broker_url(broker_name, **kwargs)
+def broker_request(broker, service_route, method, broker_name=None, **kwargs):
+    if broker_name and not broker:
+        broker = get_broker_broker(broker_name, **kwargs)
 
-    if not url:
+    if not broker:
         raise Exception("Could not find route to the broker. "
                         "Use --broker or log into the cluster using \"oc login\"")
 
@@ -560,10 +560,10 @@ def broker_request(url, service_route, method, broker_name=None, **kwargs):
         else:
             token = openshift_client.configuration.api_key.get("authorization", "")
             headers = {'Authorization': token}
-        response = requests.request(method, url, verify=kwargs["verify"],
+        response = requests.request(method, broker + service_route, verify=kwargs["verify"],
                                     headers=headers, data=kwargs.get("data"))
     except Exception as e:
-        print("ERROR: Failed broker request (%s) %s" % (method, url))
+        print("ERROR: Failed broker request (%s) %s" % (method, broker))
         raise e
 
     return response
