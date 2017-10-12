@@ -367,7 +367,7 @@ def get_asb_route():
 
 
 def broker_resource_url(host, broker_name):
-    return "{}/apis/servicecatalog.k8s.io/v1alpha1/servicebrokers/{}".format(host, broker_name)
+    return "{}/apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers/{}".format(host, broker_name)
 
 
 def relist_service_broker(kwargs):
