@@ -543,7 +543,7 @@ def get_broker_url(broker_name, **kwargs):
 
 def broker_request(broker, service_route, method, broker_name=None, **kwargs):
     if broker_name and not broker:
-        broker = get_broker_broker(broker_name, **kwargs)
+        broker = get_broker_url(broker_name, **kwargs)
 
     if not broker:
         raise Exception("Could not find route to the broker. "
