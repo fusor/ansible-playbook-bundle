@@ -30,6 +30,13 @@ def subcmd_list_parser(subcmd):
         help=u'Route to the Ansible Service Broker'
     )
     subcmd.add_argument(
+        '--broker-name',
+        action='store',
+        dest='broker_name',
+        help=u'Name of the ServiceBroker k8s resource',
+        default=u'ansible-service-broker'
+    )
+    subcmd.add_argument(
         '--secure',
         action='store_true',
         dest='verify',
@@ -245,6 +252,13 @@ def subcmd_remove_parser(subcmd):
         action='store',
         dest='broker',
         help=u'Route to the Ansible Service Broker'
+    )
+    subcmd.add_argument(
+        '--broker-name',
+        action='store',
+        dest='broker_name',
+        help=u'Name of the ServiceBroker k8s resource',
+        default=u'ansible-service-broker'
     )
     subcmd.add_argument(
         '--all',

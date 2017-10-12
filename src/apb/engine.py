@@ -352,18 +352,41 @@ def load_source_dependencies(roles_path):
     return output.split('\n')[:-1]
 
 
-def get_asb_route():
-    asb_route = None
-    try:
+def broker_headers(**kwargs):
+    if kwargs['basic_auth_username'] is not None and kwargs['basic_auth_password'] is not None:
+        return {
+            'Authorization': "Basic " + base64.b64encode(
+                "{0}:{1}".format(kwargs['basic_auth_username'], kwargs['basic_auth_password'])
+            )
+        }
+    else:
         openshift_config.load_kube_config()
-        oapi = openshift_client.OapiApi()
-        route_list = oapi.list_namespaced_route('ansible-service-broker')
-        for route in route_list.items:
-            if route.metadata.name.find('asb-') >= 0:
-                asb_route = route.spec.host
-    except:
-        asb_route = None
-    return asb_route
+        token = openshift_client.configuration.api_key['authorization']
+        return {'Authorization': token}
+
+
+def broker_resource(broker_name, **kwargs):
+    openshift_config.load_kube_config()
+    token = openshift_client.configuration.api_key['authorization']
+    cluster_host = openshift_client.configuration.host
+
+    headers = broker_headers(**kwargs)
+
+    response = requests.request("get",
+            broker_resource_url(cluster_host, broker_name),
+            verify=kwargs['verify'], headers=headers)
+
+    if response.status_code != 200:
+        errMsg = "Received non-200 status code while retrieving broker: {}\n".format(broker_name) + \
+            "Response body:\n" + \
+            str(response.text)
+        raise Exception(errMsg)
+
+    spec = response.json().get('spec', None)
+    if spec == None:
+        errMsg = "Spec not found in broker reponse. Response body: \n{}".format(response.text)
+        raise Exception(errMsg)
+    return spec
 
 
 def broker_resource_url(host, broker_name):
@@ -372,35 +395,11 @@ def broker_resource_url(host, broker_name):
 
 def relist_service_broker(kwargs):
     try:
+        broker_name = kwargs.pop('broker_name')
         openshift_config.load_kube_config()
-        token = openshift_client.configuration.api_key['authorization']
         cluster_host = openshift_client.configuration.host
-        broker_name = kwargs['broker_name']
-        headers = {}
-        if kwargs['basic_auth_username'] is not None and kwargs['basic_auth_password'] is not None:
-            headers = {'Authorization': "Basic " +
-                       base64.b64encode("{0}:{1}".format(kwargs['basic_auth_username'],
-                                                         kwargs['basic_auth_password']))
-                       }
-        else:
-            headers = {'Authorization': token}
-
-        response = requests.request("get",
-                broker_resource_url(cluster_host, broker_name),
-                verify=kwargs['verify'], headers=headers)
-
-        if response.status_code != 200:
-            errMsg = "Received non-200 status code while retrieving broker: {}\n".format(broker_name) + \
-                "Response body:\n" + \
-                str(response.text)
-            raise Exception(errMsg)
-
-        spec = response.json().get('spec', None)
-        if spec == None:
-            errMsg = "Spec not found in broker reponse. Response body: \n{}".format(response.text)
-            raise Exception(errMsg)
-
-        relist_requests = spec.get('relistRequests', None)
+        broker = broker_resource(broker_name, **kwargs)
+        relist_requests = broker.get('relistRequests', None)
         if relist_requests == None:
             errMsg = "relistRequests not found within the spec of broker: {}\n".format(broker_name) + \
                     "Are you sure you are using a ServiceCatalog of >= v0.0.21?"
@@ -408,6 +407,7 @@ def relist_service_broker(kwargs):
 
         inc_relist_requests = relist_requests + 1
 
+        headers = broker_headers(**kwargs)
         headers['Content-Type'] = 'application/strategic-merge-patch+json'
         response = requests.request("patch",
                 broker_resource_url(cluster_host, broker_name),
@@ -537,17 +537,17 @@ def clean_up_image_run():
         print("unable to clean up image - %s" % e)
 
 
-def broker_request(broker, service_route, method, **kwargs):
-    if broker is None:
-        broker = get_asb_route()
+def get_broker_url(broker_name, **kwargs):
+    broker = broker_resource(broker_name, **kwargs)
+    return broker['url']
 
-    if broker is None:
-        raise Exception("Could not find route to ansible-service-broker. "
+def broker_request(broker, service_route, method, broker_name=None, **kwargs):
+    if broker_name and not broker:
+        broker = get_broker_url(broker_name, **kwargs)
+
+    if not broker:
+        raise Exception("Could not find route to the broker. "
                         "Use --broker or log into the cluster using \"oc login\"")
-
-    url = broker + "/ansible-service-broker" + service_route
-    if url.find("http") < 0:
-        url = "https://" + url
 
     try:
         openshift_config.load_kube_config()
@@ -560,10 +560,10 @@ def broker_request(broker, service_route, method, **kwargs):
         else:
             token = openshift_client.configuration.api_key.get("authorization", "")
             headers = {'Authorization': token}
-        response = requests.request(method, url, verify=kwargs["verify"],
+        response = requests.request(method, broker + service_route, verify=kwargs["verify"],
                                     headers=headers, data=kwargs.get("data"))
     except Exception as e:
-        print("ERROR: Failed broker request (%s) %s" % (method, url))
+        print("ERROR: Failed broker request (%s) %s" % (method, broker))
         raise e
 
     return response
@@ -573,7 +573,8 @@ def cmdrun_list(**kwargs):
     response = broker_request(kwargs['broker'], "/v2/catalog", "get",
                               verify=kwargs["verify"],
                               basic_auth_username=kwargs.get("basic_auth_username"),
-                              basic_auth_password=kwargs.get("basic_auth_password"))
+                              basic_auth_password=kwargs.get("basic_auth_password"),
+                              broker_name=kwargs['broker_name'])
 
     if response.status_code != 200:
         print("Error: Attempt to list APBs in the broker returned status: %d" % response.status_code)
@@ -786,7 +787,8 @@ def cmdrun_push(**kwargs):
     response = broker_request(kwargs["broker"], "/apb/spec", "post", data=data_spec,
                               verify=kwargs["verify"],
                               basic_auth_username=kwargs.get("basic_auth_username"),
-                              basic_auth_password=kwargs.get("basic_auth_password"))
+                              basic_auth_password=kwargs.get("basic_auth_password"),
+                              broker_name=kwargs['broker_name'])
 
     if response.status_code != 200:
         print("Error: Attempt to add APB to the Broker returned status: %d" % response.status_code)
@@ -810,7 +812,8 @@ def cmdrun_remove(**kwargs):
     response = broker_request(kwargs["broker"], route, "delete",
                               verify=kwargs["verify"],
                               basic_auth_username=kwargs.get("basic_auth_username"),
-                              basic_auth_password=kwargs.get("basic_auth_password"))
+                              basic_auth_password=kwargs.get("basic_auth_password"),
+                              broker_name=kwargs['broker_name'])
 
     if response.status_code != 204:
         print("Error: Attempt to remove an APB from Broker returned status: %d" % response.status_code)
@@ -824,7 +827,8 @@ def cmdrun_bootstrap(**kwargs):
     response = broker_request(kwargs["broker"], "/v2/bootstrap", "post", data={},
                               verify=kwargs["verify"],
                               basic_auth_username=kwargs.get("basic_auth_username"),
-                              basic_auth_password=kwargs.get("basic_auth_password"))
+                              basic_auth_password=kwargs.get("basic_auth_password"),
+                              broker_name=kwargs['broker_name'])
 
     if response.status_code != 200:
         print("Error: Attempt to bootstrap Broker returned status: %d" % response.status_code)
