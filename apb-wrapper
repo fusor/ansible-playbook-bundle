@@ -10,7 +10,7 @@ sudo usermod -a -G apb apb
 
 gid=$(stat -c '%g' /var/run/docker.sock)
 if GROUP=$(getent group -i $gid); then
-  group=echo $GROUP | awk -F ":" '{ print $1 }'
+  group=$(echo $GROUP | awk -F ":" '{ print $1 }')
 else
   group=docker
   sudo groupadd $group -g $gid
