@@ -369,7 +369,7 @@ def get_asb_route():
     if url.find("http") < 0:
         url = "https://" + url
 
-    return asb_route
+    return url
 
 
 def broker_resource_url(host, broker_name):
