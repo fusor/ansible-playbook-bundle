@@ -363,11 +363,6 @@ def get_asb_route():
                 asb_route = route.spec.host
     except:
         asb_route = None
-
-    url = asb_route + "/ansible-service-broker"
-    if url.find("http") < 0:
-        url = "https://" + url
-
     return asb_route
 
 
@@ -550,7 +545,9 @@ def broker_request(broker, service_route, method, **kwargs):
         raise Exception("Could not find route to ansible-service-broker. "
                         "Use --broker or log into the cluster using \"oc login\"")
 
-    url = broker + service_route
+    url = broker + "/ansible-service-broker" + service_route
+    if url.find("http") < 0:
+        url = "https://" + url
 
     try:
         openshift_config.load_kube_config()
