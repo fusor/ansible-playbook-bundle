@@ -19,6 +19,7 @@ setup(
     package_data={'apb': [
         'dat/Dockerfile.j2',
         'dat/apb.yml.j2',
+        'dat/Makefile.j2',
         'dat/playbooks/playbook.yml.j2',
         'dat/roles/provision/tasks/main.yml.j2',
         'dat/roles/deprovision/tasks/main.yml.j2',
