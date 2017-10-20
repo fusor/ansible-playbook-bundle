@@ -125,6 +125,7 @@ apb init my_apb --async=optional --bindable
 
 This gives us the following example apb.yaml
 ```
+version: 1.0
 name: my-apb
 description: "my-apb description"
 bindable: True
