@@ -124,10 +124,10 @@ def subcmd_init_parser(subcmd):
     )
 
     subcmd.add_argument(
-      '--dockerhost',
-      action='store',
-      help=u'set the dockerhost for this project',
-      default="docker.io"
+        '--dockerhost',
+        action='store',
+        help=u'set the dockerhost for this project',
+        default="docker.io"
     )
 
     subcmd.add_argument(

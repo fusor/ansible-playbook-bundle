@@ -86,16 +86,17 @@ def load_dockerfile(df_path):
     with open(df_path, 'r') as dockerfile:
         return dockerfile.readlines()
 
+
 def load_makefile(apb_dict, params):
     env = Environment(loader=FileSystemLoader(DAT_PATH), trim_blocks=True)
     template = env.get_template(EX_MAKEFILE)
-    
+
     if not params:
         params = []
 
     return template.render(apb_dict=apb_dict, params=params)
 
-    
+
 def load_example_specfile(apb_dict, params):
     env = Environment(loader=FileSystemLoader(DAT_PATH), trim_blocks=True)
     template = env.get_template(EX_SPEC_FILE)
@@ -753,7 +754,7 @@ def cmdrun_init(**kwargs):
     spec_path = os.path.join(project, SPEC_FILE)
     dockerfile_path = os.path.join(os.path.join(project, DOCKERFILE))
     makefile_path = os.path.join(os.path.join(project, MAKEFILE))
-    
+
     specfile_out = load_example_specfile(apb_dict, [])
     write_file(specfile_out, spec_path, kwargs['force'])
 
@@ -762,7 +763,7 @@ def cmdrun_init(**kwargs):
 
     makefile_out = load_makefile(apb_dict, [])
     write_file(makefile_out, makefile_path, kwargs['force'])
-    
+
     generate_playbook_files(project, skip, apb_dict)
     print("Successfully initialized project directory at: %s" % project)
     print("Please run *apb prepare* inside of this directory after editing files.")
