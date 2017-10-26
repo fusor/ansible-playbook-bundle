@@ -364,6 +364,7 @@ def get_asb_route():
                 asb_route = route.spec.host
     except:
         asb_route = None
+        return asb_route
 
     url = asb_route + "/ansible-service-broker"
     if url.find("http") < 0:
