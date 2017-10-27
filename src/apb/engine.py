@@ -11,6 +11,7 @@ import urllib3
 import docker
 import docker.errors
 import ruamel.yaml
+import yaml
 
 from ruamel.yaml import YAML
 from openshift import client as openshift_client, config as openshift_config
@@ -842,6 +843,47 @@ def cmdrun_bootstrap(**kwargs):
 
     if not kwargs['no_relist']:
         relist_service_broker(kwargs)
+
+
+def cmdrun_serviceinstance(**kwargs):
+    project = kwargs['base_path']
+    spec = get_spec(project)
+
+    defaultValue = "ansibleplaybookbundle"
+    params = {}
+    plan_names = "(Plans->"
+    first_plan = 0
+    for plan in spec['plans']:
+        plan_names = "%s|%s" % (plan_names, plan['name'])
+
+        # Only save the vars from the first plan
+        if first_plan == 0:
+            print("Only displaying vars from the '%s' plan." % plan['name'])
+            for param in plan['parameters']:
+                try:
+                    if param['required']:
+                        # Save a required param name and set a defaultValue
+                        params[param['name']] = defaultValue
+                except:
+                    pass
+        first_plan += 1
+
+    plan_names = "%s)" % plan_names
+    serviceInstance = dict (
+        apiVersion = "servicecatalog.k8s.io/v1beta1",
+        kind = "ServiceInstance",
+        metadata = dict (
+            name = spec['name']
+        ),
+        spec = dict (
+            clusterServiceClassExternalName = "dh-" + spec['name'],
+            clusterServicePlanExternalName = plan_names,
+            parameters = params
+        )
+    )
+
+    with open(spec['name']+'.yaml', 'w') as outfile:
+        yaml.dump(serviceInstance, outfile, default_flow_style=False)
 
 
 def cmdrun_test(**kwargs):

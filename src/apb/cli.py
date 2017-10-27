@@ -16,6 +16,7 @@ AVAILABLE_COMMANDS = {
     'build': 'Build and package APB container',
     'push': 'Push local APB spec to an Ansible Service Broker',
     'remove': 'Remove APBs from the target Ansible Service Broker',
+    'serviceinstance': 'Create a ServiceInstance template based on apb.yaml',
     'bootstrap': 'Tell Ansible Service Broker to reload APBs from the container repository',
     'test': 'Test the APB'
 }
@@ -341,6 +342,10 @@ def subcmd_test_parser(subcmd):
         dest='tag',
         help=u'Tag of APB to build'
     )
+    return
+
+
+def subcmd_serviceinstance_parser(subcmd):
     return
 
 
