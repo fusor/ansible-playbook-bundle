@@ -649,6 +649,14 @@ def pretty_plans(plans):
             plan_params = []
 
         cmap['parameters'] = plan_params
+
+        try:
+            plan_bind_params = plan['schemas']['service_binding']['create']['parameters']['properties']
+        except KeyError:
+            plan_bind_params = []
+
+        cmap['bind_parameters'] = plan_bind_params
+
         pp.append(cmap)
     return pp
 
