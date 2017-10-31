@@ -864,25 +864,24 @@ def cmdrun_serviceinstance(**kwargs):
                     if param['required']:
                         # Save a required param name and set a defaultValue
                         params[param['name']] = defaultValue
-                except:
+                except Exception:
                     pass
         first_plan += 1
 
     plan_names = "%s)" % plan_names
-    serviceInstance = dict (
-        apiVersion = "servicecatalog.k8s.io/v1beta1",
-        kind = "ServiceInstance",
-        metadata = dict (
-            name = spec['name']
-        ),
-        spec = dict (
-            clusterServiceClassExternalName = "dh-" + spec['name'],
-            clusterServicePlanExternalName = plan_names,
-            parameters = params
-        )
-    )
+    serviceInstance = dict(apiVersion="servicecatalog.k8s.io/v1beta1",
+                           kind="ServiceInstance",
+                           metadata=dict(
+                               name=spec['name']
+                           ),
+                           spec=dict(
+                               clusterServiceClassExternalName="dh-" + spec['name'],
+                               clusterServicePlanExternalName=plan_names,
+                               parameters=params
+                           )
+                           )
 
-    with open(spec['name']+'.yaml', 'w') as outfile:
+    with open(spec['name'] + '.yaml', 'w') as outfile:
         yaml.dump(serviceInstance, outfile, default_flow_style=False)
 
 
