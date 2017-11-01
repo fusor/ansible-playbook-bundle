@@ -199,6 +199,29 @@ def subcmd_push_parser(subcmd):
         help=u'Route to the Ansible Service Broker'
     )
     subcmd.add_argument(
+        '--namespace',
+        action='store',
+        dest='namespace',
+        help=u'Namespace to push to internal OpenShift registry',
+        default=u'openshift'
+    )
+    subcmd.add_argument(
+        '--openshift',
+        '-o,',
+        action='store_true',
+        dest='openshift',
+        help=u'Use internal OpenShift registry',
+        default=False
+    )
+    subcmd.add_argument(
+        '--dockerfile',
+        '-f',
+        action='store',
+        dest='dockerfile',
+        help=u'Dockerfile to build internal registry image with',
+        default=u'Dockerfile'
+    )
+    subcmd.add_argument(
         '--secure',
         action='store_true',
         dest='verify',

@@ -353,6 +353,22 @@ def load_source_dependencies(roles_path):
     return output.split('\n')[:-1]
 
 
+def get_registry_service_ip():
+    ip = None
+    try:
+        openshift_config.load_kube_config()
+        api = kubernetes_client.CoreV1Api()
+        service = api.read_namespaced_service(namespace="default", name="docker-registry")
+        ip = service.spec.cluster_ip + ":" + str(service.spec.ports[0].port)
+        print("Found registry IP at: " + ip)
+
+    except ApiException as e:
+        print("Exception occurred trying to find docker-registry service: %s", e)
+        return None
+
+    return ip
+
+
 def get_asb_route():
     asb_route = None
     try:
@@ -795,20 +811,39 @@ def cmdrun_relist(**kwargs):
 def cmdrun_push(**kwargs):
     project = kwargs['base_path']
     spec = get_spec(project, 'string')
+    dict_spec = get_spec(project, 'dict')
     blob = base64.b64encode(spec)
     data_spec = {'apbSpec': blob}
     print(spec)
-    response = broker_request(kwargs["broker"], "/apb/spec", "post", data=data_spec,
-                              verify=kwargs["verify"],
-                              basic_auth_username=kwargs.get("basic_auth_username"),
-                              basic_auth_password=kwargs.get("basic_auth_password"))
 
-    if response.status_code != 200:
-        print("Error: Attempt to add APB to the Broker returned status: %d" % response.status_code)
-        print("Unable to add APB to Ansible Service Broker.")
-        exit(1)
+    if kwargs['openshift']:
+        # Assume we are using internal registry, no need to push to broker
+        registry = get_registry_service_ip()
+        tag = registry + "/" + kwargs['namespace'] + "/" + dict_spec['name']
+        print("Building image with the tag: " + tag)
+        try:
+            client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
+            client.images.build(path=project, tag=tag, dockerfile=kwargs['dockerfile'])
+            openshift_config.load_kube_config()
+            token = openshift_client.configuration.api_key['authorization'].split(" ")[1]
+            client.login(username="unused", password=token, registry=registry)
+            client.images.push(tag)
+        except docker.errors.DockerException:
+            print("Error accessing the docker API. Is the daemon running?")
+            raise
 
-    print("Successfully added APB to Ansible Service Broker")
+    else:
+        response = broker_request(kwargs["broker"], "/apb/spec", "post", data=data_spec,
+                                  verify=kwargs["verify"],
+                                  basic_auth_username=kwargs.get("basic_auth_username"),
+                                  basic_auth_password=kwargs.get("basic_auth_password"))
+
+        if response.status_code != 200:
+            print("Error: Attempt to add APB to the Broker returned status: %d" % response.status_code)
+            print("Unable to add APB to Ansible Service Broker.")
+            exit(1)
+
+        print("Successfully added APB to Ansible Service Broker")
 
     if not kwargs['no_relist']:
         relist_service_broker(kwargs)
