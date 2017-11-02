@@ -826,10 +826,14 @@ def cmdrun_push(**kwargs):
             client.images.build(path=project, tag=tag, dockerfile=kwargs['dockerfile'])
             openshift_config.load_kube_config()
             token = openshift_client.configuration.api_key['authorization'].split(" ")[1]
-            client.login(username="unused", password=token, registry=registry)
+            client.login(username="unused", password=token, registry=registry, reauth=True)
             client.images.push(tag)
+            print ("Successfully pushed image: " + tag)
         except docker.errors.DockerException:
             print("Error accessing the docker API. Is the daemon running?")
+            raise
+        except docker.errors.APIError:
+            print("Failed to login to the docker API.")
             raise
 
     else:
