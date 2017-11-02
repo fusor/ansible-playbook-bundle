@@ -828,7 +828,7 @@ def cmdrun_push(**kwargs):
             token = openshift_client.configuration.api_key['authorization'].split(" ")[1]
             client.login(username="unused", password=token, registry=registry, reauth=True)
             client.images.push(tag)
-            print ("Successfully pushed image: " + tag)
+            print("Successfully pushed image: " + tag)
         except docker.errors.DockerException:
             print("Error accessing the docker API. Is the daemon running?")
             raise
