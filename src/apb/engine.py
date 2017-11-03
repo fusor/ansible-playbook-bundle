@@ -813,6 +813,9 @@ def cmdrun_push(**kwargs):
     spec = get_spec(project, 'string')
     dict_spec = get_spec(project, 'dict')
     blob = base64.b64encode(spec)
+    broker = kwargs["broker"]
+    if broker is None:
+        broker = get_asb_route()
     data_spec = {'apbSpec': blob}
     print(spec)
 
@@ -829,6 +832,8 @@ def cmdrun_push(**kwargs):
             client.login(username="unused", password=token, registry=registry, reauth=True)
             client.images.push(tag)
             print("Successfully pushed image: " + tag)
+            bootstrap(broker, kwargs.get("basic_auth_username"),
+                      kwargs.get("basic_auth_password"), kwargs["verify"])
         except docker.errors.DockerException:
             print("Error accessing the docker API. Is the daemon running?")
             raise
@@ -874,11 +879,12 @@ def cmdrun_remove(**kwargs):
     print("Successfully deleted APB")
 
 
-def cmdrun_bootstrap(**kwargs):
-    response = broker_request(kwargs["broker"], "/v2/bootstrap", "post", data={},
-                              verify=kwargs["verify"],
-                              basic_auth_username=kwargs.get("basic_auth_username"),
-                              basic_auth_password=kwargs.get("basic_auth_password"))
+def bootstrap(broker, username, password, verify):
+    print(broker)
+    response = broker_request(broker, "/v2/bootstrap", "post", data={},
+                              verify=verify,
+                              basic_auth_username=username,
+                              basic_auth_password=password)
 
     if response.status_code != 200:
         print("Error: Attempt to bootstrap Broker returned status: %d" % response.status_code)
@@ -886,6 +892,10 @@ def cmdrun_bootstrap(**kwargs):
         exit(1)
 
     print("Successfully bootstrapped Ansible Service Broker")
+
+
+def cmdrun_bootstrap(**kwargs):
+    bootstrap(kwargs["broker"], kwargs.get("basic_auth_username"), kwargs.get("basic_auth_password"), kwargs["verify"])
 
     if not kwargs['no_relist']:
         relist_service_broker(kwargs)
