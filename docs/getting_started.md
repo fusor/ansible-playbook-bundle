@@ -716,14 +716,22 @@ Example:
       fail: false
     when: webpage.status == 200
 ```
-### Using APB Push
+### Using APB Push with Ansible Service Broker
 To test an APB you have built without pushing your image to a registry, you can use `apb push`. This command takes the Ansible Service Broker's route as an argument and will push the base64 encoded spec into the list of available APBs for the Broker to deploy. In order to use this feature, the Ansible Service Broker you are running must be configured to run in development mode. In the [config file](https://github.com/openshift/ansible-service-broker/blob/master/etc/ex.dev.config.yaml#L21), set `devbroker` to `true`. This enables an endpoint to the broker at `/apb/spec` that a user can POST APBs to.
 
 ```
 apb push <broker_route>
 ```
 
-You should now be able to see your APB in the listed specs available in the Broker.
+### Using APB Push with Local OpenShift registry
+To test an APB you have built with the internal openshift registry, you can use `apb push --openshift`. This command takes the name of the OpenShift namespace you wish to push the image to. In order to use this feature, the Ansible Service Broker you are running must be configured to bootstrap from the local_openshift registry. Please see the [config file documentation](https://github.com/openshift/ansible-service-broker/blob/master/docs/config.md) to configure the registry for type `local_openshift`. The following command will build the image with the namespace you passed in as a parameter (by default `openshift`) and push it to the internal registry.
+
+```
+apb push --openshift
+```
+
+
+You should now be able to see your APB in the service catalog.
 
 #### Specifying Route for Broker
 To get the route of the Ansible Service Broker in OpenShift:
