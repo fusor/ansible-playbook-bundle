@@ -31,7 +31,7 @@ There are three tags to choose from:
 
 For RHEL or CentOS 7:
 ```
-su -c 'wget https://copr.fedorainfracloud.org/coprs/g/ansible-service-broker/ansible-service-broker/repo/epel-7/group_ansible-service-broker-ansible-service-broker-epel-7.repo -O /etc/yum.repos.d/ansible-service-broker.repo'
+su -c 'wget https://copr.fedorainfracloud.org/coprs/g/ansible-service-broker/ansible-service-broker-latest/repo/epel-7/group_ansible-service-broker-ansible-service-broker-latest-epel-7.repo -O /etc/yum.repos.d/ansible-service-broker.repo'
 
 sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 sudo yum -y install apb
@@ -41,7 +41,7 @@ sudo yum -y install apb
 For Fedora 25 or Fedora 26:
 ```
 sudo dnf -y install dnf-plugins-core
-sudo dnf -y copr enable @ansible-service-broker/ansible-service-broker
+sudo dnf -y copr enable @ansible-service-broker/ansible-service-broker-latest
 sudo dnf -y install apb
 ```
 
