@@ -319,6 +319,13 @@ def subcmd_remove_parser(subcmd):
         help=u'Do not relist the catalog after pushing an apb to the broker',
         default=False
     )
+    subcmd.add_argument(
+        '--broker-name',
+        action='store',
+        dest='broker_name',
+        help=u'Name of the ServiceBroker k8s resource',
+        default=u'ansible-service-broker'
+    )
     return
 
 
