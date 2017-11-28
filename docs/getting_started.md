@@ -129,7 +129,7 @@ RUN chmod -R g=u /opt/{ansible,apb}
 USER apb
 ```
 
-At this point we have a fully formed APB that we can build.  If you skipped the apb prepare, apb build will still prepare the apb before building the image. You can optionally specify the organization (ie. ansibleplaybookbundle) here.
+At this point we have a fully formed APB that we can build.  If you skipped the apb prepare, apb build will still `prepare` the apb before building the image.
 ```bash
 $ apb build
 ```
@@ -507,7 +507,7 @@ The `playbooks/deprovision.yml` will look like the following:
 ```
 Edit the `roles/provision-my-pg-apb/tasks/main.yml`.  This mirrors our hello-world application in many respects but adds a [persistent volume](https://docs.openshift.org/latest/architecture/additional_concepts/storage.html#persistent-volume-claims) to save data between restarts and various configuration options for the deployment config.
 
-In addition a new task has been added at the the very bottom after the provision tasks.  To save the credentials created during the provision process, we need to encode them for retrieval by the Ansible Service Broker. The new task, using the module `asb_encode_binding` will do so for us.
+In addition a new task has been added at the very bottom after the provision tasks.  To save the credentials created during the provision process, we need to encode them for retrieval by the Ansible Service Broker. The new task, using the module `asb_encode_binding` will do so for us.
 
 You can safely delete everything in that file and replace it with the following:
 ```yaml
