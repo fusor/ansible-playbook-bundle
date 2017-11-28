@@ -515,7 +515,7 @@ Removes one (or all) APBs from the broker.
 
 ##### Usage
 ```bash
-apb bootstrap [OPTIONS]
+apb remove [OPTIONS]
 ```
 
 ##### Options
@@ -533,10 +533,22 @@ apb bootstrap [OPTIONS]
 | --no-relist         | Do not relist the catalog after deletion|
 
 
-##### Examples
-Basic reload of APBs
+##### Examples                                                                                                                                         
+Remove an APB using an ID
 ```bash
-apb bootstrap
+apb remove --id ca91b61da8476984f18fc13883ae2fdb
+```
+
+*Note: If you need an ID of an APB, use* `apb list`.
+```bash
+$ apb list
+ID                                NAME                     DESCRIPTION
+ca91b61da8476984f18fc13883ae2fdb  dh-etherpad-apb          Note taking web application
+```  
+
+Remove all APBs
+```bash
+apb remove --all
 ```
 
 ---
