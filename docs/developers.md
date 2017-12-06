@@ -28,12 +28,12 @@ For completed APB examples, take a look at some of the APBs in the [ansibleplayb
 * [rocketchat-apb](https://github.com/ansibleplaybookbundle/rocketchat-apb)
 * [etherpad-apb](https://github.com/ansibleplaybookbundle/etherpad-apb)
 * [hastebin-apb](https://github.com/ansibleplaybookbundle/hastebin-apb)
-* [mediawiki123-apb](https://github.com/ansibleplaybookbundle/mediawiki123-apb)
+* [mediawiki-apb](https://github.com/ansibleplaybookbundle/mediawiki-apb)
 * [jenkins-apb](https://github.com/ansibleplaybookbundle/jenkins-apb)
 * [manageiq-apb](https://github.com/ansibleplaybookbundle/manageiq-apb)
 * [wordpress-ha-apb](https://github.com/ansibleplaybookbundle/wordpress-ha-apb)
 * [thelounge-apb](https://github.com/ansibleplaybookbundle/thelounge-apb)
-* [rhscl-postgresql-apb](https://github.com/ansibleplaybookbundle/rhscl-postgresql-apb)
+* [postgresql-apb](https://github.com/ansibleplaybookbundle/postgresql-apb)
 * [rhscl-mariadb-apb](https://github.com/ansibleplaybookbundle/rhscl-mariadb-apb)
 * [rhscl-mysql-apb](https://github.com/ansibleplaybookbundle/rhscl-mysql-apb)
 * [rds-postgres-apb](https://github.com/ansibleplaybookbundle/rds-postgres-apb)
@@ -148,6 +148,27 @@ parameters:
 
 When using a long list of parameters it might be useful to use a shared parameter list. For an example of this, please see [rhscl-postgresql-apb](https://github.com/ansibleplaybookbundle/rhscl-postgresql-apb/blob/master/apb.yml#L4) for an example.
 
+## Kubernetes and Openshift
+The Ansible Service Broker is capable of running on both OpenShift and Kubernetes.
+Since each runtime uses different ansible modules, the variable ```cluster``` is
+used to distinguish between which playbook is run.
+
+In this example provision.yaml, the default playbook is set to Kubernetes, but
+the playbook that gets run is determined by ```--extra-vars cluster=<runtime>```:
+```yaml
+- name: Provisioning app to "{{ cluster }}"
+  hosts: localhost
+  gather_facts: false
+  vars:
+    cluster: "kubernetes"
+  connection: local
+  roles:
+  - role: ansible.kubernetes-modules
+  - role: ansibleplaybookbundle.asb-modules
+  - "{{ cluster }}"
+```
+
+For a full example of how this works, see the [mediawiki-apb](https://github.com/ansibleplaybookbundle/mediawiki-apb).
 
 ## Dockerfile
 The Dockerfile is what's used to actually build the APB image.  As a result, sometimes you will need to customize it for your own needs.  For example, if running a playbook that requires interactions with PostgreSQL, you may want to install the required packages by adding the `yum install`.
