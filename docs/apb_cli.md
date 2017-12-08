@@ -160,6 +160,12 @@ If you are using a namespace other than the default `openshift` namespace to hos
 apb push -o --namespace <namespace>
 ```
 
+This is assuming that the user has the cluster-admin role assigned to the user that is logged in. i.e.:
+```
+oc adm policy add-cluster-role-to-user cluster-admin <user>
+oc login -u <user>
+```
+
 #### Remote Registry
 Ansible Service Broker can also be [configured](https://github.com/openshift/ansible-service-broker/blob/master/docs/config.md#dockerhub-registry) to use a remote registry and org such as [docker.io/ansibleplaybookbundle](https://hub.docker.com/u/ansibleplaybookbundle/) or your own personal account.  In order to use this for developing APBs, you can build and push to your remote registry and then `bootstrap` to reload your APBs.
 

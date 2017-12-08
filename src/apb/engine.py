@@ -367,19 +367,24 @@ def load_source_dependencies(roles_path):
     return output.split('\n')[:-1]
 
 
-def get_registry_service_ip():
+def get_registry_service_ip(namespace, svc_name):
     ip = None
     try:
         openshift_config.load_kube_config()
         api = kubernetes_client.CoreV1Api()
-        service = api.read_namespaced_service(namespace="default", name="docker-registry")
+        service = api.read_namespaced_service(namespace=namespace, name=svc_name)
+        if service is None:
+            print("Couldn't find docker-registry service in namespace default. Erroring.")
+            return None
+        if service.spec.ports == []:
+            print("Service spec appears invalid. Erroring.")
+            return None
         ip = service.spec.cluster_ip + ":" + str(service.spec.ports[0].port)
         print("Found registry IP at: " + ip)
 
     except ApiException as e:
-        print("Exception occurred trying to find docker-registry service: %s", e)
+        print("Exception occurred trying to find %s service in namespace %s: %s" % (svc_name, namespace, e))
         return None
-
     return ip
 
 
@@ -842,8 +847,13 @@ def cmdrun_push(**kwargs):
     print(spec)
 
     if kwargs['openshift']:
+        namespace = kwargs['reg_namespace']
+        service = kwargs['reg_svc_name']
         # Assume we are using internal registry, no need to push to broker
-        registry = get_registry_service_ip()
+        registry = get_registry_service_ip(namespace, service)
+        if registry is None:
+            print("Failed to find registry service IP address.")
+            raise Exception("Unable to get registry IP from namespace %s" % namespace)
         tag = registry + "/" + kwargs['namespace'] + "/" + dict_spec['name']
         print("Building image with the tag: " + tag)
         try:
