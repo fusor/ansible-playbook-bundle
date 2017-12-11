@@ -234,7 +234,7 @@ localhost                  : ok=0    changed=0    unreachable=0    failed=0
 ```
 
 ##### Provision - Creating a deployment config
-At the minimum, our APB should deploy the application [pods](https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#pods).  We'll do this by specifying a [deployment config](https://docs.openshift.org/latest/architecture/core_concepts/deployments.html#deployments-and-deployment-configurations).  One of the first tasks that's commented out on the in the `provision-my-test-apb/tasks/main.yml` is the creation of the deployment config.  You can uncomment it or paste the following.  Normally, you would replace the `image:` value with your own application image and
+At the minimum, our APB should deploy the application [pods](https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#pods).  We'll do this by specifying a [deployment config](https://docs.openshift.org/latest/architecture/core_concepts/deployments.html#deployments-and-deployment-configurations).  One of the first tasks that's commented out in the `provision-my-test-apb/tasks/main.yml` is the creation of the deployment config.  You can uncomment it or paste the following.  Normally, you would replace the `image:` value with your own application image and
 ```yaml
 - name: create deployment config
   openshift_v1_deployment_config:
@@ -339,7 +339,7 @@ We want to expose external access to our application through a reliable named [r
     spec_port_target_port: web
 ```
 The `to_name` is name of the target service.  `spec_port_target_port` refers to the name of the target service's port.  More information is available in the [openshift_v1_route module](https://github.com/ansible/ansible-kubernetes-modules/blob/master/library/openshift_v1_route.py).
-If you rebuild the APB with `apb build`, push it using `apb push -o`, and provision it, it, you will see the new route created.  On the console UI overview page for the getting-started project, you will now see an active and clickable route link listed on the application.  Clicking on the route or visiting the URL will bring up the hello-world app.  From the command line, you can also view the route information.
+If you rebuild the APB with `apb build`, push it using `apb push -o`, and provision it, you will see the new route created.  On the console UI overview page for the getting-started project, you will now see an active and clickable route link listed on the application.  Clicking on the route or visiting the URL will bring up the hello-world app.  From the command line, you can also view the route information.
 ```
 $ oc project getting-started
 
