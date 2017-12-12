@@ -5,6 +5,7 @@ import base64
 import shutil
 import string
 import subprocess
+import tempfile
 import json
 import requests
 import urllib3
@@ -15,13 +16,14 @@ import ruamel.yaml
 from ruamel.yaml import YAML
 from openshift import client as openshift_client, config as openshift_config
 from jinja2 import Environment, FileSystemLoader
-from kubernetes import client as kubernetes_client
+from kubernetes import client as kubernetes_client, config as kubernetes_config
 from kubernetes.client.rest import ApiException
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 # Disable insecure request warnings from both packages
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
+EDITOR = os.environ.get('EDITOR', 'vim')
 ROLES_DIR = 'roles'
 
 DAT_DIR = 'dat'
@@ -464,80 +466,116 @@ def relist_service_broker(kwargs):
         print("Relist failure: {}".format(e))
 
 
-def create_role_binding():
+def create_namespace(namespace):
+    print("Creating namespace {}".format(namespace))
     try:
         openshift_config.load_kube_config()
         api = openshift_client.OapiApi()
-        role_binding = {
+        api.create_project_request({
             'apiVersion': 'v1',
-            'kind': 'RoleBinding',
+            'kind': 'ProjectRequest',
             'metadata': {
-                'name': 'service-account-1',
-                'namespace': 'default',
-            },
-            'subjects': [{
-                'kind': 'ServiceAccount',
-                'name': 'service-account-1',
-                'namespace': 'default',
-            }],
-            'roleRef': {
-                'name': 'cluster-admin',
-            },
-        }
-        api.create_namespaced_role_binding("default", role_binding)
-    except Exception:
-        api = openshift_client.OapiApi()
-        # HACK: this is printing an error but is still actually creating the
-        # role binding.
-        # print("failed -%s" % e)
-
-    print("Created Role Binding")
-
-
-def create_service_account():
-    try:
-        openshift_config.load_kube_config()
-        api = kubernetes_client.CoreV1Api()
-        service_account = {
-            'apiVersion': 'v1',
-            'kind': 'ServiceAccount',
-            'metadata': {
-                'name': 'service-account-1',
-                'namespace': 'default',
-            },
-        }
-        api.create_namespaced_service_account("default", service_account)
-        print("Created Serice Account")
-    except Exception as e:
-        print("failed - %s" % e)
-
-
-def create_image_pod(image_name):
-    try:
-        openshift_config.load_kube_config()
-        api = kubernetes_client.CoreV1Api()
-        pod_manifest = {
-            'apiVersion': 'v1',
-            'kind': 'Pod',
-            'metadata': {
-                'name': "test",
-            },
-            'spec': {
-                'containers': [{
-                    'image': image_name,
-                    'imagePullPolicy': 'IfNotPresent',
-                    'name': 'test',
-                    'command': ['entrypoint.sh', 'test']
-                }],
-                'restartPolicy': 'Never',
-                'serviceAccountName': 'service-account-1',
+                'name': namespace
             }
+        })
+        print("Created namespace")
+        return namespace
+    except ApiException as e:
+        if e.status == 409:
+            print("Namespace {} already exists".format(namespace))
+            return namespace
+        else:
+            raise e
 
-        }
-        create_service_account()
-        create_role_binding()
-        api.create_namespaced_pod("default", pod_manifest)
+
+def create_service_account(namespace):
+    print("Creating service account in {}".format(namespace))
+    try:
+        kubernetes_config.load_kube_config()
+        api = kubernetes_client.CoreV1Api()
+        service_account = api.create_namespaced_service_account(
+            namespace,
+            {
+                'apiVersion': 'v1',
+                'kind': 'ServiceAccount',
+                'metadata': {
+                    'generateName': 'apb-sa-',
+                    'namespace': namespace,
+                },
+            }
+        )
+        print("Created service account")
+        return service_account.metadata.name
+    except ApiException as e:
+        raise e
+
+
+def create_role_binding(namespace, service_account, role="admin"):
+    print("Creating role binding for {} in {}".format(service_account, namespace))
+    name = 'apb-rb'
+    try:
+        kubernetes_config.load_kube_config()
+        api = openshift_client.OapiApi()
+        role_binding = api.create_namespaced_role_binding(
+            namespace,
+            {
+                'apiVersion': 'v1',
+                'kind': 'RoleBinding',
+                'metadata': {
+                    'name': name,
+                    'namespace': namespace,
+                },
+                'subjects': [{
+                    'kind': 'ServiceAccount',
+                    'name': service_account,
+                    'namespace': namespace,
+                }],
+                'roleRef': {
+                    'name': role,
+                },
+            }
+        )
+    except ApiException as e:
+        raise e
+    except Exception as e:
+        # TODO:
+        # Right now you'll see something like --
+        #   Exception occurred! 'module' object has no attribute 'V1RoleBinding'
+        # Looks like an issue with the openshift-restclient...well the version
+        # of k8s included by openshift-restclient
+        pass
+    print("Created Role Binding")
+    return name
+
+
+def create_pod(image, name, namespace, command, service_account):
+    print("Creating pod with image {} in {}".format(image, namespace))
+    try:
+        kubernetes_config.load_kube_config()
+        api = kubernetes_client.CoreV1Api()
+        pod = api.create_namespaced_pod(
+            namespace,
+            {
+                'apiVersion': 'v1',
+                'kind': 'Pod',
+                'metadata': {
+                    'generateName': name,
+                    'namespace': namespace
+                },
+                'spec': {
+                    'containers': [{
+                        'image': image,
+                        'imagePullPolicy': 'IfNotPresent',
+                        'name': name,
+                        'command': command
+                    }],
+                    'restartPolicy': 'Never',
+                    'serviceAccountName': service_account,
+                }
+            }
+        )
         print("Created Pod")
+        return pod.metadata.name
     except Exception as e:
         print("failed - %s" % e)
 
@@ -707,6 +745,35 @@ def print_list(services):
         print(template.format(**service))
 
 
+def build_apb(project, dockerfile=None, registry=None, org=None, tag=None):
+    if dockerfile is None:
+        dockerfile = "Dockerfile"
+    spec = get_spec(project)
+    if 'version' not in spec:
+        print("APB spec does not have a listed version. Please update apb.yml")
+        exit(1)
+
+    name = "{}{}{}".format(
+        registry + "/" if registry is not None else "",
+        org + "/" if org is not None else "",
+        tag if tag is not None else spec['name']
+    )
+
+    update_dockerfile(project, dockerfile)
+
+    print("Building APB using tag: [%s]" % name)
+
+    try:
+        client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
+        client.images.build(path=project, tag=name, dockerfile=dockerfile)
+    except docker.errors.DockerException:
+        print("Error accessing the docker API. Is the daemon running?")
+        raise
+
+    print("Successfully built APB image: %s" % name)
+    return name
+
+
 def cmdrun_init(**kwargs):
     current_path = kwargs['base_path']
     bindable = kwargs['bindable']
@@ -789,41 +856,15 @@ def cmdrun_prepare(**kwargs):
 
     update_dockerfile(project, dockerfile)
 
-
 def cmdrun_build(**kwargs):
     project = kwargs['base_path']
-    dockerfile = "Dockerfile"
-    spec = get_spec(project)
-    if 'version' not in spec:
-        print("APB spec does not have a listed version. Please update apb.yml")
-        exit(1)
-
-    if not kwargs['tag']:
-        tag = spec['name']
-    else:
-        tag = kwargs['tag']
-
-    if kwargs['org']:
-        tag = kwargs['org'] + '/' + tag
-
-    if kwargs['registry']:
-        tag = kwargs['registry'] + '/' + tag
-
-    if kwargs['dockerfile']:
-        dockerfile = kwargs['dockerfile']
-
-    update_dockerfile(project, dockerfile)
-
-    print("Building APB using tag: [%s]" % tag)
-
-    try:
-        client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
-        client.images.build(path=project, tag=tag, dockerfile=dockerfile)
-    except docker.errors.DockerException:
-        print("Error accessing the docker API. Is the daemon running?")
-        raise
-
-    print("Successfully built APB image: %s" % tag)
+    build_apb(
+        project,
+        kwargs['dockerfile'],
+        kwargs['registry'],
+        kwargs['org'],
+        kwargs['tag']
+    )
 
 
 def cmdrun_relist(**kwargs):
@@ -962,3 +1003,74 @@ def cmdrun_test(**kwargs):
         print(test_result)
 
     clean_up_image_run()
+
+
+def cmdrun_run(**kwargs):
+    project = kwargs['base_path']
+    image = build_apb(
+        project,
+        kwargs['dockerfile'],
+        kwargs['registry'],
+        kwargs['org'],
+        kwargs['tag']
+    )
+
+    spec = get_spec(project)
+    plans = [ plan['name'] for plan in spec['plans'] ]
+    if len(plans) > 1:
+        plans_str = ', '.join(plans)
+        while True:
+            try:
+                plan = plans.index(raw_input("Select plan [{}]: ".format(plans_str)))
+                break
+            except ValueError:
+                print("ERROR: Please enter valid plan")
+    else:
+        plan = 0
+
+    parameters = {
+        '_apb_plan_id': spec['plans'][plan]['name'],
+        'namespace': kwargs['namespace']
+    }
+    for parm in spec['plans'][plan]['parameters']:
+        while True:
+            # Get the value for the parameter
+            val = raw_input("{}{}{}: ".format(
+                parm['name'],
+                "(required)" if 'required' in parm and parm['required'] else '',
+                "[default: {}]".format(parm['default']) if 'default' in parm else ''
+            ))
+            # Take the default if nothing
+            if val == "" and 'default' in parm:
+                val = parm['default']
+                break
+            # If not required move on
+            if val == "" and ('required' not in parm) or (not parm['required']):
+                break
+            # Tell the user if the parameter is required
+            if val == "" and 'default' not in parm and 'required' in parm and parm['required']:
+                print("ERROR: Please provide value for required parameter")
+        parameters[parm['name']] = val
+
+    ns = create_namespace(kwargs['namespace'])
+    sa = create_service_account(ns)
+    rb = create_role_binding(ns, sa)
+    po = create_pod(
+        image=image,
+        name='apb-run',
+        namespace=ns,
+        command=['entrypoint.sh', kwargs['action'], "--extra-vars", json.dumps(parameters)],
+        service_account=sa
+    )
+
+#        for parm in spec['plans'][plan]['parameters']:
+#            tf.write("{}{}: {}\n".format(
+#                parm['name'],
+#                " (required)" if 'required' in parm and parm['required'] else '',
+#                parm['default'] if 'default' in parm else ''
+#            ))
+#        tf.flush()
+#        subprocess.call([EDITOR, tf.name])
+#        tf.seek(0)
+#        edited_message = tf.read()
+#        print("Edited message: {}".format(edited_message))

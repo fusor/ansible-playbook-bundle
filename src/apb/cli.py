@@ -17,7 +17,8 @@ AVAILABLE_COMMANDS = {
     'push': 'Push local APB spec to an Ansible Service Broker',
     'remove': 'Remove APBs from the target Ansible Service Broker',
     'bootstrap': 'Tell Ansible Service Broker to reload APBs from the container repository',
-    'test': 'Test the APB'
+    'test': 'Test the APB',
+    'run': 'Run APB'
 }
 
 
@@ -387,6 +388,64 @@ def subcmd_test_parser(subcmd):
     )
     return
 
+def subcmd_run_parser(subcmd):
+    """ provision subcommand """
+    subcmd.add_argument(
+        '--namespace',
+        action='store',
+        dest='namespace',
+        required=True,
+        help=u'Namespace where the APB should be run'
+    )
+
+    subcmd.add_argument(
+        '--action',
+        action='store',
+        dest='action',
+        required=False,
+        help=u'The action to perform when running the APB',
+        default='provision'
+    )
+
+    subcmd.add_argument(
+        '--tag',
+        action='store',
+        dest='tag',
+        help=u'Tag of APB to build'
+    )
+
+    subcmd.add_argument(
+        '--registry',
+        action='store',
+        dest='registry',
+        help=u'Registry prefix of APB to prepend to tag'
+    )
+
+    subcmd.add_argument(
+        '--org',
+        '-o',
+        action='store',
+        dest='org',
+        help=u'Organization of APB to publish to'
+    )
+
+    subcmd.add_argument(
+        '--dockerfile',
+        '-f',
+        action='store',
+        dest='dockerfile',
+        help=u'Name of Dockerfile to build with'
+    )
+
+#    subcmd.add_argument(
+#        '--editor',
+#        action='store_true',
+#        dest='editor',
+#        required=False,
+#        help=u'Use $EDITOR for parameter prompt',
+#        default=False
+#    )
+    return
 
 def subcmd_relist_parser(subcmd):
     """ relist subcommand """
