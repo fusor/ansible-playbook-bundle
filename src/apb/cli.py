@@ -2,6 +2,7 @@
 import os
 import sys
 import argparse
+import re
 
 import apb.engine
 
@@ -9,6 +10,8 @@ SKIP_OPTIONS = ['provision', 'deprovision', 'bind', 'unbind', 'roles']
 
 AVAILABLE_COMMANDS = {
     'help': 'Display this help message',
+    'install-broker': 'Install Ansible Service Broker on a cluster',
+    'uninstall-broker': 'Uninstall Ansible Service Broker on a cluster',
     'relist': 'Relist the APBs available within the Service Catalog',
     'list': 'List APBs from the target Ansible Service Broker',
     'init': 'Initialize the directory for APB development',
@@ -19,6 +22,43 @@ AVAILABLE_COMMANDS = {
     'bootstrap': 'Tell Ansible Service Broker to reload APBs from the container repository',
     'test': 'Test the APB'
 }
+
+
+def subcmd_install_broker_parser(subcmd):
+    subcmd.add_argument(
+        '--yes',
+        '-y',
+        action='store_true',
+        dest='skip_confirmation',
+        help=u'Skip confirmation dialog',
+        default=False
+    )
+    subcmd.add_argument(
+        '--installer',
+        action='store',
+        dest='installer',
+        help=u'Image of the APB that installs the broker'
+    )
+    return
+
+
+def subcmd_uninstall_broker_parser(subcmd):
+    subcmd.add_argument(
+        '--yes',
+        '-y',
+        action='store_true',
+        dest='skip_confirmation',
+        help=u'Skip confirmation dialog',
+        default=False
+    )
+    subcmd.add_argument(
+        '--installer',
+        '--uninstaller',
+        action='store',
+        dest='installer',
+        help=u'Image of the APB that uninstalls the broker'
+    )
+    return
 
 
 def subcmd_list_parser(subcmd):
@@ -460,7 +500,8 @@ def main():
         subparser = subparsers.add_parser(
             subcommand, help=AVAILABLE_COMMANDS[subcommand]
         )
-        globals()['subcmd_%s_parser' % subcommand](subparser)
+        name = re.sub('[^a-z]+', '_', subcommand)
+        globals()['subcmd_%s_parser' % name](subparser)
 
     args = parser.parse_args()
 
@@ -469,8 +510,9 @@ def main():
         sys.exit(0)
 
     try:
+        name = re.sub('[^a-z]+', '_', args.subcommand)
         getattr(apb.engine,
-                u'cmdrun_{}'.format(args.subcommand))(**vars(args))
+                u'cmdrun_{}'.format(name))(**vars(args))
     except Exception as e:
         print("Exception occurred! %s" % e)
         sys.exit(1)

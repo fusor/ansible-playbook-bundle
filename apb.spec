@@ -44,6 +44,7 @@ Requires: python3-docker < 3.0.0
 Requires: python-openshift >= 1.0.0
 Requires: python3-jinja2 >= 2.7.2
 Requires: python3-requests >= 2.6.0
+Requires: python3-future >= 0.16.0
 %else
 BuildRequires: python-devel
 BuildRequires: python-setuptools
@@ -54,6 +55,7 @@ Requires: python-docker < 3.0.0
 Requires: python-openshift >= 1.0.0
 Requires: python-jinja2 >= 2.7.2
 Requires: python-requests >= 2.6.0
+Requires: python2-future >= 0.16.0
 %endif
 Requires: docker
 
