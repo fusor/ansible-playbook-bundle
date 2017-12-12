@@ -5,7 +5,6 @@ import base64
 import shutil
 import string
 import subprocess
-import tempfile
 import json
 import requests
 import urllib3
@@ -466,24 +465,26 @@ def relist_service_broker(kwargs):
         print("Relist failure: {}".format(e))
 
 
-def create_namespace(namespace):
-    print("Creating namespace {}".format(namespace))
+def create_project(project):
+    print("Creating project {}".format(project))
     try:
         openshift_config.load_kube_config()
         api = openshift_client.OapiApi()
-        api.create_project_request({
+        project_request = api.create_project_request({
             'apiVersion': 'v1',
             'kind': 'ProjectRequest',
             'metadata': {
-                'name': namespace
+                'name': project
             }
         })
-        print("Created namespace")
-        return namespace
+        print("Created project")
+
+        # TODO: Evaluate the project request to get the actual project name
+        return project
     except ApiException as e:
         if e.status == 409:
-            print("Namespace {} already exists".format(namespace))
-            return namespace
+            print("Project {} already exists".format(project))
+            return project
         else:
             raise e
 
@@ -579,6 +580,22 @@ def create_pod(image, name, namespace, command, service_account):
     except Exception as e:
         print("failed - %s" % e)
 
+
+def run_apb(project, image, name, action, parameters={}):
+    ns = create_project(project)
+    sa = create_service_account(ns)
+    rb = create_role_binding(ns, sa)
+
+    parameters['namespace'] = ns
+    command = ['entrypoint.sh', action, "--extra-vars", json.dumps(parameters)]
+
+    po = create_pod(
+        image=image,
+        name=name,
+        namespace=ns,
+        command=command,
+        service_account=sa
+    )
 
 def retrieve_test_result():
     cont = True
@@ -1006,16 +1023,16 @@ def cmdrun_test(**kwargs):
 
 
 def cmdrun_run(**kwargs):
-    project = kwargs['base_path']
+    apb_project = kwargs['base_path']
     image = build_apb(
-        project,
+        apb_project,
         kwargs['dockerfile'],
         kwargs['registry'],
         kwargs['org'],
         kwargs['tag']
     )
 
-    spec = get_spec(project)
+    spec = get_spec(apb_project)
     plans = [ plan['name'] for plan in spec['plans'] ]
     if len(plans) > 1:
         plans_str = ', '.join(plans)
@@ -1030,7 +1047,6 @@ def cmdrun_run(**kwargs):
 
     parameters = {
         '_apb_plan_id': spec['plans'][plan]['name'],
-        'namespace': kwargs['namespace']
     }
     for parm in spec['plans'][plan]['parameters']:
         while True:
@@ -1052,25 +1068,10 @@ def cmdrun_run(**kwargs):
                 print("ERROR: Please provide value for required parameter")
         parameters[parm['name']] = val
 
-    ns = create_namespace(kwargs['namespace'])
-    sa = create_service_account(ns)
-    rb = create_role_binding(ns, sa)
-    po = create_pod(
+    run_apb(
+        project=kwargs['project'],
         image=image,
         name='apb-run',
-        namespace=ns,
-        command=['entrypoint.sh', kwargs['action'], "--extra-vars", json.dumps(parameters)],
-        service_account=sa
+        action=kwargs['action'],
+        parameters=parameters
     )
-
-#        for parm in spec['plans'][plan]['parameters']:
-#            tf.write("{}{}: {}\n".format(
-#                parm['name'],
-#                " (required)" if 'required' in parm and parm['required'] else '',
-#                parm['default'] if 'default' in parm else ''
-#            ))
-#        tf.flush()
-#        subprocess.call([EDITOR, tf.name])
-#        tf.seek(0)
-#        edited_message = tf.read()
-#        print("Edited message: {}".format(edited_message))

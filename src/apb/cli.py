@@ -391,11 +391,11 @@ def subcmd_test_parser(subcmd):
 def subcmd_run_parser(subcmd):
     """ provision subcommand """
     subcmd.add_argument(
-        '--namespace',
+        '--project',
         action='store',
-        dest='namespace',
+        dest='project',
         required=True,
-        help=u'Namespace where the APB should be run'
+        help=u'Project where the APB should be run'
     )
 
     subcmd.add_argument(
@@ -437,14 +437,6 @@ def subcmd_run_parser(subcmd):
         help=u'Name of Dockerfile to build with'
     )
 
-#    subcmd.add_argument(
-#        '--editor',
-#        action='store_true',
-#        dest='editor',
-#        required=False,
-#        help=u'Use $EDITOR for parameter prompt',
-#        default=False
-#    )
     return
 
 def subcmd_relist_parser(subcmd):
