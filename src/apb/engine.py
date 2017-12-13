@@ -613,6 +613,7 @@ def create_pod(image, name, namespace, command, service_account):
         return (pod.metadata.name, pod.metadata.namespace)
     except Exception as e:
         print("failed - %s" % e)
+        return ("", "")
 
 
 def watch_pod(name, namespace):
@@ -647,15 +648,18 @@ def run_apb(project, image, name, action, parameters={}):
     )
 
 
-def retrieve_test_result(test_name):
+def retrieve_test_result(name, namespace):
     count = 0
+    try:
+        openshift_config.load_kube_config()
+        api = kubernetes_client.CoreV1Api()
+    except Exception as e:
+        print("Failed to get api client: {}".format(e))
     while True:
         try:
             count += 1
-            openshift_config.load_kube_config()
-            api = kubernetes_client.CoreV1Api()
             api_response = api.connect_post_namespaced_pod_exec(
-                test_name, test_name,
+                name, namespace,
                 command="/usr/bin/test-retrieval",
                 tty=False)
             if "non-zero exit code" not in api_response:
@@ -663,6 +667,11 @@ def retrieve_test_result(test_name):
         except ApiException as e:
             if count >= 50:
                 return None
+            pod_phase = api.read_namespaced_pod(name, namespace).status.phase
+            if pod_phase == 'Succeeded' or pod_phase == 'Failed':
+                print("Pod phase {} without returning test results".format(pod_phase))
+                return None
+            sleep(WATCH_POD_SLEEP)
         except Exception as e:
             print("execption: %s" % e)
             return None
@@ -1026,14 +1035,17 @@ def cmdrun_test(**kwargs):
 
     spec = get_spec(project)
     test_name = 'apb-test-{}'.format(spec['name'])
-    run_apb(
+    name, namespace = run_apb(
         project=test_name,
         image=image,
         name=test_name,
         action='test'
     )
+    if not name or not namespace:
+        print("Failed to run apb")
+        return
 
-    test_result = retrieve_test_result(test_name)
+    test_result = retrieve_test_result(name, namespace)
     test_results = []
     if test_result is None:
         print("Unable to retrieve test result.")
@@ -1103,6 +1115,9 @@ def cmdrun_run(**kwargs):
         action=kwargs['action'],
         parameters=parameters
     )
+    if not name or not namespace:
+        print("Failed to run apb")
+        return
 
     print("APB run started")
     print("APB run complete: {}".format(watch_pod(name, namespace)))
