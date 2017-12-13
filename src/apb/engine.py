@@ -13,6 +13,7 @@ import docker.errors
 import ruamel.yaml
 
 from ruamel.yaml import YAML
+from time import sleep
 from openshift import client as openshift_client, config as openshift_config
 from jinja2 import Environment, FileSystemLoader
 from kubernetes import client as kubernetes_client, config as kubernetes_config
@@ -20,14 +21,15 @@ from kubernetes.client.rest import ApiException
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 # Handle input in 2.x/3.x
-try: input = raw_input
-except NameError: pass
+try:
+    input = raw_input
+except NameError:
+    pass
 
 # Disable insecure request warnings from both packages
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-EDITOR = os.environ.get('EDITOR', 'vim')
 ROLES_DIR = 'roles'
 
 DAT_DIR = 'dat'
@@ -86,6 +88,7 @@ ASYNC_OPTIONS = ['required', 'optional', 'unsupported']
 
 SPEC_LABEL = 'com.redhat.apb.spec'
 VERSION_LABEL = 'com.redhat.apb.version'
+WATCH_POD_SLEEP = 5
 
 
 def load_dockerfile(df_path):
@@ -494,7 +497,19 @@ def create_project(project):
             raise e
 
 
-def create_service_account(namespace):
+def delete_project(project):
+    print("Deleting project {}".format(project))
+    try:
+        openshift_config.load_kube_config()
+        api = openshift_client.OapiApi()
+        api.delete_project(project)
+        print("Project deleted")
+    except ApiException as e:
+        print("Delete project failure: {}".format(e))
+        raise e
+
+
+def create_service_account(name, namespace):
     print("Creating service account in {}".format(namespace))
     try:
         kubernetes_config.load_kube_config()
@@ -505,7 +520,7 @@ def create_service_account(namespace):
                 'apiVersion': 'v1',
                 'kind': 'ServiceAccount',
                 'metadata': {
-                    'generateName': 'apb-sa-',
+                    'generateName': name,
                     'namespace': namespace,
                 },
             }
@@ -516,19 +531,19 @@ def create_service_account(namespace):
         raise e
 
 
-def create_role_binding(namespace, service_account, role="admin"):
+def create_role_binding(name, namespace, service_account, role="admin"):
     print("Creating role binding for {} in {}".format(service_account, namespace))
-    name = 'apb-rb'
     try:
         kubernetes_config.load_kube_config()
         api = openshift_client.OapiApi()
+        # TODO: Use generateName when it doesn't throw an exception
         api.create_namespaced_role_binding(
             namespace,
             {
                 'apiVersion': 'v1',
                 'kind': 'RoleBinding',
                 'metadata': {
-                    'generateName': name,
+                    'name': name,
                     'namespace': namespace,
                 },
                 'subjects': [{
@@ -595,20 +610,35 @@ def create_pod(image, name, namespace, command, service_account):
             }
         )
         print("Created Pod")
-        return pod.metadata.name
+        return (pod.metadata.name, pod.metadata.namespace)
     except Exception as e:
         print("failed - %s" % e)
 
 
+def watch_pod(name, namespace):
+    try:
+        kubernetes_config.load_kube_config()
+        api = kubernetes_client.CoreV1Api()
+
+        while True:
+            pod_phase = api.read_namespaced_pod(name, namespace).status.phase
+            if pod_phase == 'Succeeded' or pod_phase == 'Failed':
+                return pod_phase
+            sleep(WATCH_POD_SLEEP)
+    except ApiException as e:
+        print("Get pod failure: {}".format(e))
+        raise e
+
+
 def run_apb(project, image, name, action, parameters={}):
     ns = create_project(project)
-    sa = create_service_account(ns)
-    create_role_binding(ns, sa)
+    sa = create_service_account(name, ns)
+    create_role_binding(name, ns, sa)
 
     parameters['namespace'] = ns
     command = ['entrypoint.sh', action, "--extra-vars", json.dumps(parameters)]
 
-    po = create_pod(
+    return create_pod(
         image=image,
         name=name,
         namespace=ns,
@@ -617,39 +647,25 @@ def run_apb(project, image, name, action, parameters={}):
     )
 
 
-def retrieve_test_result():
-    cont = True
+def retrieve_test_result(test_name):
     count = 0
-    while cont:
+    while True:
         try:
             count += 1
             openshift_config.load_kube_config()
             api = kubernetes_client.CoreV1Api()
             api_response = api.connect_post_namespaced_pod_exec(
-                "test", "default",
+                test_name, test_name,
                 command="/usr/bin/test-retrieval",
                 tty=False)
             if "non-zero exit code" not in api_response:
                 return api_response
         except ApiException as e:
             if count >= 50:
-                cont = False
+                return None
         except Exception as e:
             print("execption: %s" % e)
-            cont = False
-
-
-def clean_up_image_run():
-    try:
-        openshift_config.load_kube_config()
-        api = kubernetes_client.CoreV1Api()
-        oapi = openshift_client.OapiApi()
-        body = kubernetes_client.V1DeleteOptions()
-        api.delete_namespaced_service_account("service-account-1", "default", body)
-        api.delete_namespaced_pod("test", "default", body)
-        oapi.delete_namespaced_role_binding("service-account-1", "default", body)
-    except Exception as e:
-        print("unable to clean up image - %s" % e)
+            return None
 
 
 def broker_request(broker, service_route, method, **kwargs):
@@ -1009,13 +1025,19 @@ def cmdrun_test(**kwargs):
     )
 
     spec = get_spec(project)
-    # run image that was just created.
-    create_image_pod(tag)
-    test_result = retrieve_test_result()
+    test_name = 'apb-test-{}'.format(spec['name'])
+    run_apb(
+        project=test_name,
+        image=image,
+        name=test_name,
+        action='test'
+    )
+
+    test_result = retrieve_test_result(test_name)
     test_results = []
     if test_result is None:
         print("Unable to retrieve test result.")
-        clean_up_image_run()
+        delete_project(test_name)
         return
     else:
         test_results = test_result.splitlines()
@@ -1027,7 +1049,7 @@ def cmdrun_test(**kwargs):
     else:
         print(test_result)
 
-    clean_up_image_run()
+    delete_project(test_name)
 
 
 def cmdrun_run(**kwargs):
@@ -1074,10 +1096,13 @@ def cmdrun_run(**kwargs):
                 print("ERROR: Please provide value for required parameter")
         parameters[parm['name']] = val
 
-    run_apb(
+    name, namespace = run_apb(
         project=kwargs['project'],
         image=image,
         name='apb-run-{}'.format(spec['name']),
         action=kwargs['action'],
         parameters=parameters
     )
+
+    print("APB run started")
+    print("APB run complete: {}".format(watch_pod(name, namespace)))
