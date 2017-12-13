@@ -12,6 +12,8 @@ import docker
 import docker.errors
 import ruamel.yaml
 
+from builtins import input
+from utils.shell import execute_cmd
 from ruamel.yaml import YAML
 from openshift import client as openshift_client, config as openshift_config
 from jinja2 import Environment, FileSystemLoader
@@ -512,7 +514,7 @@ def create_service_account():
             },
         }
         api.create_namespaced_service_account("default", service_account)
-        print("Created Serice Account")
+        print("Created Service Account")
     except Exception as e:
         print("failed - %s" % e)
 
@@ -610,6 +612,100 @@ def broker_request(broker, service_route, method, **kwargs):
         raise e
 
     return response
+
+
+def get_oc_context():
+    cmd_result = execute_cmd(["oc", "whoami", "-c"])
+    if cmd_result['returncode'] == 0:
+        return cmd_result['stdout'].rstrip()
+    else:
+        return "???"
+
+
+def get_user_input(prompt, valid_choices=['y', 'n'], default='y', lowercase_input=True, max_tries=5):
+    tries = 0
+    while tries < max_tries:
+        user_input = input(prompt)
+        if user_input == '':
+            user_input = default
+        if lowercase_input:
+            user_input = user_input.lower()
+        if user_input in valid_choices:
+            return user_input
+        else:
+            print("\n Please choose a one of the available options: %s" % '/'.join(valid_choices))
+            tries += 1
+
+    raise Exception("Unprocessable user input")
+
+
+def run_installer_image(image, command):
+    try:
+        client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
+        kubedir = os.path.expanduser('~') + '/.kube'
+        client.containers.run(image,
+                              command,
+                              volumes={kubedir: {'bind': '/opt/apb/.kube', 'mode': 'rw'}},
+                              privileged=True,
+                              network_mode="host",
+                              user=os.getuid())
+    except docker.errors.DockerException as e:
+        print("Error accessing the docker API. Is the daemon running?")
+        raise e
+
+
+def cmdrun_install_broker(**kwargs):
+    if not kwargs['installer']:
+        installer = 'docker.io/ansibleplaybookbundle/asb-installer:latest'
+    else:
+        installer = kwargs['installer']
+
+    openshift_config.load_kube_config()
+
+    if not kwargs['skip_confirmation']:
+        context = get_oc_context()
+        prompt = ("\nInstall the broker? (requires cluster-admin)"
+                  "\nHost: %s"
+                  "\nContext: %s"
+                  "\nInstaller: %s"
+                  "\nProceed installing? [Y/n]:  "
+                  % (openshift_client.Configuration().host, context, installer))
+
+        user_input = get_user_input(prompt)
+        if user_input != 'y':
+            print("Aborting broker installation")
+            return
+
+    print("Running broker installer: [%s]" % installer)
+    run_installer_image(installer, "provision")
+    print("Installation complete")
+
+
+def cmdrun_uninstall_broker(**kwargs):
+    if not kwargs['installer']:
+        installer = 'docker.io/ansibleplaybookbundle/asb-installer:latest'
+    else:
+        installer = kwargs['installer']
+
+    openshift_config.load_kube_config()
+
+    if not kwargs['skip_confirmation']:
+        context = get_oc_context()
+        prompt = ("\nUninstall the broker? (requires cluster-admin)"
+                  "\nHost: %s"
+                  "\nContext: %s"
+                  "\nUninstaller: %s"
+                  "\nProceed removing the broker? [Y/n]:  "
+                  % (openshift_client.Configuration().host, context, installer))
+
+        user_input = get_user_input(prompt)
+        if user_input != 'y':
+            print("Aborting broker removal")
+            return
+
+    print("Running broker uninstaller [%s] ..." % installer)
+    run_installer_image(installer, "deprovision")
+    print("Uninstallation incomplete")
 
 
 def cmdrun_list(**kwargs):
