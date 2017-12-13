@@ -79,22 +79,7 @@ def subcmd_build_parser(subcmd):
         '--tag',
         action='store',
         dest='tag',
-        help=u'Tag of APB to build'
-    )
-
-    subcmd.add_argument(
-        '--registry',
-        action='store',
-        dest='registry',
-        help=u'Registry prefix of APB to prepend to tag'
-    )
-
-    subcmd.add_argument(
-        '--org',
-        '-o',
-        action='store',
-        dest='org',
-        help=u'Organization of APB to publish to'
+        help=u'Tag of APB to build (ie. mysql-apb or docker.io/username/mysql-apb)'
     )
 
     subcmd.add_argument(
@@ -384,7 +369,15 @@ def subcmd_test_parser(subcmd):
         '--tag',
         action='store',
         dest='tag',
-        help=u'Tag of APB to build'
+        help=u'Tag of APB to build (ie. mysql-apb or docker.io/username/mysql-apb)'
+    )
+
+    subcmd.add_argument(
+        '--dockerfile',
+        '-f',
+        action='store',
+        dest='dockerfile',
+        help=u'Name of Dockerfile to build with'
     )
     return
 
@@ -411,22 +404,7 @@ def subcmd_run_parser(subcmd):
         '--tag',
         action='store',
         dest='tag',
-        help=u'Tag of APB to build'
-    )
-
-    subcmd.add_argument(
-        '--registry',
-        action='store',
-        dest='registry',
-        help=u'Registry prefix of APB to prepend to tag'
-    )
-
-    subcmd.add_argument(
-        '--org',
-        '-o',
-        action='store',
-        dest='org',
-        help=u'Organization of APB to publish to'
+        help=u'Tag of APB to build (ie. mysql-apb or docker.io/username/mysql-apb)'
     )
 
     subcmd.add_argument(
@@ -436,7 +414,6 @@ def subcmd_run_parser(subcmd):
         dest='dockerfile',
         help=u'Name of Dockerfile to build with'
     )
-
     return
 
 def subcmd_relist_parser(subcmd):

@@ -605,6 +605,7 @@ def run_apb(project, image, name, action, parameters={}):
         service_account=sa
     )
 
+
 def retrieve_test_result():
     cont = True
     count = 0
@@ -770,7 +771,7 @@ def print_list(services):
         print(template.format(**service))
 
 
-def build_apb(project, dockerfile=None, registry=None, org=None, tag=None):
+def build_apb(project, dockerfile=None, tag=None):
     if dockerfile is None:
         dockerfile = "Dockerfile"
     spec = get_spec(project)
@@ -778,25 +779,22 @@ def build_apb(project, dockerfile=None, registry=None, org=None, tag=None):
         print("APB spec does not have a listed version. Please update apb.yml")
         exit(1)
 
-    name = "{}{}{}".format(
-        registry + "/" if registry is not None else "",
-        org + "/" if org is not None else "",
-        tag if tag is not None else spec['name']
-    )
+    if not tag:
+        tag = spec['name']
 
     update_dockerfile(project, dockerfile)
 
-    print("Building APB using tag: [%s]" % name)
+    print("Building APB using tag: [%s]" % tag)
 
     try:
         client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
-        client.images.build(path=project, tag=name, dockerfile=dockerfile)
+        client.images.build(path=project, tag=tag, dockerfile=dockerfile)
     except docker.errors.DockerException:
         print("Error accessing the docker API. Is the daemon running?")
         raise
 
-    print("Successfully built APB image: %s" % name)
-    return name
+    print("Successfully built APB image: %s" % tag)
+    return tag
 
 
 def cmdrun_init(**kwargs):
@@ -886,8 +884,6 @@ def cmdrun_build(**kwargs):
     build_apb(
         project,
         kwargs['dockerfile'],
-        kwargs['registry'],
-        kwargs['org'],
         kwargs['tag']
     )
 
@@ -994,21 +990,13 @@ def cmdrun_bootstrap(**kwargs):
 
 def cmdrun_test(**kwargs):
     project = kwargs['base_path']
+    image = build_apb(
+        project,
+        kwargs['dockerfile'],
+        kwargs['tag']
+    )
+
     spec = get_spec(project)
-
-    update_dockerfile(project, DOCKERFILE)
-
-    if not kwargs['tag']:
-        tag = spec['name']
-    else:
-        tag = kwargs['tag']
-    print("Building APB using tag: [%s]" % tag)
-
-    client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
-    client.images.build(path=project, tag=tag)
-
-    print("Successfully built APB image: %s" % tag)
-
     # run image that was just created.
     create_image_pod(tag)
     test_result = retrieve_test_result()
@@ -1035,8 +1023,6 @@ def cmdrun_run(**kwargs):
     image = build_apb(
         apb_project,
         kwargs['dockerfile'],
-        kwargs['registry'],
-        kwargs['org'],
         kwargs['tag']
     )
 
