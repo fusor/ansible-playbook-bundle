@@ -568,7 +568,15 @@ def create_pod(image, name, namespace, command, service_account):
                         'image': image,
                         'imagePullPolicy': 'IfNotPresent',
                         'name': name,
-                        'command': command
+                        'command': command,
+                        'env': [
+                            {'name': 'POD_NAME',
+                             'valueFrom': {'fieldRef': {'fieldPath': 'metadata.name'}}
+                            },
+                            {'name': 'POD_NAMESPACE',
+                             'valueFrom': {'fieldRef': {'fieldPath': 'metadata.namespace'}}
+                            }
+                        ],
                     }],
                     'restartPolicy': 'Never',
                     'serviceAccountName': service_account,
