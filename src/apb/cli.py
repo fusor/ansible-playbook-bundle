@@ -216,14 +216,14 @@ def subcmd_push_parser(subcmd):
         '--registry-service-name',
         action='store',
         dest='reg_svc_name',
-        help=u'Namespace where internal registry service lives',
+        help=u'Name of service for internal OpenShift registry',
         default=u'docker-registry'
     )
     subcmd.add_argument(
         '--registry-namespace',
         action='store',
         dest='reg_namespace',
-        help=u'Namespace to push to internal OpenShift registry',
+        help=u'Namespace of internal OpenShift registry',
         default=u'default'
     )
     subcmd.add_argument(
