@@ -381,6 +381,7 @@ def subcmd_test_parser(subcmd):
     )
     return
 
+
 def subcmd_run_parser(subcmd):
     """ provision subcommand """
     subcmd.add_argument(
@@ -415,6 +416,7 @@ def subcmd_run_parser(subcmd):
         help=u'Name of Dockerfile to build with'
     )
     return
+
 
 def subcmd_relist_parser(subcmd):
     """ relist subcommand """

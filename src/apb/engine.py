@@ -18,6 +18,11 @@ from jinja2 import Environment, FileSystemLoader
 from kubernetes import client as kubernetes_client, config as kubernetes_config
 from kubernetes.client.rest import ApiException
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+# Handle input in 2.x/3.x
+try: input = raw_input
+except NameError: pass
+
 # Disable insecure request warnings from both packages
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -470,7 +475,7 @@ def create_project(project):
     try:
         openshift_config.load_kube_config()
         api = openshift_client.OapiApi()
-        project_request = api.create_project_request({
+        api.create_project_request({
             'apiVersion': 'v1',
             'kind': 'ProjectRequest',
             'metadata': {
@@ -517,13 +522,13 @@ def create_role_binding(namespace, service_account, role="admin"):
     try:
         kubernetes_config.load_kube_config()
         api = openshift_client.OapiApi()
-        role_binding = api.create_namespaced_role_binding(
+        api.create_namespaced_role_binding(
             namespace,
             {
                 'apiVersion': 'v1',
                 'kind': 'RoleBinding',
                 'metadata': {
-                    'name': name,
+                    'generateName': name,
                     'namespace': namespace,
                 },
                 'subjects': [{
@@ -570,11 +575,17 @@ def create_pod(image, name, namespace, command, service_account):
                         'name': name,
                         'command': command,
                         'env': [
-                            {'name': 'POD_NAME',
-                             'valueFrom': {'fieldRef': {'fieldPath': 'metadata.name'}}
+                            {
+                                'name': 'POD_NAME',
+                                'valueFrom': {
+                                    'fieldRef': {'fieldPath': 'metadata.name'}
+                                }
                             },
-                            {'name': 'POD_NAMESPACE',
-                             'valueFrom': {'fieldRef': {'fieldPath': 'metadata.namespace'}}
+                            {
+                                'name': 'POD_NAMESPACE',
+                                'valueFrom': {
+                                    'fieldRef': {'fieldPath': 'metadata.namespace'}
+                                }
                             }
                         ],
                     }],
@@ -592,7 +603,7 @@ def create_pod(image, name, namespace, command, service_account):
 def run_apb(project, image, name, action, parameters={}):
     ns = create_project(project)
     sa = create_service_account(ns)
-    rb = create_role_binding(ns, sa)
+    create_role_binding(ns, sa)
 
     parameters['namespace'] = ns
     command = ['entrypoint.sh', action, "--extra-vars", json.dumps(parameters)]
@@ -879,6 +890,7 @@ def cmdrun_prepare(**kwargs):
 
     update_dockerfile(project, dockerfile)
 
+
 def cmdrun_build(**kwargs):
     project = kwargs['base_path']
     build_apb(
@@ -1027,12 +1039,12 @@ def cmdrun_run(**kwargs):
     )
 
     spec = get_spec(apb_project)
-    plans = [ plan['name'] for plan in spec['plans'] ]
+    plans = [plan['name'] for plan in spec['plans']]
     if len(plans) > 1:
         plans_str = ', '.join(plans)
         while True:
             try:
-                plan = plans.index(raw_input("Select plan [{}]: ".format(plans_str)))
+                plan = plans.index(input("Select plan [{}]: ".format(plans_str)))
                 break
             except ValueError:
                 print("ERROR: Please enter valid plan")
@@ -1045,7 +1057,7 @@ def cmdrun_run(**kwargs):
     for parm in spec['plans'][plan]['parameters']:
         while True:
             # Get the value for the parameter
-            val = raw_input("{}{}{}: ".format(
+            val = input("{}{}{}: ".format(
                 parm['name'],
                 "(required)" if 'required' in parm and parm['required'] else '',
                 "[default: {}]".format(parm['default']) if 'default' in parm else ''
@@ -1065,7 +1077,7 @@ def cmdrun_run(**kwargs):
     run_apb(
         project=kwargs['project'],
         image=image,
-        name='apb-run',
+        name='apb-run-{}'.format(spec['name']),
         action=kwargs['action'],
         parameters=parameters
     )
