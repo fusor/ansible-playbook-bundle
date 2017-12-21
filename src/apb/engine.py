@@ -394,6 +394,12 @@ def get_asb_route():
         openshift_config.load_kube_config()
         oapi = openshift_client.OapiApi()
         route_list = oapi.list_namespaced_route('ansible-service-broker')
+        if route_list.items == []:
+            print("Didn't find OAB route in namespace: ansible-service-broker. Trying openshift-ansible-service-broker")
+            route_list = oapi.list_namespaced_route('openshift-ansible-service-broker')
+            if route_list.items == []:
+                print("Still failed to find a route to OpenShift Ansible Broker.")
+                return None
         for route in route_list.items:
             if route.metadata.name.find('asb-') >= 0:
                 asb_route = route.spec.host
@@ -915,7 +921,6 @@ def cmdrun_remove(**kwargs):
 
 
 def bootstrap(broker, username, password, verify):
-    print(broker)
     response = broker_request(broker, "/v2/bootstrap", "post", data={},
                               verify=verify,
                               basic_auth_username=username,
