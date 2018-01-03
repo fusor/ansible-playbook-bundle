@@ -395,7 +395,8 @@ def get_asb_route():
         oapi = openshift_client.OapiApi()
         route_list = oapi.list_namespaced_route('ansible-service-broker')
         if route_list.items == []:
-            print("Didn't find OAB route in namespace: ansible-service-broker. Trying openshift-ansible-service-broker")
+            print("Didn't find OpenShift Ansible Broker route in namespace: ansible-service-broker.\
+                    Trying openshift-ansible-service-broker")
             route_list = oapi.list_namespaced_route('openshift-ansible-service-broker')
             if route_list.items == []:
                 print("Still failed to find a route to OpenShift Ansible Broker.")
