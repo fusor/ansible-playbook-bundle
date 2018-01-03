@@ -214,14 +214,6 @@ def subcmd_push_parser(subcmd):
         default=u'default'
     )
     subcmd.add_argument(
-        '--openshift',
-        '-o,',
-        action='store_true',
-        dest='openshift',
-        help=u'Use internal OpenShift registry',
-        default=False
-    )
-    subcmd.add_argument(
         '--dockerfile',
         '-f',
         action='store',

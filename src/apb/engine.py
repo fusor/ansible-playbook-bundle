@@ -951,40 +951,12 @@ def cmdrun_push(**kwargs):
     spec = get_spec(project, 'string')
     dict_spec = get_spec(project, 'dict')
     blob = base64.b64encode(spec)
+    data_spec = {'apbSpec': blob}
     broker = kwargs["broker"]
     if broker is None:
         broker = get_asb_route()
-    data_spec = {'apbSpec': blob}
     print(spec)
-
-    if kwargs['openshift']:
-        namespace = kwargs['reg_namespace']
-        service = kwargs['reg_svc_name']
-        # Assume we are using internal registry, no need to push to broker
-        registry = get_registry_service_ip(namespace, service)
-        if registry is None:
-            print("Failed to find registry service IP address.")
-            raise Exception("Unable to get registry IP from namespace %s" % namespace)
-        tag = registry + "/" + kwargs['namespace'] + "/" + dict_spec['name']
-        print("Building image with the tag: " + tag)
-        try:
-            client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
-            client.images.build(path=project, tag=tag, dockerfile=kwargs['dockerfile'])
-            openshift_config.load_kube_config()
-            token = openshift_client.configuration.api_key['authorization'].split(" ")[1]
-            client.login(username="unused", password=token, registry=registry, reauth=True)
-            client.images.push(tag)
-            print("Successfully pushed image: " + tag)
-            bootstrap(broker, kwargs.get("basic_auth_username"),
-                      kwargs.get("basic_auth_password"), kwargs["verify"])
-        except docker.errors.DockerException:
-            print("Error accessing the docker API. Is the daemon running?")
-            raise
-        except docker.errors.APIError:
-            print("Failed to login to the docker API.")
-            raise
-
-    else:
+    if kwargs['broker_dev']:
         response = broker_request(kwargs["broker"], "/v2/apb", "post", data=data_spec,
                                   verify=kwargs["verify"],
                                   basic_auth_username=kwargs.get("basic_auth_username"),
@@ -996,6 +968,33 @@ def cmdrun_push(**kwargs):
             exit(1)
 
         print("Successfully added APB to Ansible Service Broker")
+        return
+
+    namespace = kwargs['reg_namespace']
+    service = kwargs['reg_svc_name']
+    # Assume we are using internal registry, no need to push to broker
+    registry = get_registry_service_ip(namespace, service)
+    if registry is None:
+        print("Failed to find registry service IP address.")
+        raise Exception("Unable to get registry IP from namespace %s" % namespace)
+    tag = registry + "/" + kwargs['namespace'] + "/" + dict_spec['name']
+    print("Building image with the tag: " + tag)
+    try:
+        client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
+        client.images.build(path=project, tag=tag, dockerfile=kwargs['dockerfile'])
+        openshift_config.load_kube_config()
+        token = openshift_client.configuration.api_key['authorization'].split(" ")[1]
+        client.login(username="unused", password=token, registry=registry, reauth=True)
+        client.images.push(tag)
+        print("Successfully pushed image: " + tag)
+        bootstrap(broker, kwargs.get("basic_auth_username"),
+                  kwargs.get("basic_auth_password"), kwargs["verify"])
+    except docker.errors.DockerException:
+        print("Error accessing the docker API. Is the daemon running?")
+        raise
+    except docker.errors.APIError:
+        print("Failed to login to the docker API.")
+        raise
 
     if not kwargs['no_relist']:
         relist_service_broker(kwargs)
