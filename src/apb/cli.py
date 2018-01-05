@@ -11,6 +11,7 @@ AVAILABLE_COMMANDS = {
     'help': 'Display this help message',
     'relist': 'Relist the APBs available within the Service Catalog',
     'list': 'List APBs from the target Ansible Service Broker',
+    'setup': 'Initialize OpenShift with APB development environment',
     'init': 'Initialize the directory for APB development',
     'prepare': 'Prepare an ansible-container project for APB packaging',
     'build': 'Build and package APB container',
@@ -422,6 +423,10 @@ def subcmd_run_parser(subcmd):
         dest='dockerfile',
         help=u'Name of Dockerfile to build with'
     )
+    return
+
+
+def subcmd_setup_parser(subcmd):
     return
 
 
