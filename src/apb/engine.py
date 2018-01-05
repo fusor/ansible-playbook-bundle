@@ -405,7 +405,7 @@ def get_asb_route():
         oapi = openshift_client.OapiApi()
         route_list = oapi.list_namespaced_route('ansible-service-broker')
         for route in route_list.items:
-            if route.metadata.name.find('asb-') >= 0:
+            if 'asb' in route.metadata.name and not 'etcd' in route.metadata.name:
                 asb_route = route.spec.host
     except Exception:
         asb_route = None
