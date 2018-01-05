@@ -693,6 +693,10 @@ def retrieve_test_result(name, namespace):
 def broker_request(broker, service_route, method, **kwargs):
     if broker is None:
         broker = get_asb_route()
+    else:
+        broker = "%s/ansible-service-broker" % broker
+
+    print "Contacting the ansible-service-broker at: %s%s" %(broker, service_route)
 
     if broker is None:
         raise Exception("Could not find route to ansible-service-broker. "
@@ -981,7 +985,7 @@ def cmdrun_push(**kwargs):
             raise
 
     else:
-        response = broker_request(kwargs["broker"], "/ansible-service-broker/v2/apb", "post", data=data_spec,
+        response = broker_request(kwargs["broker"], "/v2/apb", "post", data=data_spec,
                                   verify=kwargs["verify"],
                                   basic_auth_username=kwargs.get("basic_auth_username"),
                                   basic_auth_password=kwargs.get("basic_auth_password"))
@@ -999,9 +1003,9 @@ def cmdrun_push(**kwargs):
 
 def cmdrun_remove(**kwargs):
     if kwargs["all"]:
-        route = "/ansible-service-broker/v2/apb"
+        route = "/v2/apb"
     elif kwargs["id"] is not None:
-        route = "/ansible-service-broker/v2/apb" + kwargs["id"]
+        route = "/v2/apb" + kwargs["id"]
     else:
         raise Exception("No APB ID specified.  Use --id.")
 
