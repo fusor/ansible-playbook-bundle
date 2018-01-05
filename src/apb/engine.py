@@ -981,7 +981,7 @@ def cmdrun_push(**kwargs):
             raise
 
     else:
-        response = broker_request(kwargs["broker"], "/apb/spec", "post", data=data_spec,
+        response = broker_request(kwargs["broker"], "/ansible-service-broker/v2/apb", "post", data=data_spec,
                                   verify=kwargs["verify"],
                                   basic_auth_username=kwargs.get("basic_auth_username"),
                                   basic_auth_password=kwargs.get("basic_auth_password"))
@@ -999,9 +999,9 @@ def cmdrun_push(**kwargs):
 
 def cmdrun_remove(**kwargs):
     if kwargs["all"]:
-        route = "/apb/spec"
+        route = "/ansible-service-broker/v2/apb"
     elif kwargs["id"] is not None:
-        route = "/apb/spec/" + kwargs["id"]
+        route = "/ansible-service-broker/v2/apb" + kwargs["id"]
     else:
         raise Exception("No APB ID specified.  Use --id.")
 
