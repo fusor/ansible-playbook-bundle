@@ -1069,11 +1069,16 @@ def cmdrun_push(**kwargs):
 
     namespace = kwargs['reg_namespace']
     service = kwargs['reg_svc_name']
-    # Assume we are using internal registry, no need to push to broker
-    registry = get_registry_service_ip(namespace, service)
-    if registry is None:
-        print("Failed to find registry service IP address.")
-        raise Exception("Unable to get registry IP from namespace %s" % namespace)
+    registry_route = kwargs['reg_route']
+
+    if registry_route:
+        registry = registry_route
+    else:
+        registry = get_registry_service_ip(namespace, service)
+        if registry is None:
+            print("Failed to find registry service IP address.")
+            raise Exception("Unable to get registry IP from namespace %s" % namespace)
+
     tag = registry + "/" + kwargs['namespace'] + "/" + dict_spec['name']
     print("Building image with the tag: " + tag)
     try:

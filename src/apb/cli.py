@@ -215,6 +215,12 @@ def subcmd_push_parser(subcmd):
         default=u'default'
     )
     subcmd.add_argument(
+        '--registry-route',
+        action='store',
+        dest='reg_route',
+        help=u'Route of internal OpenShift registry'
+    )
+    subcmd.add_argument(
         '--dockerfile',
         '-f',
         action='store',
