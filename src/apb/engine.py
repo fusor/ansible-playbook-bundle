@@ -20,7 +20,6 @@ from openshift.helper.openshift import OpenShiftObjectHelper
 from jinja2 import Environment, FileSystemLoader
 from kubernetes import client as kubernetes_client, config as kubernetes_config
 from kubernetes.client.rest import ApiException
-from openshift.client.models import V1ClusterRoleBinding
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 # Handle input in 2.x/3.x
@@ -891,7 +890,7 @@ def build_apb(project, dockerfile=None, tag=None):
 
 def cmdrun_setup(**kwargs):
     try:
-        docker_client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
+        docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
     except Exception as e:
         print("Error! Failed to connect to Docker client. Please ensure it is running. Exception: %s" % e)
         exit(1)
@@ -934,14 +933,17 @@ def cmdrun_setup(**kwargs):
             broker_installed = True
         elif "service-catalog" in name:
             svccat_installed = True
-    if broker_installed == False:
+    if broker_installed is False:
         print("Error! Could not find OpenShift Ansible Broker namespace. Please ensure that the broker is\
                 installed and that the current logged in user has access.")
         print("Current user is: %s" % "foo")
         exit(1)
-    if svccat_installed == False:
+    if svccat_installed is False:
         print("Error! Could not find OpenShift Service Catalog namespace. Please ensure that the Service\
                 Catalog is installed and that the current logged in user has access.")
+        print("Current user is: %s" % "foo")
+    if proj_default_access is False:
+        print("Error! Could not find the Default namespace. Please ensure that the current logged in user has access.")
         print("Current user is: %s" % "foo")
 
 
