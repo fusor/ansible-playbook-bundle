@@ -6,8 +6,6 @@ import shutil
 import string
 import subprocess
 import json
-import requests
-import urllib3
 import docker
 import docker.errors
 import ruamel.yaml
@@ -15,21 +13,15 @@ import yaml
 
 from ruamel.yaml import YAML
 from time import sleep
-from openshift import client as openshift_client, config as openshift_config
 from jinja2 import Environment, FileSystemLoader
-from kubernetes import client as kubernetes_client, config as kubernetes_config
-from kubernetes.client.rest import ApiException
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+import request
 
 # Handle input in 2.x/3.x
 try:
     input = raw_input
 except NameError:
     pass
-
-# Disable insecure request warnings from both packages
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 ROLES_DIR = 'roles'
 
@@ -90,6 +82,23 @@ ASYNC_OPTIONS = ['required', 'optional', 'unsupported']
 SPEC_LABEL = 'com.redhat.apb.spec'
 VERSION_LABEL = 'com.redhat.apb.version'
 WATCH_POD_SLEEP = 5
+
+
+class CmdRun(object):
+    def __init__(self, **args):
+        self.r = request.Request(args)
+        self.args = args
+
+    def run(self, cmd):
+        try:
+            response = getattr(self, u'cmdrun_{}'.format(cmd))()
+            if response is not None:
+                raise response
+        except Exception as e:
+            print("List failure: {}".format(e))
+
+    def cmdrun_list(self):
+        return self.r.list_apbs()
 
 
 def load_dockerfile(df_path):
@@ -398,90 +407,13 @@ def get_registry_service_ip(namespace, svc_name):
     return ip
 
 
-def get_asb_route():
-    asb_route = None
-    try:
-        openshift_config.load_kube_config()
-        oapi = openshift_client.OapiApi()
-        route_list = oapi.list_namespaced_route('ansible-service-broker')
-        if route_list.items == []:
-            print("Didn't find OpenShift Ansible Broker route in namespace: ansible-service-broker.\
-                    Trying openshift-ansible-service-broker")
-            route_list = oapi.list_namespaced_route('openshift-ansible-service-broker')
-            if route_list.items == []:
-                print("Still failed to find a route to OpenShift Ansible Broker.")
-                return None
-        for route in route_list.items:
-            if 'asb' in route.metadata.name and 'etcd' not in route.metadata.name:
-                asb_route = route.spec.host
-    except Exception:
-        asb_route = None
-        return asb_route
-
-    url = asb_route + "/ansible-service-broker"
-    if url.find("http") < 0:
-        url = "https://" + url
-
-    return url
-
-
-def broker_resource_url(host, broker_name):
-    return "{}/apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers/{}".format(host, broker_name)
-
-
 def relist_service_broker(kwargs):
     try:
-        openshift_config.load_kube_config()
-        token = openshift_client.configuration.api_key['authorization']
-        cluster_host = openshift_client.configuration.host
-        broker_name = kwargs['broker_name']
-        headers = {}
-        if kwargs['basic_auth_username'] is not None and kwargs['basic_auth_password'] is not None:
-            headers = {'Authorization': "Basic " +
-                       base64.b64encode("{0}:{1}".format(kwargs['basic_auth_username'],
-                                                         kwargs['basic_auth_password']))
-                       }
-        else:
-            headers = {'Authorization': token}
+        r = request.Request(kwargs)
+        response = r.relist_service_broker()
 
-        response = requests.request(
-            "get",
-            broker_resource_url(cluster_host, broker_name),
-            verify=kwargs['verify'], headers=headers)
-
-        if response.status_code != 200:
-            errMsg = "Received non-200 status code while retrieving broker: {}\n".format(broker_name) + \
-                "Response body:\n" + \
-                str(response.text)
-            raise Exception(errMsg)
-
-        spec = response.json().get('spec', None)
-        if spec is None:
-            errMsg = "Spec not found in broker reponse. Response body: \n{}".format(response.text)
-            raise Exception(errMsg)
-
-        relist_requests = spec.get('relistRequests', None)
-        if relist_requests is None:
-            errMsg = "relistRequests not found within the spec of broker: {}\n".format(broker_name) + \
-                     "Are you sure you are using a ServiceCatalog of >= v0.0.21?"
-            raise Exception(errMsg)
-
-        inc_relist_requests = relist_requests + 1
-
-        headers['Content-Type'] = 'application/strategic-merge-patch+json'
-        response = requests.request(
-            "patch",
-            broker_resource_url(cluster_host, broker_name),
-            json={'spec': {'relistRequests': inc_relist_requests}},
-            verify=kwargs['verify'], headers=headers)
-
-        if response.status_code != 200:
-            errMsg = "Received non-200 status code while patching relistRequests of broker: {}\n".format(
-                broker_name) + \
-                "Response body:\n{}".format(str(response.text))
-            raise Exception(errMsg)
-
-        print("Successfully relisted the Service Catalog")
+        if response is not None:
+            raise response
     except Exception as e:
         print("Relist failure: {}".format(e))
 
@@ -691,10 +623,17 @@ def retrieve_test_result(name, namespace):
 
 
 def broker_request(broker, service_route, method, **kwargs):
-    if broker is None:
-        broker = get_asb_route()
-    else:
-        broker = "%s/ansible-service-broker" % broker
+    try:
+        r = request.Request(kwargs)
+        if broker is None:
+            broker = r.get_asb_route()
+        else:
+            broker = "%s/ansible-service-broker" % broker
+
+        if response is not None:
+            raise response
+    except Exception as e:
+        print("broker_request failure: {}".format(e))
 
     print("Contacting the ansible-service-broker at: %s%s" % (broker, service_route))
 
@@ -703,6 +642,9 @@ def broker_request(broker, service_route, method, **kwargs):
                         "Use --broker or log into the cluster using \"oc login\"")
 
     url = broker + service_route
+
+    from openshift import client as openshift_client, config as openshift_config
+    import requests
 
     try:
         openshift_config.load_kube_config()
@@ -722,106 +664,6 @@ def broker_request(broker, service_route, method, **kwargs):
         raise e
 
     return response
-
-
-def cmdrun_list(**kwargs):
-    response = broker_request(kwargs['broker'], "/v2/catalog", "get",
-                              verify=kwargs["verify"],
-                              basic_auth_username=kwargs.get("basic_auth_username"),
-                              basic_auth_password=kwargs.get("basic_auth_password"))
-
-    if response.status_code != 200:
-        print("Error: Attempt to list APBs in the broker returned status: %d" % response.status_code)
-        print("Unable to list APBs in Ansible Service Broker.")
-        exit(1)
-
-    services = response.json()['services']
-
-    if not services:
-        print("No APBs found")
-    elif kwargs["output"] == 'json':
-        print_json_list(services)
-    elif kwargs["verbose"]:
-        print_verbose_list(services)
-    else:
-        print_list(services)
-
-
-def print_json_list(services):
-    print(json.dumps(services, indent=4, sort_keys=True))
-
-
-def print_verbose_list(services):
-    for service in services:
-        print_service(service)
-
-
-def print_service(service):
-    cmap = ruamel.yaml.comments.CommentedMap()
-
-    if 'name' in service:
-        cmap['name'] = service['name']
-    if 'id' in service:
-        cmap['id'] = service['id']
-    if 'description' in service:
-        cmap['description'] = service['description']
-    if 'bindable' in service:
-        cmap['bindable'] = service['bindable']
-    if 'metadata' in service:
-        cmap['metadata'] = service['metadata']
-    if 'plans' in service:
-        cmap['plans'] = pretty_plans(service['plans'])
-
-    print(ruamel.yaml.dump(cmap, Dumper=ruamel.yaml.RoundTripDumper))
-
-
-def pretty_plans(plans):
-    pp = []
-    if plans is None:
-        return
-    for plan in plans:
-        cmap = ruamel.yaml.comments.CommentedMap()
-        if 'name' in plan:
-            cmap['name'] = plan['name']
-        if 'description' in plan:
-            cmap['description'] = plan['description']
-        if 'free' in plan:
-            cmap['free'] = plan['free']
-        if 'metadata' in plan:
-            cmap['metadata'] = plan['metadata']
-
-        try:
-            plan_params = plan['schemas']['service_instance']['create']['parameters']['properties']
-        except KeyError:
-            plan_params = []
-
-        cmap['parameters'] = plan_params
-
-        try:
-            plan_bind_params = plan['schemas']['service_binding']['create']['parameters']['properties']
-        except KeyError:
-            plan_bind_params = []
-
-        cmap['bind_parameters'] = plan_bind_params
-
-        pp.append(cmap)
-    return pp
-
-
-def print_list(services):
-    max_id = 10
-    max_name = 10
-    max_desc = 10
-
-    for service in services:
-        max_id = max(max_id, len(service["id"]))
-        max_name = max(max_name, len(service["name"]))
-        max_desc = max(max_desc, len(service["description"]))
-
-    template = "{id:%d}{name:%d}{description:%d}" % (max_id + 2, max_name + 2, max_desc + 2)
-    print(template.format(id="ID", name="NAME", description="DESCRIPTION"))
-    for service in sorted(services, key=lambda s: s['name']):
-        print(template.format(**service))
 
 
 def build_apb(project, dockerfile=None, tag=None):
@@ -953,7 +795,15 @@ def cmdrun_push(**kwargs):
     blob = base64.b64encode(spec)
     broker = kwargs["broker"]
     if broker is None:
-        broker = get_asb_route()
+        try:
+            r = request.Request(kwargs)
+            broker = r.get_asb_route()
+
+            if response is not None:
+                raise response
+        except Exception as e:
+            print("Push failure: {}".format(e))
+
     data_spec = {'apbSpec': blob}
     print(spec)
 

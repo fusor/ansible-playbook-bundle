@@ -518,8 +518,8 @@ def main():
         sys.exit(0)
 
     try:
-        getattr(apb.engine,
-                u'cmdrun_{}'.format(args.subcommand))(**vars(args))
+        cmd = apb.engine.CmdRun(**vars(args))
+        cmd.run(args.subcommand)
     except Exception as e:
         print("Exception occurred! %s" % e)
         sys.exit(1)
