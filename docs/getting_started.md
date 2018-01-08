@@ -196,7 +196,7 @@ my-test-apb
     playbook_debug: false
 ```
 
-`provision.yml` is a new Ansible playbook which will execute on `localhost` and execute the role `provision-my-test-apb`.  This playbook works on it's local container created by the service broker.  The `ansible.kubernetes-modules` role will allow us to use the [kubernetes-modules](https://github.com/ansible/ansible-kubernetes-modules) to create our OpenShift resources.  The [asb-modules](https://github.com/fusor/ansible-asb-modules) provide some additional functionality for use with the Ansible Service Broker.
+`provision.yml` is a new Ansible playbook which will execute on `localhost` and execute the role `provision-my-test-apb`.  This playbook works on its local container created by the service broker.  The `ansible.kubernetes-modules` role will allow us to use the [kubernetes-modules](https://github.com/ansible/ansible-kubernetes-modules) to create our OpenShift resources.  The [asb-modules](https://github.com/fusor/ansible-asb-modules) provide some additional functionality for use with the Ansible Service Broker.
 
 Currently, there are no tasks in the role.  The contents of file `roles/provision-my-test-apb/tasks/main.yml`  only contains comments showing common resource creation tasks.  You can currently execute the provision task, but since there are no tasks to perform, it would simply launch the APB container and exit without deploying anything.
 
@@ -293,7 +293,7 @@ rc/my-test-1   1         1         1         35s
 NAME                 READY     STATUS    RESTARTS   AGE
 po/my-test-1-2pw4t   1/1       Running   0          33s
 ```
-You will also be able to see the deployed application in the console UI at https://<oc-cluster-host>:<oc-cluster-port>/console/project/getting-started/overview.  The only way to use this pod currently is to use `oc describe pods/<pod-name>`, to find out it's IP address and access it directly.  If we had multiple pods, they'd be accessed separately.  To treat them like a single host, we'd need to create a **_service_**
+You will also be able to see the deployed application in the console UI at https://<oc-cluster-host>:<oc-cluster-port>/console/project/getting-started/overview.  The only way to use this pod currently is to use `oc describe pods/<pod-name>`, to find out its IP address and access it directly.  If we had multiple pods, they'd be accessed separately.  To treat them like a single host, we'd need to create a **_service_**
 
 To clean up before moving on and allow us to provision again, feel free to delete the getting-started namespace and recreate it or create a new one.
 
