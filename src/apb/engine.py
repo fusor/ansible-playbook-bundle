@@ -696,7 +696,7 @@ def broker_request(broker, service_route, method, **kwargs):
     else:
         broker = "%s/ansible-service-broker" % broker
 
-    print "Contacting the ansible-service-broker at: %s%s" %(broker, service_route)
+    print("Contacting the ansible-service-broker at: %s%s" % (broker, service_route))
 
     if broker is None:
         raise Exception("Could not find route to ansible-service-broker. "
