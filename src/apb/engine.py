@@ -16,6 +16,8 @@ from jinja2 import Environment, FileSystemLoader
 
 import request
 from broker_request.apb_list import Apb_List
+from broker_request.apb_push import Apb_Push
+from broker_request.apb_relist import Apb_Relist
 
 # Handle input in 2.x/3.x
 try:
@@ -96,10 +98,12 @@ class CmdRun(object):
             print("%s failure: {}".format(e) % cmd)
 
     def cmdrun_list(self):
-        return Apb_List(self.args)
+        Apb_List(self.args)
 
     def cmdrun_push(self):
-        return self.r.apb_push()
+        Apb_Push(self.args)
+        if not self.args['no_relist']:
+            Apb_Relist(self.args)
 
     def cmdrun_init(self):
         return self.r.apb_init()
