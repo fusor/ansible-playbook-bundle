@@ -1053,7 +1053,7 @@ def cmdrun_push(**kwargs):
     if broker is None:
         broker = get_asb_route()
     print(spec)
-    if kwargs['broker_dev']:
+    if kwargs['broker_push']:
         response = broker_request(kwargs["broker"], "/v2/apb", "post", data=data_spec,
                                   verify=kwargs["verify"],
                                   basic_auth_username=kwargs.get("basic_auth_username"),

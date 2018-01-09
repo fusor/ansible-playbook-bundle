@@ -265,6 +265,13 @@ def subcmd_push_parser(subcmd):
         help=u'Name of the ServiceBroker k8s resource',
         default=u'ansible-service-broker'
     )
+    subcmd.add_argument(
+        '--push-to-broker',
+        action='store_true',
+        dest='broker_push',
+        help=u'Use Broker development endpoint at /v2/apb/spec',
+        default=False
+    )
     return
 
 
