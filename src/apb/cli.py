@@ -269,7 +269,7 @@ def subcmd_push_parser(subcmd):
         '--push-to-broker',
         action='store_true',
         dest='broker_push',
-        help=u'Use Broker development endpoint at /v2/apb/spec',
+        help=u'Use Broker development endpoint at /v2/apb/',
         default=False
     )
     return

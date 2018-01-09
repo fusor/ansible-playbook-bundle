@@ -936,15 +936,12 @@ def cmdrun_setup(**kwargs):
     if broker_installed is False:
         print("Error! Could not find OpenShift Ansible Broker namespace. Please ensure that the broker is\
                 installed and that the current logged in user has access.")
-        print("Current user is: %s" % "foo")
         exit(1)
     if svccat_installed is False:
         print("Error! Could not find OpenShift Service Catalog namespace. Please ensure that the Service\
                 Catalog is installed and that the current logged in user has access.")
-        print("Current user is: %s" % "foo")
     if proj_default_access is False:
         print("Error! Could not find the Default namespace. Please ensure that the current logged in user has access.")
-        print("Current user is: %s" % "foo")
 
 
 def cmdrun_init(**kwargs):
