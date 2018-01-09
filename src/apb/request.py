@@ -2,13 +2,10 @@ import base64
 import docker
 import os
 import requests
+import shutil
 import urllib3
 
-from ruamel.yaml import YAML
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-from openshift import client as openshift_client, config as openshift_config
-from kubernetes import client as kubernetes_client, config as kubernetes_config
-from kubernetes.client.rest import ApiException
 
 # Disable insecure request warnings from both packages
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -17,156 +14,9 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 class Request(object):
 
     def __init__(self, kwargs):
-        self._fetch_clients()
+        self.args = kwargs
 
         self.apb_spec_file = 'apb.yml'
-
-        self.routing_prefix = "ansible-service-broker"
-        self.token = openshift_client.configuration.api_key['authorization']
-        self.host = openshift_client.configuration.host
-        self.oapi = openshift_client.OapiApi()
-        self.v1api = kubernetes_client.CoreV1Api()
-
-        self.route_list = self.oapi.list_namespaced_route('ansible-service-broker')
-        if self.route_list.items == []:
-            print("Didn't find OpenShift Ansible Broker route in namespace: " \
-                  "ansible-service-broker. Trying openshift-ansible-service-broker")
-            self.route_list = self.oapi.list_namespaced_route('openshift-ansible-service-broker')
-
-        if self.route_list.items == []:
-            print("Still failed to find a route to OpenShift Ansible Broker.")
-            raise Exception("Could not find route to ansible-service-broker.")
-
-        self.args = kwargs
-        self._fetch_broker()
-
-        self.auth_pass = self.args['basic_auth_password']
-        self.auth_user = self.args['basic_auth_username']
-        self.verify = self.args['verify']
-
-        self.auth_header = self._auth_header()
-
-
-    def _fetch_broker(self):
-        '''
-        Gather Broker information.
-        '''
-        if 'broker_name' in self.args:
-            self.broker_name = self.args['broker_name']
-            self.broker_resource_url = "{}/apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers/{}".format(self.host, self.broker_name)
-
-        if self.args['broker'] is None:
-            self.route = self.get_asb_route()
-        else:
-            self.route = self.args['broker']
-
-        if not self.route.endswith(self.routing_prefix):
-            if not self.route.endswith('/'):
-                self.route = "%s/" % self.route
-            self.route = "%s%s" % (self.route, self.routing_prefix)
-
-        # TODO: Improve error checking by verifing connection to the route
-        if self.route is None:
-            raise Exception("Could not find route to ansible-service-broker. "
-                             "Use --broker or log into the cluster using \"oc login\"")
-
-
-    def _fetch_clients(self):
-        try:
-            openshift_config.load_kube_config()
-        except Exception as e:
-            raise e
-
-        try:
-            self.docker_client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
-        except Exception as e:
-            raise e
-
-
-    def _auth_header(self):
-        '''
-        Create the authorization header based on the auth type.
-        '''
-
-        if self.auth_user is not None and self.auth_pass is not None:
-            self.headers = {'Authorization': "Basic " +
-                       base64.b64encode("{0}:{1}".format(self.auth_user,
-                                                         self.auth_pass))
-                   }
-        else:
-            self.headers = {'Authorization': self.token}
-
-
-    def _print_json_list(self, services):
-        print(json.dumps(services, indent=4, sort_keys=True))
-
-
-    def _print_service(self, service):
-        cmap = ruamel.yaml.comments.CommentedMap()
-
-        if 'name' in service:
-            cmap['name'] = service['name']
-        if 'id' in service:
-            cmap['id'] = service['id']
-        if 'description' in service:
-            cmap['description'] = service['description']
-        if 'bindable' in service:
-            cmap['bindable'] = service['bindable']
-        if 'metadata' in service:
-            cmap['metadata'] = service['metadata']
-        if 'plans' in service:
-            cmap['plans'] = _pretty_plans(service['plans'])
-
-        print(ruamel.yaml.dump(cmap, Dumper=ruamel.yaml.RoundTripDumper))
-
-
-    def _pretty_plans(self, plans):
-        pp = []
-        if plans is None:
-            return
-        for plan in plans:
-            cmap = ruamel.yaml.comments.CommentedMap()
-            if 'name' in plan:
-                cmap['name'] = plan['name']
-            if 'description' in plan:
-                cmap['description'] = plan['description']
-            if 'free' in plan:
-                cmap['free'] = plan['free']
-            if 'metadata' in plan:
-                cmap['metadata'] = plan['metadata']
-
-            try:
-                plan_params = plan['schemas']['service_instance']['create']['parameters']['properties']
-            except KeyError:
-                plan_params = []
-
-            cmap['parameters'] = plan_params
-
-            try:
-                plan_bind_params = plan['schemas']['service_binding']['create']['parameters']['properties']
-            except KeyError:
-                plan_bind_params = []
-
-            cmap['bind_parameters'] = plan_bind_params
-
-            pp.append(cmap)
-        return pp
-
-
-    def _print_list(self, services):
-        max_id = 10
-        max_name = 10
-        max_desc = 10
-
-        for service in services:
-            max_id = max(max_id, len(service["id"]))
-            max_name = max(max_name, len(service["name"]))
-            max_desc = max(max_desc, len(service["description"]))
-
-        template = "{id:%d}{name:%d}{description:%d}" % (max_id + 2, max_name + 2, max_desc + 2)
-        print(template.format(id="ID", name="NAME", description="DESCRIPTION"))
-        for service in sorted(services, key=lambda s: s['name']):
-            print(template.format(**service))
 
 
     def _load_spec_dict(self, spec_path):
@@ -214,6 +64,37 @@ class Request(object):
             print("Exception occurred trying to find %s service in namespace %s: %s" % (svc_name, namespace, e))
             return None
         return ip
+
+
+    def load_dockerfile(df_path):
+        with open(df_path, 'r') as dockerfile:
+            return dockerfile.readlines()
+
+
+    def _load_makefile(self, apb_dict, params):
+        env = Environment(loader=FileSystemLoader(DAT_PATH), trim_blocks=True)
+        template = env.get_template(EX_MAKEFILE)
+
+        if not params:
+            params = []
+
+        return template.render(apb_dict=apb_dict, params=params)
+
+
+    def _load_example_specfile(self, apb_dict, params):
+        env = Environment(loader=FileSystemLoader(DAT_PATH), trim_blocks=True)
+        template = env.get_template(EX_SPEC_FILE)
+
+        if not params:
+            params = []
+
+        return template.render(apb_dict=apb_dict, params=params)
+
+
+    def _write_file(self, file_out, destination, force):
+        touch(destination, force)
+        with open(destination, 'w') as outfile:
+            outfile.write(''.join(file_out))
 
 
     def relist_service_broker(self):
@@ -277,34 +158,6 @@ class Request(object):
             url = "https://" + url
 
         return url
-
-
-    def apb_list(self):
-        '''
-        List the apbs in the catalog.
-        '''
-
-        url = "%s/v2/catalog" % self.route
-        print("Contacting the ansible-service-broker at: %s" % url)
-
-        response = requests.request("get", url, verify=self.verify,
-                                    headers=self.headers)
-
-        if response.status_code != 200:
-              print("Error: Attempt to list APBs in the broker returned " \
-                    "status: %d" % response.status_code)
-              raise Exception("Unable to list APBs in Ansible Service Broker.")
-
-        services = response.json()['services']
-
-        if not services:
-            print("No APBs found")
-        elif self.args["output"] == 'json':
-            self._print_json_list(services)
-        elif self.args["verbose"]:
-            self._print_verbose_list(services)
-        else:
-            self._print_list(services)
 
 
     def apb_push(self):
@@ -371,3 +224,65 @@ class Request(object):
             raise
 
         print("Successfully bootstrapped Ansible Service Broker")
+
+
+    def apb_init(self):
+        current_path = self.args['base_path']
+        bindable = self.args['bindable']
+        async = self.args['async']
+        dockerhost = self.args['dockerhost']
+        skip = {
+            'provision': self.args['skip-provision'],
+            'deprovision': self.args['skip-deprovision'],
+            'bind': self.args['skip-bind'] or not self.args['bindable'],
+            'unbind': self.args['skip-unbind'] or not self.args['bindable'],
+            'roles': self.args['skip-roles']
+        }
+
+        apb_tag_arr = self.args['tag'].split('/')
+        apb_name = apb_tag_arr[-1]
+        app_org = apb_tag_arr[0]
+        if apb_name.lower().endswith("-apb"):
+            app_name = apb_name[:-4]
+        else:
+            app_name = apb_name
+
+        description = "This is a sample application generated by apb init"
+
+        apb_dict = {
+            'name': apb_name,
+            'app_name': app_name,
+            'app_org': app_org,
+            'description': description,
+            'bindable': bindable,
+            'async': async,
+            'dockerhost': dockerhost
+        }
+
+        project = os.path.join(current_path, apb_name)
+
+        if os.path.exists(project):
+            if not self.args['force']:
+                raise Exception('ERROR: Project directory: [%s] found and force option not specified' % project)
+            shutil.rmtree(project)
+
+        print("Initializing %s for an APB." % project)
+
+        os.mkdir(project)
+
+        spec_path = os.path.join(project, SPEC_FILE)
+        dockerfile_path = os.path.join(os.path.join(project, DOCKERFILE))
+        makefile_path = os.path.join(os.path.join(project, MAKEFILE))
+
+        specfile_out = load_example_specfile(apb_dict, [])
+        write_file(specfile_out, spec_path, self.args['force'])
+
+        dockerfile_out = load_dockerfile(EX_DOCKERFILE_PATH)
+        write_file(dockerfile_out, dockerfile_path, self.args['force'])
+
+        makefile_out = load_makefile(apb_dict, [])
+        write_file(makefile_out, makefile_path, self.args['force'])
+
+        generate_playbook_files(project, skip, apb_dict)
+        print("Successfully initialized project directory at: %s" % project)
+        print("Please run *apb prepare* inside of this directory after editing files.")
