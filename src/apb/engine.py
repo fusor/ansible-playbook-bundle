@@ -91,14 +91,15 @@ class CmdRun(object):
 
     def run(self, cmd):
         try:
-            response = getattr(self, u'cmdrun_{}'.format(cmd))()
-            if response is not None:
-                raise response
+            getattr(self, u'cmdrun_{}'.format(cmd))()
         except Exception as e:
-            print("List failure: {}".format(e))
+            print("%s failure: {}".format(e) % cmd)
 
     def cmdrun_list(self):
-        return self.r.list_apbs()
+        return self.r.apb_list()
+
+    def cmdrun_push(self):
+        return self.r.apb_push()
 
 
 def load_dockerfile(df_path):
@@ -267,34 +268,6 @@ def is_valid_spec(spec):
     if error:
         return False
     return True
-
-
-def load_spec_dict(spec_path):
-    with open(spec_path, 'r') as spec_file:
-        return YAML().load(spec_file.read())
-
-
-def load_spec_str(spec_path):
-    with open(spec_path, 'r') as spec_file:
-        return spec_file.read()
-
-
-def get_spec(project, output="dict"):
-    spec_path = os.path.join(project, SPEC_FILE)
-
-    if not os.path.exists(spec_path):
-        raise Exception('ERROR: Spec file: [ %s ] not found' % spec_path)
-
-    try:
-        if output == 'string':
-            spec = load_spec_str(spec_path)
-        else:
-            spec = load_spec_dict(spec_path)
-    except Exception as e:
-        print('ERROR: Failed to load spec!')
-        raise e
-
-    return spec
 
 
 # NOTE: Splits up an encoded blob into chunks for insertion into Dockerfile
@@ -786,69 +759,6 @@ def cmdrun_build(**kwargs):
 
 def cmdrun_relist(**kwargs):
     relist_service_broker(kwargs)
-
-
-def cmdrun_push(**kwargs):
-    project = kwargs['base_path']
-    spec = get_spec(project, 'string')
-    dict_spec = get_spec(project, 'dict')
-    blob = base64.b64encode(spec)
-    broker = kwargs["broker"]
-    if broker is None:
-        try:
-            r = request.Request(kwargs)
-            broker = r.get_asb_route()
-
-            if response is not None:
-                raise response
-        except Exception as e:
-            print("Push failure: {}".format(e))
-
-    data_spec = {'apbSpec': blob}
-    print(spec)
-
-    if kwargs['openshift']:
-        namespace = kwargs['reg_namespace']
-        service = kwargs['reg_svc_name']
-        # Assume we are using internal registry, no need to push to broker
-        registry = get_registry_service_ip(namespace, service)
-        if registry is None:
-            print("Failed to find registry service IP address.")
-            raise Exception("Unable to get registry IP from namespace %s" % namespace)
-        tag = registry + "/" + kwargs['namespace'] + "/" + dict_spec['name']
-        print("Building image with the tag: " + tag)
-        try:
-            client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
-            client.images.build(path=project, tag=tag, dockerfile=kwargs['dockerfile'])
-            openshift_config.load_kube_config()
-            token = openshift_client.configuration.api_key['authorization'].split(" ")[1]
-            client.login(username="unused", password=token, registry=registry, reauth=True)
-            client.images.push(tag)
-            print("Successfully pushed image: " + tag)
-            bootstrap(broker, kwargs.get("basic_auth_username"),
-                      kwargs.get("basic_auth_password"), kwargs["verify"])
-        except docker.errors.DockerException:
-            print("Error accessing the docker API. Is the daemon running?")
-            raise
-        except docker.errors.APIError:
-            print("Failed to login to the docker API.")
-            raise
-
-    else:
-        response = broker_request(kwargs["broker"], "/v2/apb", "post", data=data_spec,
-                                  verify=kwargs["verify"],
-                                  basic_auth_username=kwargs.get("basic_auth_username"),
-                                  basic_auth_password=kwargs.get("basic_auth_password"))
-
-        if response.status_code != 200:
-            print("Error: Attempt to add APB to the Broker returned status: %d" % response.status_code)
-            print("Unable to add APB to Ansible Service Broker.")
-            exit(1)
-
-        print("Successfully added APB to Ansible Service Broker")
-
-    if not kwargs['no_relist']:
-        relist_service_broker(kwargs)
 
 
 def cmdrun_remove(**kwargs):
