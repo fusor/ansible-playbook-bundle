@@ -727,7 +727,6 @@ def broker_request(broker, service_route, method, **kwargs):
     if broker is None:
         broker = get_asb_route()
 
-
     if broker is None:
         raise Exception("Could not find route to ansible-service-broker. "
                         "Use --broker or log into the cluster using \"oc login\"")
@@ -1045,9 +1044,11 @@ def cmdrun_push(**kwargs):
     blob = base64.b64encode(spec)
     data_spec = {'apbSpec': blob}
     broker = kwargs["broker"]
+    if broker is None:
+        broker = get_asb_route()
     print(spec)
     if kwargs['broker_push']:
-        response = broker_request(kwargs["broker"], "/v2/apb", "post", data=data_spec,
+        response = broker_request(broker, "/v2/apb", "post", data=data_spec,
                                   verify=kwargs["verify"],
                                   basic_auth_username=kwargs.get("basic_auth_username"),
                                   basic_auth_password=kwargs.get("basic_auth_password"))
