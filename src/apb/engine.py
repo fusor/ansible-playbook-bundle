@@ -726,10 +726,7 @@ def retrieve_test_result(name, namespace):
 def broker_request(broker, service_route, method, **kwargs):
     if broker is None:
         broker = get_asb_route()
-    else:
-        broker = "%s/ansible-service-broker" % broker
 
-    print("Contacting the ansible-service-broker at: %s%s" % (broker, service_route))
 
     if broker is None:
         raise Exception("Could not find route to ansible-service-broker. "
@@ -741,6 +738,7 @@ def broker_request(broker, service_route, method, **kwargs):
         broker = broker + 'ansible-service-broker'
 
     url = broker + service_route
+    print("Contacting the ansible-service-broker at: %s" % url)
 
     try:
         openshift_config.load_kube_config()
@@ -1047,8 +1045,6 @@ def cmdrun_push(**kwargs):
     blob = base64.b64encode(spec)
     data_spec = {'apbSpec': blob}
     broker = kwargs["broker"]
-    if broker is None:
-        broker = get_asb_route()
     print(spec)
     if kwargs['broker_push']:
         response = broker_request(kwargs["broker"], "/v2/apb", "post", data=data_spec,
