@@ -76,7 +76,7 @@ class Broker_Request(Request):
             self.broker_resource_url = "{}/apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers/{}".format(self.host, self.broker_name)
 
         if self.args['broker'] is None:
-            self.route = self.get_asb_route()
+            self.route = self._get_asb_route()
         else:
             self.route = self.args['broker']
 
@@ -98,3 +98,21 @@ class Broker_Request(Request):
             self.docker_client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
         except Exception as e:
             raise e
+
+
+    def _get_asb_route(self):
+        '''
+        Find the ansible-service-broker route.
+
+        TODO: Add Kubernetes support by searching for an endpoint
+        '''
+
+        for route in self.route_list.items:
+            if 'asb' in route.metadata.name and 'etcd' not in route.metadata.name:
+                asb_route = route.spec.host
+
+        url = "%s/%s" % (asb_route, self.routing_prefix)
+        if url.find("http") < 0:
+            url = "https://" + url
+
+        return url

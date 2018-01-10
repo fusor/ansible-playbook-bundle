@@ -60,13 +60,10 @@ def cmdrun_relist(**args):
     Apb_Relist(args)
 
 
-def cmdrun_bootstrap(**kwargs):
+def cmdrun_bootstrap(**args):
     Apb_Bootstrap(args)
-
-    bootstrap(kwargs["broker"], kwargs.get("basic_auth_username"), kwargs.get("basic_auth_password"), kwargs["verify"])
-
-    if not kwargs['no_relist']:
-        relist_service_broker(kwargs)
+    if not args['no_relist']:
+        Apb_Relist(args)
 
 
 def insert_encoded_spec(dockerfile, encoded_spec_lines):
