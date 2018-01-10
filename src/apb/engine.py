@@ -1,8 +1,6 @@
-import errno
 import os
 import uuid
 import base64
-import string
 import subprocess
 import json
 import docker
@@ -12,12 +10,14 @@ import yaml
 
 from ruamel.yaml import YAML
 from time import sleep
-from jinja2 import Environment, FileSystemLoader
 
 import request
 from broker_request.apb_list import Apb_List
 from broker_request.apb_push import Apb_Push
 from broker_request.apb_relist import Apb_Relist
+from broker_request.apb_bootstrap import Apb_Bootstrap
+from apb_directory.apb_init import Apb_Init
+
 
 # Handle input in 2.x/3.x
 try:
@@ -27,56 +27,12 @@ except NameError:
 
 ROLES_DIR = 'roles'
 
-DAT_DIR = 'dat'
-DAT_PATH = os.path.join(os.path.dirname(__file__), DAT_DIR)
-
 SPEC_FILE = 'apb.yml'
-EX_SPEC_FILE = 'apb.yml.j2'
-EX_SPEC_FILE_PATH = os.path.join(DAT_PATH, EX_SPEC_FILE)
 SPEC_FILE_PARAM_OPTIONS = ['name', 'description', 'type', 'default']
 
 DOCKERFILE = 'Dockerfile'
-EX_DOCKERFILE = 'Dockerfile.j2'
-EX_DOCKERFILE_PATH = os.path.join(DAT_PATH, EX_DOCKERFILE)
 
 MAKEFILE = 'Makefile'
-EX_MAKEFILE = 'Makefile.j2'
-EX_MAKEFILE_PATH = os.path.join(DAT_PATH, EX_MAKEFILE)
-
-ACTION_TEMPLATE_DICT = {
-    'provision': {
-        'playbook_template': 'playbooks/playbook.yml.j2',
-        'playbook_dir': 'playbooks',
-        'playbook_file': 'provision.yml',
-        'role_task_main_template': 'roles/provision/tasks/main.yml.j2',
-        'role_tasks_dir': 'roles/$role_name/tasks',
-        'role_task_main_file': 'main.yml'
-    },
-    'deprovision': {
-        'playbook_template': 'playbooks/playbook.yml.j2',
-        'playbook_dir': 'playbooks',
-        'playbook_file': 'deprovision.yml',
-        'role_task_main_template': 'roles/deprovision/tasks/main.yml.j2',
-        'role_tasks_dir': 'roles/$role_name/tasks',
-        'role_task_main_file': 'main.yml'
-    },
-    'bind': {
-        'playbook_template': 'playbooks/playbook.yml.j2',
-        'playbook_dir': 'playbooks',
-        'playbook_file': 'bind.yml',
-        'role_task_main_template': 'roles/bind/tasks/main.yml.j2',
-        'role_tasks_dir': 'roles/$role_name/tasks',
-        'role_task_main_file': 'main.yml'
-    },
-    'unbind': {
-        'playbook_template': 'playbooks/playbook.yml.j2',
-        'playbook_dir': 'playbooks',
-        'playbook_file': 'unbind.yml',
-        'role_task_main_template': 'roles/unbind/tasks/main.yml.j2',
-        'role_tasks_dir': 'roles/$role_name/tasks',
-        'role_task_main_file': 'main.yml'
-    },
-}
 
 SKIP_OPTIONS = ['provision', 'deprovision', 'bind', 'unbind', 'roles']
 ASYNC_OPTIONS = ['required', 'optional', 'unsupported']
@@ -86,27 +42,31 @@ VERSION_LABEL = 'com.redhat.apb.version'
 WATCH_POD_SLEEP = 5
 
 
-class CmdRun(object):
-    def __init__(self, **args):
-        self.r = request.Request(args)
-        self.args = args
+def cmdrun_list(**args):
+    Apb_List(args)
 
-    def run(self, cmd):
-        try:
-            getattr(self, u'cmdrun_{}'.format(cmd))()
-        except Exception as e:
-            print("%s failure: {}".format(e) % cmd)
 
-    def cmdrun_list(self):
-        Apb_List(self.args)
+def cmdrun_push(**args):
+    Apb_Push(args)
+    if not args['no_relist']:
+        Apb_Relist(args)
 
-    def cmdrun_push(self):
-        Apb_Push(self.args)
-        if not self.args['no_relist']:
-            Apb_Relist(self.args)
 
-    def cmdrun_init(self):
-        return self.r.apb_init()
+def cmdrun_init(**args):
+    Apb_Init(args)
+
+
+def cmdrun_relist(**args):
+    Apb_Relist(args)
+
+
+def cmdrun_bootstrap(**kwargs):
+    Apb_Bootstrap(args)
+
+    bootstrap(kwargs["broker"], kwargs.get("basic_auth_username"), kwargs.get("basic_auth_password"), kwargs["verify"])
+
+    if not kwargs['no_relist']:
+        relist_service_broker(kwargs)
 
 
 def insert_encoded_spec(dockerfile, encoded_spec_lines):
@@ -140,55 +100,6 @@ def insert_encoded_spec(dockerfile, encoded_spec_lines):
     dockerfile.insert(offset, "\n")
 
     return dockerfile
-
-
-def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
-
-
-def write_playbook(project_dir, apb_dict, action):
-    env = Environment(loader=FileSystemLoader(DAT_PATH))
-    templates = ACTION_TEMPLATE_DICT[action]
-    playbook_template = env.get_template(templates['playbook_template'])
-    playbook_out = playbook_template.render(apb_dict=apb_dict, action_name=action)
-
-    playbook_pathname = os.path.join(project_dir,
-                                     templates['playbook_dir'],
-                                     templates['playbook_file'])
-    mkdir_p(os.path.join(project_dir, templates['playbook_dir']))
-    write_file(playbook_out, playbook_pathname, True)
-
-
-def write_role(project_path, apb_dict, action):
-    env = Environment(loader=FileSystemLoader(DAT_PATH))
-    templates = ACTION_TEMPLATE_DICT[action]
-    template = env.get_template(templates['role_task_main_template'])
-    main_out = template.render(apb_dict=apb_dict, action_name=action)
-
-    role_name = action + '-' + apb_dict['name']
-    dir_tpl = string.Template(templates['role_tasks_dir'])
-    dir = dir_tpl.substitute(role_name=role_name)
-    role_tasks_dir = os.path.join(project_path, dir)
-
-    mkdir_p(role_tasks_dir)
-    main_filepath = os.path.join(role_tasks_dir, templates['role_task_main_file'])
-    write_file(main_out, main_filepath, True)
-
-
-def generate_playbook_files(project_path, skip, apb_dict):
-    print("Generating playbook files")
-
-    for action in ACTION_TEMPLATE_DICT.keys():
-        if not skip[action]:
-            write_playbook(project_path, apb_dict, action)
-            if not skip['roles']:
-                write_role(project_path, apb_dict, action)
 
 
 def gen_spec_id(spec, spec_path):
@@ -276,16 +187,6 @@ def make_friendly(blob):
         flines.append('{0}"'.format(blob[line_break * chunks:]))
 
     return flines
-
-
-def touch(fname, force):
-    if os.path.exists(fname):
-        os.utime(fname, None)
-        if force:
-            os.remove(fname)
-            open(fname, 'a').close()
-    else:
-        open(fname, 'a').close()
 
 
 def update_deps(project):
@@ -671,9 +572,6 @@ def cmdrun_build(**kwargs):
     )
 
 
-def cmdrun_relist(**kwargs):
-    relist_service_broker(kwargs)
-
 
 def cmdrun_remove(**kwargs):
     if kwargs["all"]:
@@ -711,13 +609,6 @@ def bootstrap(broker, username, password, verify):
         exit(1)
 
     print("Successfully bootstrapped Ansible Service Broker")
-
-
-def cmdrun_bootstrap(**kwargs):
-    bootstrap(kwargs["broker"], kwargs.get("basic_auth_username"), kwargs.get("basic_auth_password"), kwargs["verify"])
-
-    if not kwargs['no_relist']:
-        relist_service_broker(kwargs)
 
 
 def cmdrun_serviceinstance(**kwargs):
