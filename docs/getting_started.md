@@ -409,7 +409,7 @@ To run the deprovision template, click on the menu on the list of **_Deployed Se
 
 
 #### Bind
-From the previous sections, we learned how to deploy a standalone application.  However, in most cases applications will need to communicate other applications, often a data source.  In the following sections we'll create PostgreSQL database that the hello-world application deployed from my-test-apb can use.
+From the previous sections, we learned how to deploy a standalone application.  However, in most cases applications will need to communicate with other applications, often a data source.  In the following sections we'll create a PostgreSQL database that the hello-world application deployed from my-test-apb can use.
 
 
 ##### Asynchronous Binding (Experimental)
