@@ -136,7 +136,7 @@ $ apb build
 
 At this point, you can push the new APB image to the local OpenShift registry.
 ```bash
-$ apb push -o
+$ apb push
 ```
 
 Querying the ansible service broker will now show your new apb listed.
@@ -276,7 +276,7 @@ If you build, push, and provision the apb there will be a new running pod and a 
 Build and Push 
 ```
 $ apb build
-$ apb push -o
+$ apb push
 ```
 Provision using the Web Console UI
 
@@ -317,7 +317,7 @@ We want to use multiple [pods](https://docs.openshift.org/latest/architecture/co
 ```
 The `selector` will allow the *my-test* service to include the correct pods.  The `ports` will take the target port from the pods (8080) and expose them as a single port for the service (80).  Notice the application was running on 8080 but has now been made available on the default http port of 80.  The `name` field of the port will allow us to specify this port in the future with other resources.  More information is available in the [k8s_v1_service module](https://github.com/ansible/ansible-kubernetes-modules/blob/master/library/k8s_v1_service.py).
 
-If you rebuild the APB with `apb build`, push it using `apb push -o`, and provision it, you will see a new service in the UI or on the command line.  In the UI (), you can click on the new service under **_Networking_** in the application on the overview page or under **_Applications -> Services_**.  The service's IP address will be shown which you can use to access the load balanced application.  To view the service information from the command line, you can do the following:
+If you rebuild the APB with `apb build`, push it using `apb push`, and provision it, you will see a new service in the UI or on the command line.  In the UI (), you can click on the new service under **_Networking_** in the application on the overview page or under **_Applications -> Services_**.  The service's IP address will be shown which you can use to access the load balanced application.  To view the service information from the command line, you can do the following:
 ```
 $ oc project getting-started
 $ oc get services
@@ -339,7 +339,7 @@ We want to expose external access to our application through a reliable named [r
     spec_port_target_port: web
 ```
 The `to_name` is name of the target service.  `spec_port_target_port` refers to the name of the target service's port.  More information is available in the [openshift_v1_route module](https://github.com/ansible/ansible-kubernetes-modules/blob/master/library/openshift_v1_route.py).
-If you rebuild the APB with `apb build`, push it using `apb push -o`, and provision it, it, you will see the new route created.  On the console UI overview page for the getting-started project, you will now see an active and clickable route link listed on the application.  Clicking on the route or visiting the URL will bring up the hello-world app.  From the command line, you can also view the route information.
+If you rebuild the APB with `apb build`, push it using `apb push`, and provision it, it, you will see the new route created.  On the console UI overview page for the getting-started project, you will now see an active and clickable route link listed on the application.  Clicking on the route or visiting the URL will bring up the hello-world app.  From the command line, you can also view the route information.
 ```
 $ oc project getting-started
 
@@ -729,7 +729,7 @@ Edit the `roles/bind-my-pg-apb/tasks/main.yml` and add the following:
 When all this is complete, build and push your APB.
 ```bash
 apb build
-apb push -o
+apb push
 ```
 
 At this point, the APB can create a fully functional Postgres database on our cluster and create a new database for use by our application.  Let's test it out now.
@@ -815,14 +815,14 @@ Example:
 ### Notes
 
 #### Using `apb push` with Local OpenShift registry (recommended)
-To test an APB you have built with the internal openshift registry, you can use `apb push -o`. This command takes the name of the OpenShift namespace you wish to push the image to. In order to use this feature, the Ansible Service Broker you are running must be configured to bootstrap from the local_openshift registry. Please see the [config file documentation](https://github.com/openshift/ansible-service-broker/blob/master/docs/config.md) to configure the registry for type `local_openshift`. The following command will build the image with the namespace you passed in as a parameter (by default `openshift`) and push it to the internal registry.
+To test an APB you have built with the internal openshift registry, you can use `apb push`. This command takes the name of the OpenShift namespace you wish to push the image to. In order to use this feature, the Ansible Service Broker you are running must be configured to bootstrap from the local_openshift registry. Please see the [config file documentation](https://github.com/openshift/ansible-service-broker/blob/master/docs/config.md) to configure the registry for type `local_openshift`. The following command will build the image with the namespace you passed in as a parameter (by default `openshift`) and push it to the internal registry.
 
 ```
-apb push --openshift
+apb push
 ```
 or 
 ```
-apb push -o
+apb push
 ```
 
 #### Using `apb push` with Ansible Service Broker mock registry

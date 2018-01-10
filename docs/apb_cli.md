@@ -151,13 +151,13 @@ In order to use the internal OpenShift Docker Registry to source APBs, you must 
 apb init my-new-apb
 cd my-new-apb
 apb build
-apb push --openshift
+apb push
 apb list
 ```
 
 If you are using a namespace other than the default `openshift` namespace to host your APBs then you can use the following command:
 ```
-apb push -o --namespace <namespace>
+apb push --namespace <namespace>
 ```
 
 This is assuming that the user has the cluster-admin role assigned to the user that is logged in. i.e.:
@@ -383,7 +383,7 @@ apb push [OPTIONS]
 | --help, -h         | Show help message |
 | --broker BROKER_URL | Route to the Ansible Service Broker |
 | --namespace NAMESPACE | Namespace to push to internal OpenShift registry |
-| --openshift, -o    | Use the internal OpenShift registry |
+| --push-to-broker   | Use the OpenShift Ansible Broker mock registry endpoint |
 | --dockerfile DOCKERFILE, -f DOCKERFILE | Dockerfile to build internal registry image.  Usually defaults to "Dockerfile" but can be set to any filename |
 | --secure           | Use secure connection to Ansible Service Broker |
 | --username  USERNAME| Basic auth username to be used in broker communication  |
@@ -393,19 +393,17 @@ apb push [OPTIONS]
 
 
 ##### Examples
-Push to the Ansible Service Broker development endpoint
+Push to the local OpenShift registry
 ```bash
 apb push
 ```
-
-Push to the local OpenShift registry
+Push to the Ansible Service Broker development endpoint
 ```bash
-apb push -o
+apb push --push-to-broker
 ```
-
 Push to the local OpenShift registry under namespace `leto`
 ```bash
-apb push -o --namespace leto
+apb push --namespace leto
 ```
 
 ---
