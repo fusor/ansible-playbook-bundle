@@ -4,6 +4,7 @@ import uuid
 import base64
 import shutil
 import string
+import random
 import subprocess
 import json
 import requests
@@ -20,6 +21,7 @@ from openshift.helper.openshift import OpenShiftObjectHelper
 from jinja2 import Environment, FileSystemLoader
 from kubernetes import client as kubernetes_client, config as kubernetes_config
 from kubernetes.client.rest import ApiException
+from kubernetes.stream import stream as kubernetes_stream
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 # Handle input in 2.x/3.x
@@ -714,12 +716,16 @@ def retrieve_test_result(name, namespace):
     while True:
         try:
             count += 1
-            api_response = api.connect_post_namespaced_pod_exec(
-                name, namespace,
+            api_response = kubernetes_stream(
+                api.connect_get_namespaced_pod_exec,
+                name,
+                namespace,
                 command="/usr/bin/test-retrieval",
-                tty=False)
-            if "non-zero exit code" not in api_response:
+                stderr=True, stdin=False,
+                stdout=True, tty=False)
+            if "test results are not available" not in api_response:
                 return api_response
+            sleep(WATCH_POD_SLEEP)
         except ApiException as e:
             if count >= 50:
                 return None
@@ -729,7 +735,7 @@ def retrieve_test_result(name, namespace):
                 return None
             sleep(WATCH_POD_SLEEP)
         except Exception as e:
-            print("execption: %s" % e)
+            print("exception: %s" % e)
             return None
 
 
@@ -1197,6 +1203,10 @@ def cmdrun_serviceinstance(**kwargs):
         yaml.dump(serviceInstance, outfile, default_flow_style=False)
 
 
+def rand_str(size=5, chars=string.ascii_lowercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
+
+
 def cmdrun_test(**kwargs):
     project = kwargs['base_path']
     image = build_apb(
@@ -1206,7 +1216,7 @@ def cmdrun_test(**kwargs):
     )
 
     spec = get_spec(project)
-    test_name = 'apb-test-{}'.format(spec['name'])
+    test_name = 'apb-test-{}-{}'.format(spec['name'], rand_str())
     name, namespace = run_apb(
         project=test_name,
         image=image,
