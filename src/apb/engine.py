@@ -663,18 +663,22 @@ def create_pod(image, name, namespace, command, service_account):
 
 
 def watch_pod(name, namespace):
-    try:
-        kubernetes_config.load_kube_config()
-        api = kubernetes_client.CoreV1Api()
+    kubernetes_config.load_kube_config()
+    api = kubernetes_client.CoreV1Api()
 
-        while True:
-            pod_phase = api.read_namespaced_pod(name, namespace).status.phase
-            if pod_phase == 'Succeeded' or pod_phase == 'Failed':
-                return pod_phase
-            sleep(WATCH_POD_SLEEP)
-    except ApiException as e:
-        print("Get pod failure: {}".format(e))
-        raise e
+    while True:
+        pod_status = api.read_namespaced_pod(name, namespace).status
+        pod_phase = pod_status.phase
+        if pod_phase == 'Succeeded' or pod_phase == 'Failed':
+            return pod_phase
+        if pod_phase == 'Pending':
+            try:
+                reason = pod_status.container_statuses[0].state.waiting.reason
+            except ApiException as e:
+                pass
+            if reason == 'ImagePullBackOff':
+                raise ApiException("APB failed {} - check name".format(reason))
+        sleep(WATCH_POD_SLEEP)
 
 
 def run_apb(project, image, name, action, parameters={}):
@@ -1280,4 +1284,9 @@ def cmdrun_run(**kwargs):
         return
 
     print("APB run started")
-    print("APB run complete: {}".format(watch_pod(name, namespace)))
+    try:
+        pod_completed = watch_pod(name, namespace)
+        print("APB run complete: {}".format(pod_completed))
+    except Exception as e:
+        print("APB run failed: {}".format(e))
+        exit(1)
