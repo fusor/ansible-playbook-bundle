@@ -336,8 +336,7 @@ apb build [OPTIONS]
 | :---               | :---        |
 | --help, -h         | Show help message |
 | --tag TAG          | Sets the tag of the built image to a string in the format registry/org/name|
-| --registry         | registry portion of the tag of the image (e.g. docker.io)|
-| --org, -o          | user or organization portion of the tag of the image|
+| --dockerfile DOCKERFILE, -f DOCKERFILE  | Writes the apb spec to the target filename instead of a file named "Dockerfile"  |
 
 
 ##### Examples
@@ -349,11 +348,6 @@ apb build
 Build the image and use the tag docker.io/my-org/my-new-apb.
 ```bash
 apb build --tag docker.io/my-org/my-new-apb
-```
-
-Build the image and use the tag docker.io/my-org/<my-apb-name>.
-```bash
-apb build --registry docker.io --org my-org
 ```
 
 Build the image using the file "Dockerfile-custom" as the Dockerfile definition.
@@ -383,13 +377,16 @@ apb push [OPTIONS]
 | --help, -h         | Show help message |
 | --broker BROKER_URL | Route to the Ansible Service Broker |
 | --namespace NAMESPACE | Namespace to push to internal OpenShift registry |
-| --push-to-broker   | Use the OpenShift Ansible Broker mock registry endpoint |
+| --registry-service-name REG_SVC_NAME | Name of service for the internal OpenShift registry |
+| --registry-route REG_ROUTE | Name of service for the internal OpenShift registry |
+| --registry-namespace REG_NAMESPACE | Name of service for the internal OpenShift registry |
 | --dockerfile DOCKERFILE, -f DOCKERFILE | Dockerfile to build internal registry image.  Usually defaults to "Dockerfile" but can be set to any filename |
 | --secure           | Use secure connection to Ansible Service Broker |
 | --username  USERNAME| Basic auth username to be used in broker communication  |
 | --password  PASSWORD| Basic auth password to be used in broker communication  |
 | --no-relist        | Do not relist the catalog after pushing an apb to the broker  |
 | --broker-name      | Name of the ServiceBroker k8s resource  |
+| --push-to-broker   | Use the OpenShift Ansible Broker mock registry endpoint |
 
 
 ##### Examples
@@ -541,7 +538,9 @@ apb remove [OPTIONS]
 Remove an APB using an ID
 ```bash
 apb remove --id ca91b61da8476984f18fc13883ae2fdb
+oc delete clusterserviceclass ca91b61da8476984f18fc13883ae2fdb
 ```
+Deleting the `clusterserviceclass` removes the associated APB from the Service Catalog.
 
 *Note: If you need an ID of an APB, use* `apb list`.
 ```bash
