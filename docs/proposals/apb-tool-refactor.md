@@ -52,13 +52,17 @@ src/apb/
 
 
 #### cli.go
-Command processing
-  - Subcommands
-    - Broker subcommands
-    - Docker subcommands
-    - Apb directory subcommands
-  - Gather input
-  - Call <command>.Run()
+The ```cli.go``` primary focus is command processing. It gathers and validates
+input, then calls the corresponding subcommand with the appropriate arguments.
+The subcommands will be classified into 3 groups:
+  - Broker subcommands
+  - Docker subcommands
+  - Apb directory subcommands
+
+```cli.go``` will expect a return value from the subcommand it called. Based on
+that subcommand, the return value will be processed before its printed to
+stdout. Some commands won't require any additional help printing something human
+readable.
 
 
 #### base.go
