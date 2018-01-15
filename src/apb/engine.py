@@ -1252,16 +1252,20 @@ def cmdrun_run(**kwargs):
                 "(required)" if 'required' in parm and parm['required'] else '',
                 "[default: {}]".format(parm['default']) if 'default' in parm else ''
             ))
-            # Take the default if nothing
-            if val == "" and 'default' in parm:
-                val = parm['default']
+            # Take the value if something
+            if val:
                 break
-            # If not required move on
-            if val == "" and ('required' not in parm) or (not parm['required']):
-                break
-            # Tell the user if the parameter is required
-            if val == "" and 'default' not in parm and 'required' in parm and parm['required']:
-                print("ERROR: Please provide value for required parameter")
+            else:
+                # Take the default if nothing
+                if 'default' in parm:
+                    val = parm['default']
+                    break
+                # If not required move on
+                if ('required' not in parm) or (not parm['required']):
+                    break
+                # Tell the user if the parameter is required
+                if 'default' not in parm and 'required' in parm and parm['required']:
+                    print("ERROR: Please provide value for required parameter")
         parameters[parm['name']] = val
 
     name, namespace = run_apb(
