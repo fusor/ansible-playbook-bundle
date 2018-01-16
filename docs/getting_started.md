@@ -266,7 +266,7 @@ The `replicas: 1` field specifies that we only want 1 [pod](https://docs.openshi
 
 The `selector` section is a [label](https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#labels) query over pods.
 
-In the `containers` section, we have specified the a [container](https://docs.openshift.org/latest/architecture/core_concepts/containers_and_images.html#containers) with a hello-world app running on port 8080 on TCP.  The [image](https://docs.openshift.org/latest/architecture/core_concepts/containers_and_images.html#docker-images) is stored on [docker.io](https://hub.docker.com/)/[ansibleplaybookbundle](https://hub.docker.com/r/ansibleplaybookbundle/)/[hello-world](https://hub.docker.com/r/ansibleplaybookbundle/hello-world/).
+In the `containers` section, we have specified a [container](https://docs.openshift.org/latest/architecture/core_concepts/containers_and_images.html#containers) with a hello-world app running on port 8080 on TCP.  The [image](https://docs.openshift.org/latest/architecture/core_concepts/containers_and_images.html#docker-images) is stored on [docker.io](https://hub.docker.com/)/[ansibleplaybookbundle](https://hub.docker.com/r/ansibleplaybookbundle/)/[hello-world](https://hub.docker.com/r/ansibleplaybookbundle/hello-world/).
 
 For more information, the [developers guide](developers.md#deployment-config) has more detail and you can also visit the ansible-kubernetes-modules [code](https://github.com/ansible/ansible-kubernetes-modules/blob/master/library/openshift_v1_deployment_config.py) documentation for a full accounting of all fields.
 
