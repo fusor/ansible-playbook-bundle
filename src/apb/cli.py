@@ -194,13 +194,6 @@ def subcmd_push_parser(subcmd):
         help=u'Route to the Ansible Service Broker'
     )
     subcmd.add_argument(
-        '--namespace',
-        action='store',
-        dest='namespace',
-        help=u'Namespace to push to internal OpenShift registry',
-        default=u'openshift'
-    )
-    subcmd.add_argument(
         '--registry-service-name',
         action='store',
         dest='reg_svc_name',
