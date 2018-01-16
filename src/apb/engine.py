@@ -534,14 +534,17 @@ def create_service_account(name, namespace):
                 'apiVersion': 'v1',
                 'kind': 'ServiceAccount',
                 'metadata': {
-                    'generateName': name,
+                    'name': name,
                     'namespace': namespace,
                 },
             }
         )
         print("Created service account")
-        return service_account.metadata.name
+        return name
     except ApiException as e:
+        if e.status == 409:
+            print("Service account {} already exists".format(name))
+            return name
         raise e
 
 
@@ -603,6 +606,9 @@ def create_role_binding(name, namespace, service_account, role="admin"):
             }
         )
     except ApiException as e:
+        if e.status == 409:
+            print("Role binding {} already exists".format(name))
+            return name
         raise e
     except Exception as e:
         # TODO:
