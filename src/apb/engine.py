@@ -528,7 +528,7 @@ def create_service_account(name, namespace):
     try:
         kubernetes_config.load_kube_config()
         api = kubernetes_client.CoreV1Api()
-        service_account = api.create_namespaced_service_account(
+        api.create_namespaced_service_account(
             namespace,
             {
                 'apiVersion': 'v1',
@@ -680,7 +680,7 @@ def watch_pod(name, namespace):
         if pod_phase == 'Pending':
             try:
                 reason = pod_status.container_statuses[0].state.waiting.reason
-            except ApiException as e:
+            except ApiException:
                 pass
             if reason == 'ImagePullBackOff':
                 raise ApiException("APB failed {} - check name".format(reason))
