@@ -208,6 +208,13 @@ def subcmd_push_parser(subcmd):
         default=u'default'
     )
     subcmd.add_argument(
+        '--namespace',
+        action='store',
+        dest='namespace',
+        help=u'Namespace to push APB in OpenShift registry',
+        default=u'openshift'
+    )
+    subcmd.add_argument(
         '--registry-route',
         action='store',
         dest='reg_route',
