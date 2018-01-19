@@ -1,0 +1,126 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: apbtools-permission
+objects:
+################################################################################
+# Broker endpoint access
+################################################################################
+- apiVersion: rbac.authorization.k8s.io/v1beta1
+  kind: ClusterRoleBinding
+  metadata:
+    name: apbtool-access-asb
+  subjects:
+  - kind: User
+    name: ${USER}
+  roleRef:
+    kind: ClusterRole
+    name: access-asb-role
+    apiGroup: rbac.authorization.k8s.io
+################################################################################
+# apb must be able to view the ansible-service-broker project
+################################################################################
+- apiVersion: authorization.openshift.io/v1
+  kind: RoleBinding
+  metadata:
+    name: apbtool-view
+    namespace: ${BROKER_NAMESPACE}
+  subjects:
+  - kind: User
+    name: ${USER}
+  roleRef:
+    kind: Role
+    name: view
+################################################################################
+# apb relist support
+################################################################################
+- apiVersion: rbac.authorization.k8s.io/v1beta1
+  kind: Role
+  metadata:
+    name: apbtool-get-secrets
+    namespace: ${BROKER_NAMESPACE}
+  rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+- apiVersion: rbac.authorization.k8s.io/v1beta1
+  kind: RoleBinding
+  metadata:
+    name: apbtool-get-secrets
+    namespace: ${BROKER_NAMESPACE}
+  subjects:
+  - kind: User
+    name: ${USER}
+  roleRef:
+    kind: Role
+    name: apbtool-get-secrets
+    apiGroup: rbac.authorization.k8s.io
+- apiVersion: rbac.authorization.k8s.io/v1beta1
+  kind: ClusterRole
+  metadata:
+    name: apbtool-relist
+  rules:
+  - apiGroups: ["servicecatalog.k8s.io"]
+    resources: ["clusterservicebrokers"]
+    verbs: ["get", "patch"]
+- apiVersion: rbac.authorization.k8s.io/v1beta1
+  kind: ClusterRoleBinding
+  metadata:
+    name: apbtool-relist
+  subjects:
+  - kind: User
+    name: ${USER}
+  roleRef:
+    kind: ClusterRole
+    name: apbtool-relist
+    apiGroup: rbac.authorization.k8s.io
+################################################################################
+# apb push requires the prereqs for accessing the registry directly, see:
+# https://docs.openshift.com/enterprise/3.2/install_config/install/docker_registry.html#access-user-prerequisites
+################################################################################
+- apiVersion: authorization.openshift.io/v1
+  kind: RoleBinding
+  metadata:
+    name: apbtool-openshift-admin
+    namespace: ${GLOBAL_IMAGE_PROJECT}
+  subjects:
+  - kind: User
+    name: ${USER}
+  roleRef:
+    kind: Role
+    name: admin
+- apiVersion: rbac.authorization.k8s.io/v1beta1
+  kind: ClusterRoleBinding
+  metadata:
+    name: apbtool-system-registry
+  subjects:
+  - kind: User
+    name: ${USER}
+  roleRef:
+    kind: ClusterRole
+    name: system:registry
+    apiGroup: rbac.authorization.k8s.io
+- apiVersion: rbac.authorization.k8s.io/v1beta1
+  kind: ClusterRoleBinding
+  metadata:
+    name: apbtool-system-image-builder
+  subjects:
+  - kind: User
+    name: ${USER}
+  roleRef:
+    kind: ClusterRole
+    name: system:image-builder
+    apiGroup: rbac.authorization.k8s.io
+parameters:
+- displayname: User
+  description: The name of the User that should be permissioned for apb tool access
+  name: USER
+  value: developer
+- displayname: Broker Namespace
+  description: The Ansible Broker's namespace
+  name: BROKER_NAMESPACE
+  value: ansible-service-broker
+- displayname: Global Image Project
+  description: Global Image Project
+  name: GLOBAL_IMAGE_PROJECT
+  value: openshift

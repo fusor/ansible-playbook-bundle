@@ -885,7 +885,7 @@ def build_apb(project, dockerfile=None, tag=None):
     print("Building APB using tag: [%s]" % tag)
 
     try:
-        client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
+        client = create_docker_client()
         client.images.build(path=project, tag=tag, dockerfile=dockerfile)
     except docker.errors.DockerException:
         print("Error accessing the docker API. Is the daemon running?")
@@ -897,7 +897,7 @@ def build_apb(project, dockerfile=None, tag=None):
 
 def cmdrun_setup(**kwargs):
     try:
-        docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
+        create_docker_client()
     except Exception as e:
         print("Error! Failed to connect to Docker client. Please ensure it is running. Exception: %s" % e)
         exit(1)
@@ -1077,6 +1077,8 @@ def cmdrun_push(**kwargs):
 
     if registry_route:
         registry = registry_route
+    elif is_minishift():
+        registry = get_minishift_registry()
     else:
         registry = get_registry_service_ip(namespace, service)
         if registry is None:
@@ -1086,12 +1088,16 @@ def cmdrun_push(**kwargs):
     tag = registry + "/" + kwargs['namespace'] + "/" + dict_spec['name']
     print("Building image with the tag: " + tag)
     try:
-        client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
+        client = create_docker_client()
         client.images.build(path=project, tag=tag, dockerfile=kwargs['dockerfile'])
         openshift_config.load_kube_config()
         token = openshift_client.configuration.api_key['authorization'].split(" ")[1]
-        client.login(username="unused", password=token, registry=registry, reauth=True)
+        username = "developer" if is_minishift() else "unused"
+        client.login(username=username, password=token, registry=registry, reauth=True)
+
+        print("Pushing the image, this could take a minute...")
         client.images.push(tag)
+
         print("Successfully pushed image: " + tag)
         bootstrap(broker, kwargs.get("basic_auth_username"),
                   kwargs.get("basic_auth_password"), kwargs["verify"])
@@ -1296,3 +1302,38 @@ def cmdrun_run(**kwargs):
     except Exception as e:
         print("APB run failed: {}".format(e))
         exit(1)
+
+
+def create_docker_client():
+    # In order to build and push to the minishift registry, it's required that
+    # users have configured their shell to use the minishift docker daemon
+    # instead of a local daemon:
+    # https://docs.openshift.org/latest/minishift/using/docker-daemon.html
+    if is_minishift():
+        cert_path = os.environ.get('DOCKER_CERT_PATH')
+        docker_host = os.environ.get('DOCKER_HOST')
+        if docker_host == None or cert_path == None:
+            raise Exception("Attempting to target minishift, but missing \
+                    required env vars. Try running: \"eval $(minishift docker-env)\"")
+        client_cert = os.path.join(cert_path, 'cert.pem')
+        client_key = os.path.join(cert_path, 'key.pem')
+        ca_cert = os.path.join(cert_path, 'ca.pem')
+        tls = docker.tls.TLSConfig(
+                ca_cert=ca_cert,
+                client_cert=(client_cert, client_key),
+                verify=True)
+        client = docker.DockerClient(tls=tls, base_url=docker_host, version='auto')
+    else:
+        client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
+    return client
+
+def is_minishift():
+    # Assume user is using minishift if the shell has been configured to use
+    # a minishift docker daemon.
+    docker_cert_path = os.environ.get('DOCKER_CERT_PATH')
+    if docker_cert_path == None: return False
+    return "minishift" in docker_cert_path
+
+def get_minishift_registry():
+    cmd = "minishift openshift registry"
+    return subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True).rstrip()
