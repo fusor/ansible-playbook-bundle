@@ -143,10 +143,42 @@ subcommand:
 
 ```
 
+#### Access Permissions
+
+The `apb` tool requires you to be logged in as a tokened cluster user (`system:admin`
+is not sufficient because it does not have a token that can be used for the tool's authentication).
+In addition, there are a number of `RoleBinding`s and `ClusterRoleBindings` that must
+exist to permit the full breadth of the `apb` tool's functions.
+
+The easiest option is to ensure the user has the `cluster-admin` `ClusterRoleBinding`.
+**To be clear, this is effectively cluster root and should only be used in a development setting**.
+
+```
+oc adm policy add-cluster-role-to-user cluster-admin <user>
+oc login -u <user>
+```
+
+If you would like a more strictly permissioned environment, we have an [Openshift Template](templates/openshift-permissions.template.yaml)
+available that can be applied with the following command:
+
+`oc process -f templates/openshift-permissions.template.yaml -p USER=<your_desired_user> | oc create -f -`.
+
+By default, the template will permission the `developer` user. If that is your user, it
+is safe to leave off the `-p` flag, which overrides the default value. Obviously, this
+command must be run by a user with sufficient permissions to create the various roles.
+The `developer` account does not have such permissions. `oc login -u system:admin` should
+be sufficient.
+
 ## Typical Workflows
 
 #### Local Registry
 In order to use the internal OpenShift Docker Registry to source APBs, you must have configured the Ansible Service Broker to use the `local_openshift` type registry adapter. Please see the [config](https://github.com/openshift/ansible-service-broker/blob/master/docs/config.md#local-openshift-registry) section for more information.
+
+NOTE: If you are working with a minishift cluster and the [ansible-service-broker addon](https://github.com/minishift/minishift-addons/tree/master/add-ons/ansible-service-broker),
+you must first configure your shell to use the minishift Docker daemon. This can
+be done with `eval $(minishift docker-env)`. For more info, see [minishift's documentation for working with its docker registry](https://docs.openshift.org/latest/minishift/using/docker-daemon.html).
+
+
 ```bash
 apb init my-new-apb
 cd my-new-apb
@@ -158,12 +190,6 @@ apb list
 If you are using a namespace other than the default `openshift` namespace to host your APBs then you can use the following command:
 ```
 apb push --namespace <namespace>
-```
-
-This is assuming that the user has the cluster-admin role assigned to the user that is logged in. i.e.:
-```
-oc adm policy add-cluster-role-to-user cluster-admin <user>
-oc login -u <user>
 ```
 
 #### Remote Registry
