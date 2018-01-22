@@ -16,6 +16,7 @@ The APB developer guide provides an in depth guide to creating APBs. This guide 
      * [Optional Variables](#optional-variables)
      * [Working with Restricted SCC](#working-with-the-restricted-scc)
      * [Using a ConfigMap](#using-a-configmap-within-an-apb)
+     * [Testing APBs with docker run](#using-docker-run-to-quickly-test-an-apb)
 
 
 ## APB Examples
