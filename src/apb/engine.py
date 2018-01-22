@@ -673,6 +673,8 @@ def watch_pod(name, namespace):
     api = kubernetes_client.CoreV1Api()
 
     while True:
+        sleep(WATCH_POD_SLEEP)
+
         pod_status = api.read_namespaced_pod(name, namespace).status
         pod_phase = pod_status.phase
         if pod_phase == 'Succeeded' or pod_phase == 'Failed':
@@ -684,7 +686,6 @@ def watch_pod(name, namespace):
                 pass
             if reason == 'ImagePullBackOff':
                 raise ApiException("APB failed {} - check name".format(reason))
-        sleep(WATCH_POD_SLEEP)
 
 
 def run_apb(project, image, name, action, parameters={}):
@@ -895,6 +896,42 @@ def build_apb(project, dockerfile=None, tag=None):
     return tag
 
 
+def get_registry(kwargs):
+    namespace = kwargs['reg_namespace']
+    service = kwargs['reg_svc_name']
+    registry_route = kwargs['reg_route']
+
+    if registry_route:
+        return registry_route
+    elif is_minishift():
+        return get_minishift_registry()
+    else:
+        registry = get_registry_service_ip(namespace, service)
+        if registry is None:
+            print("Failed to find registry service IP address.")
+            raise Exception("Unable to get registry IP from namespace %s" % namespace)
+        return registry
+
+
+def push_apb(registry, tag):
+    try:
+        client = create_docker_client()
+        openshift_config.load_kube_config()
+        token = openshift_client.Configuration().get_api_key_with_prefix('authorization').split(" ")[1]
+        username = "developer" if is_minishift() else "unused"
+        client.login(username=username, password=token, registry=registry, reauth=True)
+
+        print("Pushing the image, this could take a minute...")
+        client.images.push(tag)
+        print("Successfully pushed image: " + tag)
+    except docker.errors.DockerException:
+        print("Error accessing the docker API. Is the daemon running?")
+        raise
+    except docker.errors.APIError:
+        print("Failed to login to the docker API.")
+        raise
+
+
 def cmdrun_setup(**kwargs):
     try:
         create_docker_client()
@@ -1071,42 +1108,17 @@ def cmdrun_push(**kwargs):
         print("Successfully added APB to Ansible Service Broker")
         return
 
-    namespace = kwargs['reg_namespace']
-    service = kwargs['reg_svc_name']
-    registry_route = kwargs['reg_route']
-
-    if registry_route:
-        registry = registry_route
-    elif is_minishift():
-        registry = get_minishift_registry()
-    else:
-        registry = get_registry_service_ip(namespace, service)
-        if registry is None:
-            print("Failed to find registry service IP address.")
-            raise Exception("Unable to get registry IP from namespace %s" % namespace)
-
+    registry = get_registry(kwargs)
     tag = registry + "/" + kwargs['namespace'] + "/" + dict_spec['name']
-    print("Building image with the tag: " + tag)
-    try:
-        client = create_docker_client()
-        client.images.build(path=project, tag=tag, dockerfile=kwargs['dockerfile'])
-        openshift_config.load_kube_config()
-        token = openshift_client.Configuration().get_api_key_with_prefix('authorization').split(" ")[1]
-        username = "developer" if is_minishift() else "unused"
-        client.login(username=username, password=token, registry=registry, reauth=True)
 
-        print("Pushing the image, this could take a minute...")
-        client.images.push(tag)
-
-        print("Successfully pushed image: " + tag)
-        bootstrap(broker, kwargs.get("basic_auth_username"),
-                  kwargs.get("basic_auth_password"), kwargs["verify"])
-    except docker.errors.DockerException:
-        print("Error accessing the docker API. Is the daemon running?")
-        raise
-    except docker.errors.APIError:
-        print("Failed to login to the docker API.")
-        raise
+    build_apb(project, kwargs['dockerfile'], tag)
+    push_apb(registry, tag)
+    bootstrap(
+        broker,
+        kwargs.get("basic_auth_username"),
+        kwargs.get("basic_auth_password"),
+        kwargs["verify"]
+    )
 
     if not kwargs['no_relist']:
         relist_service_broker(kwargs)
@@ -1238,13 +1250,17 @@ def cmdrun_test(**kwargs):
 
 def cmdrun_run(**kwargs):
     apb_project = kwargs['base_path']
+    registry = get_registry(kwargs)
+    spec = get_spec(apb_project)
+    tag = registry + "/" + kwargs['namespace'] + "/" + spec['name']
+
     image = build_apb(
         apb_project,
         kwargs['dockerfile'],
-        kwargs['tag']
+        tag
     )
+    push_apb(registry, tag)
 
-    spec = get_spec(apb_project)
     plans = [plan['name'] for plan in spec['plans']]
     if len(plans) > 1:
         plans_str = ', '.join(plans)
