@@ -452,6 +452,35 @@ One common use case for ConfigMaps is when the parameters of an APB will be used
 
 ```
 
+## Using docker run to quickly test an APB
+While developing APBs, you may want to quickly test an APB without involving the Ansible Service Broker or Service Catalog. This can be accomplished by using a `docker run` command.
+
+Before continuing, run `oc login` and provide credentials for a cluster-admin user. This method of APB invocation mounts `~/.kube` into the APB container for authentication.
+
+The example below shows a generic `docker run` command with placeholders for an `$APB_IMAGE_NAME`, `$ACTION_NAME`, and `extra-vars`.
+
+```
+docker run --rm --net=host -v $HOME/.kube:/opt/apb/.kube:z -u $UID \
+$APB_IMAGE_NAME \
+$ACTION_NAME \
+--extra-vars 'namespace=sample-namespace' \
+--extra-vars 'example_param_1=foo' \
+--extra-vars 'example_param_2=bar' \
+```
+
+The next example shows a `docker run` command which will perform the `provision` action of the MediaWiki APB, with necessary values substituted in.
+```
+docker run --rm --net=host -v $HOME/.kube:/opt/apb/.kube:z -u $UID \
+docker.io/ansibleplaybookbundle/mediawiki-apb:latest \
+provision \
+--extra-vars 'namespace=mediawiki' \
+--extra-vars 'mediawiki_db_schema=mediawiki' \
+--extra-vars 'mediawiki_admin_pass=test' \
+--extra-vars 'mediawiki_admin_user=admin' \
+--extra-vars 'mediawiki_site_name=Mediawiki'  \
+--extra-vars 'mediawiki_site_lang=en'
+```
+
 # APB Spec Versioning
 We are using semantic versioning with the format of x.y where x is a major release and y is a minor release.
 
