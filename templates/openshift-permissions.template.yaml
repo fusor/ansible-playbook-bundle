@@ -1,3 +1,6 @@
+# Template used for permissioning a user to allow full apb tooling authorization
+# Primarily used by the ansible-service-broker minishift addon:
+# https://github.com/minishift/minishift-addons/tree/master/add-ons/ansible-service-broker
 apiVersion: v1
 kind: Template
 metadata:
