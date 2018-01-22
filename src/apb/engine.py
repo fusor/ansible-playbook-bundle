@@ -1312,27 +1312,31 @@ def create_docker_client():
     if is_minishift():
         cert_path = os.environ.get('DOCKER_CERT_PATH')
         docker_host = os.environ.get('DOCKER_HOST')
-        if docker_host == None or cert_path == None:
-            raise Exception("Attempting to target minishift, but missing \
-                    required env vars. Try running: \"eval $(minishift docker-env)\"")
+        if docker_host is None or cert_path is None:
+            raise Exception("Attempting to target minishift, but missing required \
+                            env vars. Try running: \"eval $(minishift docker-env)\"")
         client_cert = os.path.join(cert_path, 'cert.pem')
         client_key = os.path.join(cert_path, 'key.pem')
         ca_cert = os.path.join(cert_path, 'ca.pem')
         tls = docker.tls.TLSConfig(
-                ca_cert=ca_cert,
-                client_cert=(client_cert, client_key),
-                verify=True)
+            ca_cert=ca_cert,
+            client_cert=(client_cert, client_key),
+            verify=True
+        )
         client = docker.DockerClient(tls=tls, base_url=docker_host, version='auto')
     else:
         client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
     return client
 
+
 def is_minishift():
     # Assume user is using minishift if the shell has been configured to use
     # a minishift docker daemon.
     docker_cert_path = os.environ.get('DOCKER_CERT_PATH')
-    if docker_cert_path == None: return False
+    if docker_cert_path is None:
+        return False
     return "minishift" in docker_cert_path
+
 
 def get_minishift_registry():
     cmd = "minishift openshift registry"
