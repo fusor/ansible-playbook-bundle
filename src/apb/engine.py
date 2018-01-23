@@ -677,7 +677,9 @@ def watch_pod(name, namespace):
 
         pod_status = api.read_namespaced_pod(name, namespace).status
         pod_phase = pod_status.phase
+        print("Pod in phase: {}".format(pod_phase))
         if pod_phase == 'Succeeded' or pod_phase == 'Failed':
+            print(api.read_namespaced_pod_log(name, namespace))
             return pod_phase
         if pod_phase == 'Pending':
             try:
