@@ -37,29 +37,29 @@ care of the details so they should be easy to deploy.
 
 [Docker](https://www.docker.com/) must be correctly installed and running on the system.
 
+NOTE: If you are working with a minishift cluster and the [ansible-service-broker addon](https://github.com/minishift/minishift-addons/tree/master/add-ons/ansible-service-broker),
+you must first configure your shell to use the minishift Docker daemon. This can
+be done with `eval $(minishift docker-env)`. For more info, see [minishift's documentation for working with its docker registry](https://docs.openshift.org/latest/minishift/using/docker-daemon.html).
+
 #### Running from a container
 
 Pull the container:
 ```bash
 docker pull docker.io/ansibleplaybookbundle/apb-tools
 ```
-
-Create an alias in your `.bashrc` or somewhere else sane for your shell:
-```bash
-alias apb='docker run --rm --privileged -v $PWD:/mnt -v $HOME/.kube:/.kube -v /var/run/docker.sock:/var/run/docker.sock -u $UID docker.io/ansibleplaybookbundle/apb-tools'
-```
-
-You should be able to start working by running `apb init my_apb`. The first run may take awhile if you did not pull the image.
-
-If you would prefer to use atomic rather than an alias this is also possible:
-```bash
-atomic run docker.io/ansibleplaybookbundle/apb-tools init my_apb
-```
-
 There are three tags to choose from:
 - **latest**: more stable, less frequent releases
 - **nightly**: following upstream commits, installed from RPM
 - **canary**: following upstream commits, installed from source build
+
+Copy the [apb-docker-run.sh](../scripts/apb-docker-run.sh) script into your `PATH` and
+make sure it's executable:
+
+```
+cp $APB_CHECKOUT/scripts/apb-docker-run.sh $YOUR_PATH_DIR/apb && chmod +x $YOUR_PATH_DIR/apb
+```
+
+You should be able to start working by running `apb init my_apb`. The first run may take awhile if you did not pull the image.
 
 #### RPM Installation
 
@@ -173,11 +173,6 @@ be sufficient.
 
 #### Local Registry
 In order to use the internal OpenShift Docker Registry to source APBs, you must have configured the Ansible Service Broker to use the `local_openshift` type registry adapter. Please see the [config](https://github.com/openshift/ansible-service-broker/blob/master/docs/config.md#local-openshift-registry) section for more information.
-
-NOTE: If you are working with a minishift cluster and the [ansible-service-broker addon](https://github.com/minishift/minishift-addons/tree/master/add-ons/ansible-service-broker),
-you must first configure your shell to use the minishift Docker daemon. This can
-be done with `eval $(minishift docker-env)`. For more info, see [minishift's documentation for working with its docker registry](https://docs.openshift.org/latest/minishift/using/docker-daemon.html).
-
 
 ```bash
 apb init my-new-apb

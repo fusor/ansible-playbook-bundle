@@ -1350,4 +1350,5 @@ def is_minishift():
 
 def get_minishift_registry():
     cmd = "minishift openshift registry"
-    return subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True).rstrip()
+    return os.environ.get('MINISHIFT_REGISTRY') or \
+        subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True).rstrip()

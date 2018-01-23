@@ -8,7 +8,12 @@ echo "apb:x:$UID:$UID:apb:/home/apb:/bin/bash" >> /etc/passwd
 sudo groupadd apb -g $UID
 sudo usermod -a -G apb apb
 
-gid=$(stat -c '%g' /var/run/docker.sock)
+if ! [[ "${MINISHIFT_REGISTRY}" == "" ]]; then
+  gid=$(stat -c '%g' ${DOCKER_CERT_PATH}/ca.pem)
+else
+  gid=$(stat -c '%g' /var/run/docker.sock)
+fi
+
 if GROUP=$(getent group -i $gid); then
   group=$(echo $GROUP | awk -F ":" '{ print $1 }')
 else
