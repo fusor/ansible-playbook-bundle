@@ -47,6 +47,12 @@ Pull the container:
 ```bash
 docker pull docker.io/ansibleplaybookbundle/apb-tools
 ```
+
+Create an alias in your `.bashrc` or somewhere else sane for your shell:
+```bash
+alias apb='docker run --rm --privileged --net=host -v $PWD:/mnt -v $HOME/.kube:/.kube -v /var/run/docker.sock:/var/run/docker.sock -u $UID docker.io/ansibleplaybookbundle/apb-tools'
+```
+
 There are three tags to choose from:
 - **latest**: more stable, less frequent releases
 - **nightly**: following upstream commits, installed from RPM
