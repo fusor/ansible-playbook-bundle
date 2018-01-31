@@ -1205,7 +1205,7 @@ def cmdrun_serviceinstance(**kwargs):
                            kind="ServiceInstance",
                            metadata=dict(
                                name=spec['name'],
-                               labels=spec['labels']
+                               labels=dict(spec['labels'])
                            ),
                            spec=dict(
                                clusterServiceClassExternalName="dh-" + spec['name'],
