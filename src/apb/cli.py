@@ -2,6 +2,7 @@
 import os
 import sys
 import argparse
+import pkg_resources
 
 import apb.engine
 
@@ -20,7 +21,8 @@ AVAILABLE_COMMANDS = {
     'serviceinstance': 'Create a ServiceInstance template based on apb.yaml',
     'bootstrap': 'Tell Ansible Service Broker to reload APBs from the container repository',
     'test': 'Test the APB',
-    'run': 'Run APB'
+    'run': 'Run APB',
+    'version': 'Get current version of APB tool'
 }
 
 
@@ -501,6 +503,11 @@ def subcmd_relist_parser(subcmd):
     return
 
 
+def subcmd_version_parser(subcmd):
+    """ version subcommand """
+    return
+
+
 def subcmd_help_parser(subcmd):
     """ help subcommand """
     return
@@ -544,6 +551,11 @@ def main():
 
     if args.subcommand == 'help':
         parser.print_help()
+        sys.exit(0)
+
+    if args.subcommand == 'version':
+        version = pkg_resources.require("apb")[0].version
+        print("Version: apb-%s" % version)
         sys.exit(0)
 
     try:
