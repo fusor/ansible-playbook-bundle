@@ -755,6 +755,9 @@ def broker_request(broker, service_route, method, **kwargs):
             broker = broker + '/'
         broker = broker + 'ansible-service-broker'
 
+    if not broker.startswith('http'):
+        broker = 'https://' + broker
+
     url = broker + service_route
     print("Contacting the ansible-service-broker at: %s" % url)
 
