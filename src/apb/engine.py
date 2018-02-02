@@ -1137,7 +1137,7 @@ def cmdrun_push(**kwargs):
 
 def cmdrun_remove(**kwargs):
     if kwargs["all"]:
-        route = "/v2/apb/"
+        route = "/v2/apb"
     elif kwargs["id"] is not None:
         route = "/v2/apb/" + kwargs["id"]
     else:
