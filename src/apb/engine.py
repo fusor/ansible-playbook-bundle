@@ -1318,7 +1318,7 @@ def cmdrun_run(**kwargs):
     name, namespace = run_apb(
         project=kwargs['project'],
         image=image,
-        name='apb-run-{}'.format(spec['name']),
+        name='apb-run-{}-{}'.format(kwargs['action'], spec['name']),
         action=kwargs['action'],
         parameters=parameters
     )
