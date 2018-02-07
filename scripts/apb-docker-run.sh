@@ -1,6 +1,12 @@
 # Script for running apb with a container.
 # Recommended to copy this to somewhere in your PATH as "apb"
 APB_IMAGE=${APB_IMAGE:-docker.io/ansibleplaybookbundle/apb-tools:canary}
+
+if [[ $(id -u) = 0 ]]; then
+  echo "apb should not be run as root!"
+  exit 1
+fi
+
 echo "Running APB image: ${APB_IMAGE}"
 
 if ! [[ -z "${DOCKER_CERT_PATH}" ]] && [[ ${DOCKER_CERT_PATH} = *"minishift"* ]]; then
