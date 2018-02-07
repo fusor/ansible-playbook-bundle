@@ -389,19 +389,44 @@ def subcmd_bootstrap_parser(subcmd):
 def subcmd_test_parser(subcmd):
     """ test subcommand """
     subcmd.add_argument(
-        '--tag',
-        action='store',
-        dest='tag',
-        help=u'Tag of APB to build (ie. mysql-apb or docker.io/username/mysql-apb)'
-    )
-
-    subcmd.add_argument(
         '--dockerfile',
         '-f',
         action='store',
         dest='dockerfile',
         help=u'Name of Dockerfile to build with'
     )
+
+    subcmd.add_argument(
+        '--registry-service-name',
+        action='store',
+        dest='reg_svc_name',
+        help=u'Name of service for internal OpenShift registry',
+        default=u'docker-registry'
+    )
+
+    subcmd.add_argument(
+        '--registry-namespace',
+        action='store',
+        dest='reg_namespace',
+        help=u'Namespace of internal OpenShift registry',
+        default=u'default'
+    )
+
+    subcmd.add_argument(
+        '--namespace',
+        action='store',
+        dest='namespace',
+        help=u'Namespace to push APB in OpenShift registry',
+        default=u'openshift'
+    )
+
+    subcmd.add_argument(
+        '--registry-route',
+        action='store',
+        dest='reg_route',
+        help=u'Route of internal OpenShift registry'
+    )
+
     return
 
 

@@ -1226,17 +1226,18 @@ def rand_str(size=5, chars=string.ascii_lowercase + string.digits):
 
 def cmdrun_test(**kwargs):
     project = kwargs['base_path']
-    image = build_apb(
-        project,
-        kwargs['dockerfile'],
-        kwargs['tag']
-    )
+    registry = get_registry(kwargs)
+    spec = get_spec(project)
+    tag = registry + "/" + kwargs['namespace'] + "/" + spec['name']
+
+    build_apb(project, kwargs['dockerfile'], tag)
+    push_apb(registry, tag)
 
     spec = get_spec(project)
     test_name = 'apb-test-{}-{}'.format(spec['name'], rand_str())
     name, namespace = run_apb(
         project=test_name,
-        image=image,
+        image=tag,
         name=test_name,
         action='test'
     )
