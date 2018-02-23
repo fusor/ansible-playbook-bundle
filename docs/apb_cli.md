@@ -53,7 +53,7 @@ There are three tags to choose from:
 - **nightly**: following upstream commits, installed from RPM
 - **canary**: following upstream commits, installed from source build
 
-Copy the [apb-docker-run.sh](../scripts/apb-docker-run.sh) script into your `PATH` and
+Copy the [apb-docker-run.sh](https://raw.githubusercontent.com/ansibleplaybookbundle/ansible-playbook-bundle/master/scripts/apb-docker-run.sh) script into your `PATH` and
 make sure it's executable:
 
 ```

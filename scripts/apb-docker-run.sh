@@ -1,3 +1,4 @@
+#!/bin/bash
 # Script for running apb with a container.
 # Recommended to copy this to somewhere in your PATH as "apb"
 APB_IMAGE=${APB_IMAGE:-docker.io/ansibleplaybookbundle/apb-tools:canary}
