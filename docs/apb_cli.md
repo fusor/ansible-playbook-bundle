@@ -43,6 +43,10 @@ be done with `eval $(minishift docker-env)`. For more info, see [minishift's doc
 
 #### Running from a container
 
+NOTE: You **must** configure your host networking to allow traffic between
+your container and the minishift vm if you are using minishift. Execute [setup-network.sh](../scripts/setup-network.sh) to
+setup necessary iptables rules.
+
 Pull the container:
 ```bash
 docker pull docker.io/ansibleplaybookbundle/apb-tools
