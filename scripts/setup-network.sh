@@ -8,6 +8,6 @@ if ! [[ $(id -u) = 0 ]]; then
   exit 1
 fi
 
-iptables -I INPUT -m tcp -p tcp -m multiport --dports 443,8443 -d ${MINISHIFT_SUBNET} -j ACCEPT
-iptables -I FORWARD -m tcp -p tcp -m multiport --dports 443,8443 -d ${MINISHIFT_SUBNET} -j ACCEPT
+iptables -I INPUT -m tcp -p tcp -m multiport --dports 443,8443,2376 -d ${MINISHIFT_SUBNET} -j ACCEPT
+iptables -I FORWARD -m tcp -p tcp -m multiport --dports 443,8443,2376 -d ${MINISHIFT_SUBNET} -j ACCEPT
 iptables -I FORWARD -s ${MINISHIFT_SUBNET} -j ACCEPT
