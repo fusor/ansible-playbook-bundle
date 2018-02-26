@@ -928,9 +928,10 @@ def delete_old_images(image_name):
     try:
         openshift_config.load_kube_config()
         oapi = openshift_client.OapiApi()
-        image_list = oapi.list_image()
-        for image in image_list.items:
-            image_fqn, image_sha = image.docker_image_reference.split("@")
+        image_list = oapi.list_image(_preload_content=False)
+        image_list = json.loads(image_list.data)
+        for image in image_list['items']:
+            image_fqn, image_sha = image['dockerImageReference'].split("@")
             if image_name == image_fqn:
                 oapi.delete_image(name=image_sha, body={})
 
