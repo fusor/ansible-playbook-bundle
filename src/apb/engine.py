@@ -925,6 +925,8 @@ def get_registry(kwargs):
 
 
 def delete_old_images(image_name):
+    # Let's ignore the registry prefix for now because sometimes our tag doesn't match the registry
+    registry, image_name = image_name.split('/', 1)
     try:
         openshift_config.load_kube_config()
         oapi = openshift_client.OapiApi()
@@ -932,7 +934,13 @@ def delete_old_images(image_name):
         image_list = json.loads(image_list.data)
         for image in image_list['items']:
             image_fqn, image_sha = image['dockerImageReference'].split("@")
-            if image_name == image_fqn:
+            if image_name in image_fqn:
+                if registry not in image_fqn:
+                    # This warning will only get displayed if a user has used --registry-route
+                    # This is because the route name gets collapsed into the service hostname
+                    # when pushed to the registry.
+                    print("Warning: Tagged image registry prefix doesn't match. Deleting anyway. Given: %s; Found: %s"
+                          % (registry, image_fqn.split('/')[0]))
                 oapi.delete_image(name=image_sha, body={})
 
     except Exception as e:
