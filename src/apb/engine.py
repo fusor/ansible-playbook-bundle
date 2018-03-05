@@ -1185,11 +1185,15 @@ def cmdrun_remove(**kwargs):
         tag = registry + "/" + kwargs['namespace'] + "/" + spec['name']
         print("Image: [%s]" % tag)
         delete_old_images(tag)
-        bootstrap(kwargs["broker"], kwargs.get("basic_auth_username"), kwargs.get("basic_auth_password"), kwargs["verify"])
+        bootstrap(
+            kwargs["broker"],
+            kwargs.get("basic_auth_username"),
+            kwargs.get("basic_auth_password"),
+            kwargs["verify"]
+        )
         exit()
     else:
         raise Exception("No flag specified.  Use --id or --local.")
-
 
     response = broker_request(kwargs["broker"], route, "delete",
                               verify=kwargs["verify"],
