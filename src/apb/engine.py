@@ -935,6 +935,7 @@ def delete_old_images(image_name):
         for image in image_list['items']:
             image_fqn, image_sha = image['dockerImageReference'].split("@")
             if image_name in image_fqn:
+                print("Found image: %s" % image_fqn)
                 if registry not in image_fqn:
                     # This warning will only get displayed if a user has used --registry-route
                     # This is because the route name gets collapsed into the service hostname
@@ -942,6 +943,7 @@ def delete_old_images(image_name):
                     print("Warning: Tagged image registry prefix doesn't match. Deleting anyway. Given: %s; Found: %s"
                           % (registry, image_fqn.split('/')[0]))
                 oapi.delete_image(name=image_sha, body={})
+                print("Successfully deleted %s" % image_sha)
 
     except Exception as e:
         print("Exception deleting old images: %s" % e)
@@ -1170,8 +1172,24 @@ def cmdrun_remove(**kwargs):
         route = "/v2/apb"
     elif kwargs["id"] is not None:
         route = "/v2/apb/" + kwargs["id"]
+    elif kwargs["local"] is True:
+        print("Attempting to delete associated registry image.")
+        project = kwargs['base_path']
+        spec = get_spec(project, 'dict')
+        kwargs['reg_namespace'] = "default"
+        kwargs['reg_svc_name'] = "docker-registry"
+        kwargs['reg_route'] = None
+        kwargs['namespace'] = "openshift"
+
+        registry = get_registry(kwargs)
+        tag = registry + "/" + kwargs['namespace'] + "/" + spec['name']
+        print("Image: [%s]" % tag)
+        delete_old_images(tag)
+        bootstrap(kwargs["broker"], kwargs.get("basic_auth_username"), kwargs.get("basic_auth_password"), kwargs["verify"])
+        exit()
     else:
-        raise Exception("No APB ID specified.  Use --id.")
+        raise Exception("No flag specified.  Use --id or --local.")
+
 
     response = broker_request(kwargs["broker"], route, "delete",
                               verify=kwargs["verify"],

@@ -286,6 +286,13 @@ def subcmd_remove_parser(subcmd):
         help=u'Route to the Ansible Service Broker'
     )
     subcmd.add_argument(
+        '--local', '-l',
+        action='store_true',
+        dest='local',
+        help=u'Remove image from internal OpenShift registry',
+        default=False
+    )
+    subcmd.add_argument(
         '--all',
         action='store_true',
         dest='all',
