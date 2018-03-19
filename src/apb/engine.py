@@ -375,8 +375,15 @@ def get_asb_route():
         openshift_config.load_kube_config()
         oapi = openshift_client.OapiApi()
         route_list = oapi.list_namespaced_route('ansible-service-broker')
+        if route_list.items == []:
+            print("Didn't find OpenShift Ansible Broker route in namespace: ansible-service-broker.\
+                    Trying openshift-ansible-service-broker")
+            route_list = oapi.list_namespaced_route('openshift-ansible-service-broker')
+            if route_list.items == []:
+                print("Still failed to find a route to OpenShift Ansible Broker.")
+                return None
         for route in route_list.items:
-            if route.metadata.name.find('asb-') >= 0:
+            if 'asb' in route.metadata.name and 'etcd' not in route.metadata.name:
                 asb_route = route.spec.host
     except Exception:
         asb_route = None
@@ -571,7 +578,16 @@ def broker_request(broker, service_route, method, **kwargs):
         raise Exception("Could not find route to ansible-service-broker. "
                         "Use --broker or log into the cluster using \"oc login\"")
 
+    if not broker.endswith('/ansible-service-broker'):
+        if not broker.endswith('/'):
+            broker = broker + '/'
+        broker = broker + 'ansible-service-broker'
+
+    if not broker.startswith('http'):
+        broker = 'https://' + broker
+
     url = broker + service_route
+    print("Contacting the ansible-service-broker at: %s" % url)
 
     try:
         openshift_config.load_kube_config()
@@ -883,7 +899,6 @@ def cmdrun_remove(**kwargs):
 
 
 def bootstrap(broker, username, password, verify):
-    print(broker)
     response = broker_request(broker, "/v2/bootstrap", "post", data={},
                               verify=verify,
                               basic_auth_username=username,
