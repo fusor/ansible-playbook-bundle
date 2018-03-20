@@ -1170,8 +1170,10 @@ def cmdrun_push(**kwargs):
 def cmdrun_remove(**kwargs):
     if kwargs["all"]:
         route = "/v2/apb"
+        old_route = "/apb/spec"
     elif kwargs["id"] is not None:
         route = "/v2/apb/" + kwargs["id"]
+        old_route = "/apb/spec/" + kwargs["id"]
     elif kwargs["local"] is True:
         print("Attempting to delete associated registry image.")
         project = kwargs['base_path']
@@ -1199,6 +1201,14 @@ def cmdrun_remove(**kwargs):
                               verify=kwargs["verify"],
                               basic_auth_username=kwargs.get("basic_auth_username"),
                               basic_auth_password=kwargs.get("basic_auth_password"))
+
+    if response.status_code == 404:
+        print("Received a 404 trying to remove APB with id: %s" % kwargs["id"])
+        print("Attempting to contact 3.7 endpoint before erroring out.")
+        response = broker_request(kwargs["broker"], old_route, "delete",
+                                  verify=kwargs["verify"],
+                                  basic_auth_username=kwargs.get("basic_auth_username"),
+                                  basic_auth_password=kwargs.get("basic_auth_password"))
 
     if response.status_code != 204:
         print("Error: Attempt to remove an APB from Broker returned status: %d" % response.status_code)
