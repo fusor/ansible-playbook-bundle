@@ -17,6 +17,7 @@ The APB developer guide provides an in depth guide to creating APBs. This guide 
      * [Working with Restricted SCC](#working-with-the-restricted-scc)
      * [Using a ConfigMap](#using-a-configmap-within-an-apb)
      * [Testing APBs with docker run](#using-docker-run-to-quickly-test-an-apb)
+     * [Developing APBs for Use in Proxied Environments](#developing-apbs-for-use-in-proxied-environments)
 
 
 ## APB Examples
@@ -67,7 +68,7 @@ name: example-apb
 description: A short description of what this APB does
 bindable: True
 async: optional
-metadata: 
+metadata:
   documentationUrl: <link to documentation>
   imageUrl: <link to URL of image>
   dependencies: ['<registry>/<organization>/<dependency-name-1>', '<registry>/<organization>/<dependency-name-2>']
@@ -318,7 +319,7 @@ The following is an example of creating a persistent volume claim resource and d
       storage: 1Gi
 
 
-# In addition to the resource, we need to add our volume to the deployment config declaration. 
+# In addition to the resource, we need to add our volume to the deployment config declaration.
 # The following is an example deployment config with a persistent volume.
 - name: create hello-world-db deployment config
   openshift_v1_deployment_config:
@@ -480,6 +481,100 @@ provision \
 --extra-vars 'mediawiki_admin_user=admin' \
 --extra-vars 'mediawiki_site_name=Mediawiki'  \
 --extra-vars 'mediawiki_site_lang=en'
+```
+
+## Developing APBs for Use in Proxied Environments
+The broker will pass its proxy settings to APB action pods (e.g. provision, deprovision, bind, unbind, update) as environment variables. We have found that there is little consensus on proxy settings being read from uppercase vs. lowercase environment variables (e.g. http_proxy vs. HTTP_PROXY), so the broker assigns the same values to both within each APB action pod, as shown below.
+
+```bash
+http_proxy="<http_proxy>:<port>"
+https_proxy="<https_proxy>:<port>"
+no_proxy="<no_proxy_list>"
+
+HTTP_PROXY="<http_proxy>:<port>"
+HTTPS_PROXY="<https_proxy>:<port>"
+NO_PROXY="<no_proxy_list>"
+```
+
+As an APB developer, you can access any of these environment variables from an Ansible Playbook using a lookup.
+
+```yaml
+set_fact:
+  http_proxy: {{ lookup('env', 'http_proxy') }}
+  https_proxy: {{ lookup('env', 'https_proxy') }}
+  no_proxy: {{ lookup('env', 'no_proxy') }}
+```
+
+### Passing Proxy Settings to Child Pods
+  You might want to pass proxy settings through to child pods created by an APB action pod. Edit the provision action of your APB, navigating to the section defining the deployment config that will be created for the child pod. Copy the APB action pod proxy vars to the `env` section of the container definition as shown below.
+
+```yaml
+  - openshift_v1_deployment_config:
+      name: demo-app
+      namespace: '{{ namespace }}'
+      containers:
+      - name: demo-app
+        env:
+          - name: http_proxy
+            value: "{{ lookup('env','http_proxy') }}"
+          - name: https_proxy
+            value: "{{ lookup('env','https_proxy') }}"
+          - name: no_proxy
+            value: "{{ lookup('env','no_proxy') }}"
+          - name: HTTP_PROXY
+            value: "{{ lookup('env','http_proxy') }}"
+          - name: HTTPS_PROXY
+            value: "{{ lookup('env','https_proxy') }}"
+          - name: NO_PROXY
+            value: "{{ lookup('env','no_proxy') }}"
+     [...]
+```
+
+If more fine-grained control over proxy settings is desired at provision time, consider adding a boolean parameter to `apb.yml` giving the APB user control over whether broker proxy settings should pass through to the APBs child pods.
+
+```yaml
+[...]
+parameters:
+  - name: proxy_passthrough
+    title: Use broker proxy settings
+    type: boolean
+    default: False
+    updatable: True
+    required: True
+[...]
+```
+
+Then, in the APB's provision tasks:
+```yaml
+
+  - name: Create DC without proxy passthrough
+    openshift_v1_deployment_config:
+      [...]
+      containers:
+      - name: demo-app
+      [...]
+    when: not proxy_passthrough
+
+  - name: Create DC with proxy passthrough
+    openshift_v1_deployment_config:
+      [...]
+      containers:
+      - name: demo-app
+        env:
+          - name: http_proxy
+            value: "{{ lookup('env','http_proxy') }}"
+          - name: https_proxy
+            value: "{{ lookup('env','https_proxy') }}"
+          - name: no_proxy
+            value: "{{ lookup('env','no_proxy') }}"
+          - name: HTTP_PROXY
+            value: "{{ lookup('env','http_proxy') }}"
+          - name: HTTPS_PROXY
+            value: "{{ lookup('env','https_proxy') }}"
+          - name: NO_PROXY
+            value: "{{ lookup('env','no_proxy') }}"
+      [...]
+    when: proxy_passthrough
 ```
 
 # APB Spec Versioning
