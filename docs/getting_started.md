@@ -258,29 +258,26 @@ At the minimum, our APB should deploy the application [pods](https://docs.opensh
       - container_port: 8080
         protocol: TCP
 ```
-The `namespace` field will designate which [namespace](https://docs.openshift.org/latest/architecture/core_concepts/projects_and_users.html#namespaces) the deployment config should be in.
 
-The [`labels`] are used to help us organize, group, and select objects.
+* The `namespace` field will designate which [namespace](https://docs.openshift.org/latest/architecture/core_concepts/projects_and_users.html#namespaces) the deployment config should be in.
+* The `labels` are used to help us organize, group, and select objects.
+* `replicas: 1` specifies that we only want 1 [pod](https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#pods).
+* The `selector` section is a [label](https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#labels) query over pods.
 
-The `replicas: 1` field specifies that we only want 1 [pod](https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#pods).
-
-The `selector` section is a [label](https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#labels) query over pods.
-
-In the `containers` section, we have specified a [container](https://docs.openshift.org/latest/architecture/core_concepts/containers_and_images.html#containers) with a hello-world app running on port 8080 on TCP.  The [image](https://docs.openshift.org/latest/architecture/core_concepts/containers_and_images.html#docker-images) is stored on [docker.io](https://hub.docker.com/)/[ansibleplaybookbundle](https://hub.docker.com/r/ansibleplaybookbundle/)/[hello-world](https://hub.docker.com/r/ansibleplaybookbundle/hello-world/).
-
-For more information, the [developers guide](developers.md#deployment-config) has more detail and you can also visit the ansible-kubernetes-modules [code](https://github.com/ansible/ansible-kubernetes-modules/blob/master/library/openshift_v1_deployment_config.py) documentation for a full accounting of all fields.
-
+In the `containers` section, we have specified a [container](https://docs.openshift.org/latest/architecture/core_concepts/containers_and_images.html#containers) with a hello-world app running on port 8080 on TCP.  The [image](https://docs.openshift.org/latest/architecture/core_concepts/containers_and_images.html#docker-images) is stored on [docker.io](https://hub.docker.com/)/[ansibleplaybookbundle](https://hub.docker.com/r/ansibleplaybookbundle/)/[hello-world](https://hub.docker.com/r/ansibleplaybookbundle/hello-world/). For more information, the [developers guide](developers.md#deployment-config) has more detail and you can also visit the ansible-kubernetes-modules [code](https://github.com/ansible/ansible-kubernetes-modules/blob/master/library/openshift_v1_deployment_config.py) documentation for a full accounting of all fields.
 
 If you build, push, and provision the apb there will be a new running pod and a new deployment config.
 
-Build and Push
+* Build and Push
 ```
 $ apb build
 $ apb push
 ```
-Provision using the Web Console UI
 
-Check your resources
+* Provision using the Web Console UI.
+
+* Check your resources
+
 ```
 $ oc project getting-started
 $ oc get all
@@ -293,7 +290,8 @@ rc/my-test-1   1         1         1         35s
 NAME                 READY     STATUS    RESTARTS   AGE
 po/my-test-1-2pw4t   1/1       Running   0          33s
 ```
-You will also be able to see the deployed application in the console UI at https://<oc-cluster-host>:<oc-cluster-port>/console/project/getting-started/overview.  The only way to use this pod currently is to use `oc describe pods/<pod-name>`, to find out its IP address and access it directly.  If we had multiple pods, they'd be accessed separately.  To treat them like a single host, we'd need to create a **_service_**
+
+You will also be able to see the deployed application in the console UI at https://`<oc-cluster-host>`:`<oc-cluster-port>`/console/project/getting-started/overview.  The only way to use this pod currently is to use `oc describe pods/<pod-name>`, to find out its IP address and access it directly.  If we had multiple pods, they'd be accessed separately.  To treat them like a single host, we'd need to create a **_service_**
 
 To clean up before moving on and allow us to provision again, feel free to delete the getting-started namespace and recreate it or create a new one.
 
