@@ -957,7 +957,7 @@ def push_apb(registry, tag):
         openshift_config.load_kube_config()
         api_key = openshift_client.Configuration().get_api_key_with_prefix('authorization')
         if api_key is None:
-            raise Exception("No api key found in kubeconfig. NOTE: system:admin" +
+            raise Exception("No api key found in kubeconfig. NOTE: system:admin " +
                             "*cannot* be used with apb, since it does not have a token.")
         token = api_key.split(" ")[1]
         username = "developer" if is_minishift() else "unused"
