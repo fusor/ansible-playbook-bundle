@@ -447,7 +447,7 @@ my-pg-apb/
 
 In addition to the normal files, new playbooks `bind.yml`, `unbind.yml`, and their associated roles have been stubbed out.  `bind.yml` and `unbind.yml` are both empty and since we're using the default binding behavior, will remain empty.
 
- Edit the `apb.yml`.  Notice the setting `bindable: true`.  In addition to those changes, we need to add some parameters to the apb.yml for configuring PostgreSQL.  They will be available fields in the GUI when provisioning our new APB.
+ Edit the `apb.yml`.  Notice the setting `bindable: true`.  In addition to those changes, we need to add some parameters to the apb.yml for configuring PostgreSQL.  These will be the available fields to configure in the GUI when provisioning our new APB.
 ```yaml
 version: 1.0
 name: my-pg-apb
