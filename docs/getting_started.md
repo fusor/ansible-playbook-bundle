@@ -707,7 +707,7 @@ apb push
 ```
 
 #### Using `apb push` with Ansible Service Broker mock registry
-To test an APB you have built without pushing your image to a registry, you can use `apb push`. This command takes the Ansible Service Broker's route as an argument and will push the base64 encoded spec into the list of available APBs for the Broker to deploy. In order to use this feature, the Ansible Service Broker you are running must be configured to run in development mode. In the [config file](https://github.com/openshift/ansible-service-broker/blob/master/etc/ex.dev.config.yaml#L21), set `devbroker` to `true`. This enables an endpoint to the broker at `/v2/apb/` that a user can POST APBs to.
+To test an APB you have built without pushing your image to a registry, you can use `apb push`. This command takes the Ansible Service Broker's route as an argument and will push the base64 encoded spec into the list of available APBs for the Broker to deploy. In order to use this feature, the Ansible Service Broker you are running must be configured to run in development mode. In the [config file](https://github.com/openshift/ansible-service-broker/blob/master/etc/example-config.yaml#L44), set `devbroker` to `true`. This enables an endpoint to the broker at `/v2/apb/` that a user can POST APBs to.
 
 ```
 apb push --push-to-broker [--broker <broker_route>]
