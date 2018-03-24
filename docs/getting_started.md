@@ -670,7 +670,7 @@ The actual implementation of the test is left to you, the APB author. We have ad
 We have added a test command, `apb test` which can be used to run the test action. The test action will build the image, start up a pod as if you were being run by the service broker, and will retrieve the test results if any were saved. The status of pod after execution has finished will determine the status of the test. If the pod is in an error state, then something failed and we will tell you that the test was unsuccessful.
 
 ##### asb_save_test_result Module
-`asb_save_test_result` [moudule](https://github.com/fusor/ansible-asb-modules) will allow you to save test results and allows the `apb test` command to return them. The APB pod will stay alive, for the tool to retrieve test results.
+`asb_save_test_result` [module](https://github.com/fusor/ansible-asb-modules) will allow you to save test results and allows the `apb test` command to return them. The APB pod will stay alive, for the tool to retrieve test results.
 Example:
 ```yaml
  - name: url check for media wiki
