@@ -268,13 +268,13 @@ In the `containers` section, we have specified a [container](https://docs.opensh
 
 If you build, push, and provision the apb there will be a new running pod and a new deployment config.
 
-* Build and Push
+* Build and Push:
 ```
 $ apb build
 $ apb push
 ```
 
-* Provision using the Web Console UI.
+* Provision using the Web Console UI. This is best done by deleting and recreating the `getting-started` project so that the `my-test` can be provisioned afresh.
 
 * Check your resources
 
