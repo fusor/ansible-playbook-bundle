@@ -403,23 +403,31 @@ def get_registry_service_ip(namespace, svc_name):
 
 def get_asb_route():
     asb_route = None
+    route_list = None
     try:
         openshift_config.load_kube_config()
         oapi = openshift_client.OapiApi()
         route_list = oapi.list_namespaced_route('ansible-service-broker')
-        if route_list.items == []:
-            print("Didn't find OpenShift Ansible Broker route in namespace: ansible-service-broker.\
-                    Trying openshift-ansible-service-broker")
+    except ApiException as e:
+        print("Didn't find OpenShift Ansible Broker route in namespace: ansible-service-broker.\
+                Reason: [%s]. Trying namespace: openshift-ansible-service-broker" % e.reason)
+
+    if route_list is None or route_list.items == []:
+        try:
+            openshift_config.load_kube_config()
+            oapi = openshift_client.OapiApi()
             route_list = oapi.list_namespaced_route('openshift-ansible-service-broker')
-            if route_list.items == []:
-                print("Still failed to find a route to OpenShift Ansible Broker.")
-                return None
-        for route in route_list.items:
-            if 'asb' in route.metadata.name and 'etcd' not in route.metadata.name:
-                asb_route = route.spec.host
-    except Exception:
-        asb_route = None
-        return asb_route
+        except ApiException as e:
+            print("Unable to find OpenShift Ansible Broker route. Reason: [%s]." % e.reason)
+            return None
+
+    if route_list.items == []:
+        print("No routes found in broker namespaces.")
+        return None
+
+    for route in route_list.items:
+        if 'asb' in route.metadata.name and 'etcd' not in route.metadata.name:
+            asb_route = route.spec.host
 
     url = asb_route + "/ansible-service-broker"
     if url.find("http") < 0:
