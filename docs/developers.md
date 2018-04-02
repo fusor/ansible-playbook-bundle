@@ -490,6 +490,7 @@ $ curl -H "Authorization: Bearer $(oc whoami -t)" -k -X POST https://asb-1338-an
   "image_count": 109
 }
 ```
+Note: `oc whoami -t` should return a token and the logged in user must have permissions that are documented [here](apb_cli.md#access-permissions)
 
 * Step 4: Verify new APB exists in the Automation Broker
 
