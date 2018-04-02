@@ -418,6 +418,88 @@ etherpad_db_host: "{{ lookup('env','ETHERPAD_DB_HOST') | default('mariadb', true
 state: present
 ```
 
+### Alternative to using `apb push`
+When developing APBs, there are a couple of factors which could prevent the developer from using the full development lifecycle that the APB tooling offers. Primarily these factors are:
+* Developing against an OpenShift/Kubernetes cluster that exists on a remote host
+* Developing APBs on a machine that doesn't have access to the Docker daemon
+
+If a developer meets any of these criteria, then we suggest the following workflow to publish images to the internal OCP registry so that the Automation Broker can bootstrap the image. This section will show you how to do these steps with the APB tooling and without.
+
+* Step 1: Ensure the base64 encoded spec is a label on the Dockerfile
+
+This is usually done via `apb prepare`. If you do not have the APB tooling installed, you can run:
+```
+$ cat apb.yml | grep base64
+```
+This will return the base64 encoded `apb.yml` which you can copy and paste into the `Dockerfile` under the `LABEL` `com.redhat.apb.spec` like:
+```
+LABEL "com.redhat.apb.spec"=\
+"dmVyc2lvbjogMS4wCm5hbWU6IG1lZGlhd2lraS1hcGIKZGVzY3JpcHRpb246IE1lZGlhd2lraSBh\
+cGIgaW1wbGVtZW50YXRpb24KYmluZGFibGU6IEZhbHNlCmFzeW5jOiBvcHRpb25hbAptZXRhZGF0\
+YToKICBkb2N1bWVudGF0aW9uVXJsOiBodHRwczovL3d3dy5tZWRpYXdpa2kub3JnL3dpa2kvRG9j\
+dW1lbnRhdGlvbgogIGxvbmdEZXNjcmlwdGlvbjogQW4gYXBiIHRoYXQgZGVwbG95cyBNZWRpYXdp\
+a2kgMS4yMwogIGRlcGVuZGVuY2llczogWydkb2NrZXIuaW8vYW5zaWJsZXBsYXlib29rYnVuZGxl\
+L21lZGlhd2lraTEyMzpsYXRlc3QnXQogIGRpc3BsYXlOYW1lOiBNZWRpYXdpa2kgKEFQQilmZGZk\
+CiAgY29uc29sZS5vcGVuc2hpZnQuaW8vaWNvbkNsYXNzOiBpY29uLW1lZGlhd2lraQogIHByb3Zp\
+ZGVyRGlzcGxheU5hbWU6ICJSZWQgSGF0LCBJbmMuIgpwbGFuczoKICAtIG5hbWU6IGRlZmF1bHQK\
+ICAgIGRlc2NyaXB0aW9uOiBBbiBBUEIgdGhhdCBkZXBsb3lzIE1lZGlhV2lraQogICAgZnJlZTog\
+VHJ1ZQogICAgbWV0YWRhdGE6CiAgICAgIGRpc3BsYXlOYW1lOiBEZWZhdWx0CiAgICAgIGxvbmdE\
+ZXNjcmlwdGlvbjogVGhpcyBwbGFuIGRlcGxveXMgYSBzaW5nbGUgbWVkaWF3aWtpIGluc3RhbmNl\
+IHdpdGhvdXQgYSBEQgogICAgICBjb3N0OiAkMC4wMAogICAgcGFyYW1ldGVyczoKICAgICAgLSBu\
+YW1lOiBtZWRpYXdpa2lfZGJfc2NoZW1hCiAgICAgICAgZGVmYXVsdDogbWVkaWF3aWtpCiAgICAg\
+ICAgdHlwZTogc3RyaW5nCiAgICAgICAgdGl0bGU6IE1lZGlhd2lraSBEQiBTY2hlbWEKICAgICAg\
+ICBwYXR0ZXJuOiAiXlthLXpBLVpfXVthLXpBLVowLTlfXSokIgogICAgICAgIHJlcXVpcmVkOiBU\
+cnVlCiAgICAgIC0gbmFtZTogbWVkaWF3aWtpX3NpdGVfbmFtZQogICAgICAgIGRlZmF1bHQ6IE1l\
+ZGlhV2lraQogICAgICAgIHR5cGU6IHN0cmluZwogICAgICAgIHRpdGxlOiBNZWRpYXdpa2kgU2l0\
+ZSBOYW1lCiAgICAgICAgcGF0dGVybjogIl5bYS16QS1aXSskIgogICAgICAgIHJlcXVpcmVkOiBU\
+cnVlCiAgICAgICAgdXBkYXRhYmxlOiBUcnVlCiAgICAgIC0gbmFtZTogbWVkaWF3aWtpX3NpdGVf\
+bGFuZwogICAgICAgIGRlZmF1bHQ6IGVuCiAgICAgICAgdHlwZTogc3RyaW5nCiAgICAgICAgdGl0\
+bGU6IE1lZGlhd2lraSBTaXRlIExhbmd1YWdlCiAgICAgICAgcGF0dGVybjogIl5bYS16XXsyLDN9\
+JCIKICAgICAgICByZXF1aXJlZDogVHJ1ZQogICAgICAtIG5hbWU6IG1lZGlhd2lraV9hZG1pbl91\
+c2VyCiAgICAgICAgZGVmYXVsdDogYWRtaW4KICAgICAgICB0eXBlOiBzdHJpbmcKICAgICAgICB0\
+aXRsZTogTWVkaWF3aWtpIEFkbWluIFVzZXIgKENhbm5vdCBiZSB0aGUgc2FtZSB2YWx1ZSBhcyBB\
+ZG1pbiBVc2VyIFBhc3N3b3JkKQogICAgICAgIHJlcXVpcmVkOiBUcnVlCiAgICAgIC0gbmFtZTog\
+bWVkaWF3aWtpX2FkbWluX3Bhc3MKICAgICAgICB0eXBlOiBzdHJpbmcKICAgICAgICB0aXRsZTog\
+TWVkaWF3aWtpIEFkbWluIFVzZXIgUGFzc3dvcmQKICAgICAgICByZXF1aXJlZDogVHJ1ZQogICAg\
+ICAgIGRpc3BsYXlfdHlwZTogcGFzc3dvcmQK"
+```
+
+* Step 2: Populate the internal OCP registry with our built APB image
+
+This is what is normally handled by `apb push`. In order to build our image without using Docker, we will take advantage of the source-to-image functionality of OpenShift. By default, the Automation Broker is configured to look at the `openshift` namespace for published APBs. The `openshift` namespace is detailed in our documentation as a namespace which exposes it's images/imagestreams to be available to any authenticated user on the cluster. We will take advantage of this by using `oc new-app` in namespace `openshift` to build our image.
+```
+$ oc new-app <path_to_apb_source> --name <apb_name> -n openshift
+```
+After a couple of minutes we should now see our image in the internal registry:
+```
+$ oc get images | grep <apb_name>
+sha256:b2dcb4b95e178e9b7ac73e5ee0211080c10b24260f76cfec30b89e74e8ee6742   172.30.1.1:5000/openshift/<apb_name>@sha256:b2dcb4b95e178e9b7ac73e5ee0211080c10b24260f76cfec30b89e74e8ee6742
+```
+
+* Step 3: Bootstrap the Automation Broker
+
+This is normally also handled by `apb push` or `apb bootstrap`. I recommend `apb bootstrap` for this step since it will also relist the Service Catalog without you having to wait 5-10 minutes. If you do not have access to do `apb bootstrap`, you can also do the following:
+```
+$ oc get route -n ansible-service-broker
+NAME       HOST/PORT                                           PATH      SERVICES   PORT        TERMINATION   WILDCARD
+asb-1338   asb-1338-ansible-service-broker.172.17.0.1.nip.io             asb        port-1338   reencrypt     None
+
+$ curl -H "Authorization: Bearer $(oc whoami -t)" -k -X POST https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/bootstrap                                 
+{
+  "spec_count": 38,
+  "image_count": 109
+}
+```
+
+* Step 4: Verify new APB exists in the Automation Broker
+
+This is normally the functionality of `apb list`. If you do not have access to use `apb list`, you can use the route gathered from step 3 and do:
+```
+$ curl -H "Authorization: Bearer $(oc whoami -t)" -k https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/catalog
+```
+
+You should see a list of all bootstrapped specs and one that is labeled `localregistry-<apb_name>`. I recommend using `|grep <apb_name>` to help find it since the output is in JSON.
+
 ### Working with the restricted scc
 
 When building an OpenShift image, it is important that we do not have our application running as the root user when at all possible. When running under the restriced security context, the application image is launched with a random UID. This will cause problems if your application folder is owned by the root user. A good way to work around this is to add a user to the root group and make the application folder owned by the root group. A very good article on how to support Arbitrary User IDs is shown [here](https://docs.openshift.org/latest/creating_images/guidelines.html#openshift-origin-specific-guidelines). The following is a Dockerfile example of a node app running in `/usr/src`. This command would be run after the application is installed in `/usr/src` and the associated environment variables set.
