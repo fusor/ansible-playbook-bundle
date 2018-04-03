@@ -1,11 +1,11 @@
 # Developer Guide
 
-The APB developer guide provides an in depth guide to creating APBs. This guide will explain the fundamental components that make up an APB and is meant to help an experienced APB developer get a better understanding of each individual component within an APB. If you are looking to get more information on creating your first APB, take a look at our [getting started guide](https://github.com/ansibleplaybookbundle/ansible-playbook-bundle/blob/master/docs/getting_started.md).
+The Service Bundle developer guide provides an in depth guide to creating Bundles. This guide will explain the fundamental components that make up a Service Bundle and is meant to help an experienced Bundle developer get a better understanding of each individual component within a Service Bundle. If you are looking to get more information on creating your first Service Bundle, take a look at our [getting started guide](https://github.com/ansibleplaybookbundle/ansible-playbook-bundle/blob/master/docs/getting_started.md).
 
   1. [Directory Structure](#directory-structure)
-  1. [Explanation of APB Spec File](#apb-spec-file)
+  1. [Explanation of Service Bundle Spec File](#service-bundle-spec-file)
   1. [Dockerfile](#dockerfile)
-  1. [APB Actions (Playbooks)](#actions)
+  1. [Bundle Actions (Playbooks)](#actions)
      * [Binding Credentials](#binding-credentials)
   1. [Working with Common Resources](#working-with-common-resources)
      * [Service](#service)
@@ -16,14 +16,14 @@ The APB developer guide provides an in depth guide to creating APBs. This guide 
   1. [Tips & Tricks](#tips-and-tricks)
      * [Optional Variables](#optional-variables)
      * [Working with Restricted SCC](#working-with-the-restricted-scc)
-     * [Using a ConfigMap](#using-a-configmap-within-an-apb)
-     * [Testing APBs with docker run](#using-docker-run-to-quickly-test-an-apb)
-     * [Developing APBs for Use in Proxied Environments](#developing-apbs-for-use-in-proxied-environments)
-  1. [APB Spec Version](#apb-spec-versioning)
+     * [Using a ConfigMap](#using-a-configmap-within-a-bundle)
+     * [Testing Service Bundles with docker run](#using-docker-run-to-quickly-test-a-bundle)
+     * [Developing Bundles for Use in Proxied Environments](#developing-bundles-for-use-in-proxied-environments)
+  1. [Service Bundle Spec Version](#service-bundle-spec-versioning)
 
-## APB Examples
+## Service Bundle Examples
 
-For completed APB examples, take a look at some of the APBs in the [ansibleplaybookbundle org](https://github.com/ansibleplaybookbundle)
+For completed Service Bundle examples, take a look at some of the Bundles in the [ansibleplaybookbundle org](https://github.com/ansibleplaybookbundle)
 * [hello-world-apb](https://github.com/ansibleplaybookbundle/hello-world-apb)
 * [hello-world-db-apb](https://github.com/ansibleplaybookbundle/hello-world-db-apbb)
 * [pyzip-demo-apb](https://github.com/ansibleplaybookbundle/pyzip-demo-apb)
@@ -44,8 +44,7 @@ For completed APB examples, take a look at some of the APBs in the [ansibleplayb
 
 ## Directory Structure
 
-The following shows an example directory structure of an APB.
-
+The following shows an example directory structure of a Service Bundle.
 ```bash
 example-apb/
 ├── Dockerfile
@@ -63,14 +62,14 @@ example-apb/
     └── unbind.yml
 ```
 
-## APB Spec File
+## Service Bundle Spec File
 
-The APB Spec File (`apb.yml`) is where the outline of your application is declared.  The following is an example APB spec
+The Service Bundle Spec File (`apb.yml`) is where the outline of your application is declared.  The following is an example Bundle spec
 
 ```yaml
 version: 1.0
 name: example-apb
-description: A short description of what this APB does
+description: A short description of what this Bundle does
 bindable: True
 async: optional
 metadata:
@@ -78,7 +77,7 @@ metadata:
   imageUrl: <link to URL of image>
   dependencies: ['<registry>/<organization>/<dependency-name-1>', '<registry>/<organization>/<dependency-name-2>']
   displayName: Example App (APB)
-  longDescription: A longer description of what this APB does
+  longDescription: A longer description of what this Bundle does
   providerDisplayName: "Red Hat, Inc."
 plans:
   - name: default
@@ -104,11 +103,11 @@ plans:
 
 ### Top level structure
 
-* `version`: Version of the APB spec. Please see [versioning](#apb-spec-versioning) for more information.
-* `name`: Name of the APB. Names must be valid ASCII and may contain lowercase letters, digits, underscores, periods and dashed. Please see [Docker's guidelines](https://docs.docker.com/engine/reference/commandline/tag/#extended-description) for valid tag names.
-* `description`: Short description of this APB.
-* `bindable`: Boolean option of whether or not this APB can be bound to. Accepted fields are `true` or `false`.
-* `async`: Field to determine whether the APB can be deployed asynchronously. Accepted fields are `optional`, `required`, `unsupported`.
+* `version`: Version of the Bundle spec. Please see [versioning](#apb-spec-versioning) for more information.
+* `name`: Name of the Service Bundle. Names must be valid ASCII and may contain lowercase letters, digits, underscores, periods and dashed. Please see [Docker's guidelines](https://docs.docker.com/engine/reference/commandline/tag/#extended-description) for valid tag names.
+* `description`: Short description of this Service Bundle.
+* `bindable`: Boolean option of whether or not this Service Bundle can be bound to. Accepted fields are `true` or `false`.
+* `async`: Field to determine whether the Service Bundle can be deployed asynchronously. Accepted fields are `optional`, `required`, `unsupported`.
 * `metadata`: A dictionary field declaring relevant metadata information. Please see the [metadata section](#metadata) for more information.
 * `plans`: A list of plans that can be deployed. Please see the [plans section](#plans) for more information.
 
@@ -116,20 +115,20 @@ plans:
 
 * `documentationUrl`: URL to the applications documentation.
 * `imageUrl`: URL to an image which will be displayed in the WebUI for the Service Catalog.
-* `dependencies`: List of images which are consumed from within the APB.
-* `displayName`: The name that will be displayed in the WebUI for this APB.
-* `longDescription`: Longer description that will be displayed when the APB is clicked in the WebUI.
-* `providerDisplayName`: Name of who is providing this APB for consumption.
+* `dependencies`: List of images which are consumed from within the Bundle.
+* `displayName`: The name that will be displayed in the WebUI for this Bundle.
+* `longDescription`: Longer description that will be displayed when the Bundle is clicked in the WebUI.
+* `providerDisplayName`: Name of who is providing this Bundle for consumption.
 
 #### Plans
 
 Plans are declared as a list. This section will explain what each field in a plan describes.
 
-* `name`: Unique name of plan to deploy. This will be displayed when the APB is clicked from the Service Catalog.
+* `name`: Unique name of plan to deploy. This will be displayed when the Bundle is clicked from the Service Catalog.
 * `description`: Short description of what will be deployed from this plan.
 * `free`: Boolean field to determine if this plan is free or not. Accepted fields are `true` or `false`.
 * `metadata`: Dictionary field declaring relevant plan metadata information. Please see the [plan metadata section](#plan-metadata)
-* `parameters`: List of parameter dictionaries used as input to the APB. Please see the [parameters section](#parameters)
+* `parameters`: List of parameter dictionaries used as input to the Bundle. Please see the [parameters section](#parameters)
 
 #### Plan Metadata
 
@@ -153,10 +152,10 @@ parameters:
     display_group: Group 1
 ```
 
-* `name`: Unique name of the parameter passed into the APB
+* `name`: Unique name of the parameter passed into the Bundle
 * `title`: Displayed label in the UI.
 * `type`: Data type of the parameters as specified by [json-schema](http://json-schema.org/) such as `string`, `number`, `int`, `boolean`, or `enum`.  Default input field type in the UI will be assigned if no `display_type` is assigned.
-* `required`: Whether or not the parameter is required for APB execution.  Required field in UI.
+* `required`: Whether or not the parameter is required for Bundle execution.  Required field in UI.
 * `default`: Default value assigned to the parameter.
 * `display_type`: Display type for the UI.  For example, you can override a string input as a `password` to hide it in the UI.  Accepted fields include `text`, `textarea`, `password`, `checkbox`, `select`.
 * `display_group`: will cause a parameter to display in groups with adjacent parameters with matching `display_group` fields.  In the above example, adding another field below with `display_group: Group 1` will visually group them together in the UI under the heading "Group 1".
@@ -189,7 +188,7 @@ For a full example of how this works, see the [mediawiki-apb](https://github.com
 
 ## Dockerfile
 
-The Dockerfile is what's used to actually build the APB image.  As a result, sometimes you will need to customize it for your own needs.  For example, if running a playbook that requires interactions with PostgreSQL, you may want to install the required packages by adding the `yum install`.
+The Dockerfile is what's used to actually build the Service Bundle image.  As a result, sometimes you will need to customize it for your own needs.  For example, if running a playbook that requires interactions with PostgreSQL, you may want to install the required packages by adding the `yum install`.
 
 ```yaml
 FROM ansibleplaybookbundle/apb-base
@@ -212,15 +211,15 @@ USER apb
 
 ## Actions
 
-An action for an APB is the command that the APB is run with. 5 standard actions that we support are `provision`, `deprovision`, `bind`, `unbind`, and `test`. For an action to be valid there must be a valid file in the `playbooks` directory named `<action>.yml`. These playbooks can do anything which also means that you can technically create any action you would like. Our [mediawiki-apb](https://github.com/ansibleplaybookbundle/mediawiki123-apb/blob/master/playbooks/update.yml) has an example of creating an action `update`.
+An action for a Service Bundle is the command that the Bundle is run with. 5 standard actions that we support are `provision`, `deprovision`, `bind`, `unbind`, and `test`. For an action to be valid there must be a valid file in the `playbooks` directory named `<action>.yml`. These playbooks can do anything which also means that you can technically create any action you would like. Our [mediawiki-apb](https://github.com/ansibleplaybookbundle/mediawiki123-apb/blob/master/playbooks/update.yml) has an example of creating an action `update`.
 
-Most APBs will normally have a `provision` to create resources and a `deprovision` action to destroy the resources when deleting the service.
+Most Bundles will normally have a `provision` to create resources and a `deprovision` action to destroy the resources when deleting the service.
 
 <a id="binding-credentials"></a>
 
 `bind` and `unbind` are used when the coordinates of one service needs to be made available to another service.  This is often the case when creating a data service and making it available to an application.  There are future plans to asynchronously execute `bind` and `unbind` playbooks, but currently, the coordinates are made available during the provision.
 
-To properly make our coordinates available to another service, we use the `asb_encode_binding` module. This module should be called at the end of the APBs provision role and it will return bind credentials to the Ansible Service Broker.
+To properly make our coordinates available to another service, we use the `asb_encode_binding` module. This module should be called at the end of the Bundle's provision role and it will return bind credentials to the Ansible Service Broker.
 
 ```yaml
 - name: encode bind credentials
@@ -232,11 +231,11 @@ To properly make our coordinates available to another service, we use the `asb_e
 
 ## Working with Common Resources
 
-Below is a list of common resources that are created when developing APBs. Please see the [Ansible Kubernetes Module](https://github.com/ansible/ansible-kubernetes-modules/tree/master/library) for a full list of available resource modules.
+Below is a list of common resources that are created when developing Service Bundles. Please see the [Ansible Kubernetes Module](https://github.com/ansible/ansible-kubernetes-modules/tree/master/library) for a full list of available resource modules.
 
 ### Service
 
-The following is a sample ansible task to create a service named `hello-world`. It is worth noting that the `namespace` variable in an APB will be provided by the Ansible Service Broker when launched from the WebUI.
+The following is a sample ansible task to create a service named `hello-world`. It is worth noting that the `namespace` variable in a Service Bundle will be provided by the Ansible Service Broker when launched from the WebUI.
 
 * Provision
 
@@ -385,7 +384,7 @@ The following is an example of creating a persistent volume claim resource and d
 
 ### Optional Variables
 
-You can add optional variables to an Ansible Playbook Bundle by using environment variables. To pass variables into an APB, you will need to escape the variable substitution in your `.yml` files. For example, the section below is of [main.yml](https://github.com/fusor/apb-examples/blob/master/etherpad-apb/roles/provision-etherpad-apb/tasks/main.yml#L89) in the [etherpad-apb](https://github.com/fusor/apb-examples/tree/master/etherpad-apb):
+You can add optional variables to an Ansible Playbook Bundle by using environment variables. To pass variables into a Service Bundle, you will need to escape the variable substitution in your `.yml` files. For example, the section below is of [main.yml](https://github.com/fusor/apb-examples/blob/master/etherpad-apb/roles/provision-etherpad-apb/tasks/main.yml#L89) in the [etherpad-apb](https://github.com/fusor/apb-examples/tree/master/etherpad-apb):
 
 ```yaml
 - name: create mariadb deployment config
@@ -404,7 +403,7 @@ You can add optional variables to an Ansible Playbook Bundle by using environmen
         value: '{{ mariadb_password }}'
 ```
 
-To define variables, use the `main.yml` file under the `defaults` folder to define/set other variables for your APB.  For example, below is the [defaults/main.yml](https://github.com/fusor/apb-examples/blob/master/etherpad-apb/roles/provision-etherpad-apb/defaults/main.yml) for the `etherpad-apb`:
+To define variables, use the `main.yml` file under the `defaults` folder to define/set other variables for your Bundle.  For example, below is the [defaults/main.yml](https://github.com/fusor/apb-examples/blob/master/etherpad-apb/roles/provision-etherpad-apb/defaults/main.yml) for the `etherpad-apb`:
 
 ```yaml
 playbook_debug: no
@@ -419,15 +418,15 @@ state: present
 ```
 
 ### Alternative to using `apb push`
-When developing APBs, there are a couple of factors which could prevent the developer from using the full development lifecycle that the APB tooling offers. Primarily these factors are:
+When developing Service Bundles, there are a couple of factors which could prevent the developer from using the full development lifecycle that the `apb` tooling offers. Primarily these factors are:
 * Developing against an OpenShift/Kubernetes cluster that exists on a remote host
-* Developing APBs on a machine that doesn't have access to the Docker daemon
+* Developing Bundles on a machine that doesn't have access to the Docker daemon
 
-If a developer meets any of these criteria, then we suggest the following workflow to publish images to the internal OCP registry so that the Automation Broker can bootstrap the image. This section will show you how to do these steps with the APB tooling and without.
+If a developer meets any of these criteria, then we suggest the following workflow to publish images to the internal OCP registry so that the Automation Broker can bootstrap the image. This section will show you how to do these steps with the `apb` tooling and without.
 
-* Step 1: Ensure the base64 encoded spec is a label on the Dockerfile
+* Step 1: Ensure the base64 encoded spec is a label in the Dockerfile
 
-This is usually done via `apb prepare`. If you do not have the APB tooling installed, you can run:
+This is usually done via `apb prepare`. If you do not have the `apb` tooling installed, you can run:
 ```
 $ cat apb.yml | grep base64
 ```
@@ -464,16 +463,16 @@ TWVkaWF3aWtpIEFkbWluIFVzZXIgUGFzc3dvcmQKICAgICAgICByZXF1aXJlZDogVHJ1ZQogICAg\
 ICAgIGRpc3BsYXlfdHlwZTogcGFzc3dvcmQK"
 ```
 
-* Step 2: Populate the internal OCP registry with our built APB image
+* Step 2: Populate the internal OCP registry with our built Service Bundle image
 
-This is what is normally handled by `apb push`. In order to build our image without using Docker, we will take advantage of the source-to-image functionality of OpenShift. By default, the Automation Broker is configured to look at the `openshift` namespace for published APBs. The `openshift` namespace is detailed in our documentation as a namespace which exposes it's images/imagestreams to be available to any authenticated user on the cluster. We will take advantage of this by using `oc new-app` in namespace `openshift` to build our image.
+This is what is normally handled by `apb push`. In order to build our image without using Docker, we will take advantage of the source-to-image functionality of OpenShift. By default, the Automation Broker is configured to look at the `openshift` namespace for published Service Bundles. The `openshift` namespace is detailed in our documentation as a namespace which exposes its images/imagestreams to be available to any authenticated user on the cluster. We will take advantage of this by using `oc new-app` in namespace `openshift` to build our image.
 ```
-$ oc new-app <path_to_apb_source> --name <apb_name> -n openshift
+$ oc new-app <path_to_bundle_source> --name <bundle_name> -n openshift
 ```
 After a couple of minutes we should now see our image in the internal registry:
 ```
-$ oc get images | grep <apb_name>
-sha256:b2dcb4b95e178e9b7ac73e5ee0211080c10b24260f76cfec30b89e74e8ee6742   172.30.1.1:5000/openshift/<apb_name>@sha256:b2dcb4b95e178e9b7ac73e5ee0211080c10b24260f76cfec30b89e74e8ee6742
+$ oc get images | grep <bundle_name>
+sha256:b2dcb4b95e178e9b7ac73e5ee0211080c10b24260f76cfec30b89e74e8ee6742   172.30.1.1:5000/openshift/<bundle_name>@sha256:b2dcb4b95e178e9b7ac73e5ee0211080c10b24260f76cfec30b89e74e8ee6742
 ```
 
 * Step 3: Bootstrap the Automation Broker
@@ -492,14 +491,14 @@ $ curl -H "Authorization: Bearer $(oc whoami -t)" -k -X POST https://asb-1338-an
 ```
 Note: `oc whoami -t` should return a token and the logged in user must have permissions that are documented [here](apb_cli.md#access-permissions)
 
-* Step 4: Verify new APB exists in the Automation Broker
+* Step 4: Verify new Service Bundle exists in the Automation Broker
 
 This is normally the functionality of `apb list`. If you do not have access to use `apb list`, you can use the route gathered from step 3 and do:
 ```
 $ curl -H "Authorization: Bearer $(oc whoami -t)" -k https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/catalog
 ```
 
-You should see a list of all bootstrapped specs and one that is labeled `localregistry-<apb_name>`. I recommend using `|grep <apb_name>` to help find it since the output is in JSON.
+You should see a list of all bootstrapped specs and one that is labeled `localregistry-<bundle_name>`. I recommend using `|grep <bundle_name>` to help find it since the output is in JSON.
 
 ### Working with the restricted scc
 
@@ -516,11 +515,11 @@ RUN useradd -u ${USER_UID} -r -g 0 -M -d /usr/src -b /usr/src -s /sbin/nologin -
 USER 1001
 ```
 
-### Using a ConfigMap within an APB
+### Using a ConfigMap within an Service Bundle
 
 There is a temporary workaround we are using to create configmaps from ansible due to a bug in the Ansible modules.
 
-One common use case for ConfigMaps is when the parameters of an APB will be used within a configuration file of an application or service. The ConfigMap module allows you to mount a ConfigMap into a pod as a volume which can be used to store the config file. This approach allows you to also leverage the power Ansible's `template` module to create a ConfigMap out of APB paramters. The following is an example of creating a ConfigMap from a jinja template mounted into a pod as a volume.
+One common use case for ConfigMaps is when the parameters of an Service Bundle will be used within a configuration file of an application or service. The ConfigMap module allows you to mount a ConfigMap into a pod as a volume which can be used to store the config file. This approach allows you to also leverage the power Ansible's `template` module to create a ConfigMap out of Service Bundle paramters. The following is an example of creating a ConfigMap from a jinja template mounted into a pod as a volume.
 
 ```yaml
 - name: Create hastebin config from template
@@ -573,24 +572,24 @@ One common use case for ConfigMaps is when the parameters of an APB will be used
 
 ```
 
-### Using docker run to quickly test an APB
+### Using docker run to quickly test a Service Bundle
 
-While developing APBs, you may want to quickly test an APB without involving the Ansible Service Broker or Service Catalog. This can be accomplished by using a `docker run` command.
+While developing Service Bundles, you may want to quickly test a Bundle without involving the Automation Broker or Service Catalog. This can be accomplished by using a `docker run` command.
 
-Before continuing, run `oc login` and provide credentials for a cluster-admin user. This method of APB invocation mounts `~/.kube` into the APB container for authentication.
+Before continuing, run `oc login` and provide credentials for a cluster-admin user. This method of Service Bundle invocation mounts `~/.kube` into the Bundle container for authentication.
 
-The example below shows a generic `docker run` command with placeholders for an `$APB_IMAGE_NAME`, `$ACTION_NAME`, and `extra-vars`.
+The example below shows a generic `docker run` command with placeholders for an `$SB_IMAGE_NAME`, `$ACTION_NAME`, and `extra-vars`.
 
 ```bash
 docker run --rm --net=host -v $HOME/.kube:/opt/apb/.kube:z -u $UID \
-$APB_IMAGE_NAME \
+$SB_IMAGE_NAME \
 $ACTION_NAME \
 --extra-vars 'namespace=sample-namespace' \
 --extra-vars 'example_param_1=foo' \
 --extra-vars 'example_param_2=bar' \
 ```
 
-The next example shows a `docker run` command which will perform the `provision` action of the MediaWiki APB, with necessary values substituted in.
+The next example shows a `docker run` command which will perform the `provision` action of the MediaWiki Service Bundle, with necessary values substituted in.
 
 ```bash
 docker run --rm --net=host -v $HOME/.kube:/opt/apb/.kube:z -u $UID \
@@ -604,9 +603,9 @@ provision \
 --extra-vars 'mediawiki_site_lang=en'
 ```
 
-### Developing APBs for Use in Proxied Environments
+### Developing Bundles for Use in Proxied Environments
 
-The broker will pass its proxy settings to APB action pods (e.g. provision, deprovision, bind, unbind, update) as environment variables. We have found that there is little consensus on proxy settings being read from uppercase vs. lowercase environment variables (e.g. http_proxy vs. HTTP_PROXY), so the broker assigns the same values to both within each APB action pod, as shown below.
+The broker will pass its proxy settings to Bundle action pods (e.g. provision, deprovision, bind, unbind, update) as environment variables. We have found that there is little consensus on proxy settings being read from uppercase vs. lowercase environment variables (e.g. http_proxy vs. HTTP_PROXY), so the broker assigns the same values to both within each Bundle action pod, as shown below.
 
 ```bash
 http_proxy="<http_proxy>:<port>"
@@ -618,7 +617,7 @@ HTTPS_PROXY="<https_proxy>:<port>"
 NO_PROXY="<no_proxy_list>"
 ```
 
-As an APB developer, you can access any of these environment variables from an Ansible Playbook using a lookup.
+As a Service Bundle developer, you can access any of these environment variables from an Ansible Playbook using a lookup.
 
 ```yaml
 set_fact:
@@ -629,7 +628,7 @@ set_fact:
 
 #### Passing Proxy Settings to Child Pods
 
-  You might want to pass proxy settings through to child pods created by an APB action pod. Edit the provision action of your APB, navigating to the section defining the deployment config that will be created for the child pod. Copy the APB action pod proxy vars to the `env` section of the container definition as shown below.
+  You might want to pass proxy settings through to child pods created by a Bundle action pod. Edit the provision action of your Bundle, navigating to the section defining the deployment config that will be created for the child pod. Copy the Bundle action pod proxy vars to the `env` section of the container definition as shown below.
 
 ```yaml
   - openshift_v1_deployment_config:
@@ -653,7 +652,7 @@ set_fact:
      [...]
 ```
 
-If more fine-grained control over proxy settings is desired at provision time, consider adding a boolean parameter to `apb.yml` giving the APB user control over whether broker proxy settings should pass through to the APBs child pods.
+If more fine-grained control over proxy settings is desired at provision time, consider adding a boolean parameter to `apb.yml` giving the Bundle user control over whether broker proxy settings should pass through to the Bundle's child pods.
 
 ```yaml
 [...]
@@ -667,7 +666,7 @@ parameters:
 [...]
 ```
 
-Then, in the APB's provision tasks:
+Then, in the Bundle's provision tasks:
 
 ```yaml
 
@@ -703,11 +702,11 @@ Then, in the APB's provision tasks:
 
 ## Custom Error Message
 
-A custom error message can be displayed when a failure occurs in the APB. This can be achieved by the pod writing out to its *termination log* which is by default `/dev/termination-log`.
+A custom error message can be displayed when a failure occurs in the Bundle. This can be achieved by the pod writing out to its *termination log* which is by default `/dev/termination-log`.
 
-When the APB fails, the broker will pass the contents of the pod's termination log to the service catalog (if it exists), and the contents of the termination log will be displayed on the WebUI.  If the termination log is empty, a generic error message would be displayed.
+When the Bundle fails, the broker will pass the contents of the pod's termination log to the service catalog (if it exists), and the contents of the termination log will be displayed on the WebUI.  If the termination log is empty, a generic error message would be displayed.
 
-The below shows how this can be achieved in an APB. It captures the task in a `block` and `rescue`:
+The below shows how this can be achieved in a Service Bundle. It captures the task in a `block` and `rescue`:
 
 ```yaml
   - block:
@@ -721,10 +720,10 @@ The below shows how this can be achieved in an APB. It captures the task in a `b
       - name: Writing Termination Message '/dev/termination-log'
         shell: echo "[Creating a DC Error] - {{ ansible_failed_result.msg }}" > /dev/termination-log
 
-      - fail: msg="[APB Failed! - Plan - '{{ _apb_plan_id }}'] "
+      - fail: msg="[Bundle Failed! - Plan - '{{ _apb_plan_id }}'] "
 ```
 
-## APB Spec Versioning
+## Service Bundle Spec Versioning
 
 We are using semantic versioning with the format of x.y where x is a major release and y is a minor release.
 
@@ -732,7 +731,7 @@ The current spec version is 1.0.
 
 ### Major Version Bump
 
-We will increment the major version whenever an API breaking change is introduced to the APB spec. Some examples include:
+We will increment the major version whenever an API breaking change is introduced to the Service Bundle spec. Some examples include:
 
 * Introduction/deletion of a required field
 * Changing the yaml format
@@ -740,7 +739,7 @@ We will increment the major version whenever an API breaking change is introduce
 
 ### Minor Version Bump
 
-We will increment the minor version whenever a non-breaking change is introduced to the APB spec. Some examples include:
+We will increment the minor version whenever a non-breaking change is introduced to the Service Bundle spec. Some examples include:
 
 * Introduction/deletion of an optional field
 * Spelling change
