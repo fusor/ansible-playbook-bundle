@@ -570,6 +570,14 @@ def main():
         default=os.getcwd()
     )
 
+    parser.add_argument(
+        '--token',
+        action='store',
+        dest='auth_token',
+        help=u'Specify OpenShift auth token to be used',
+        default=None
+    )
+
     subparsers = parser.add_subparsers(title='subcommand', dest='subcommand')
     subparsers.required = True
 

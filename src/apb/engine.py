@@ -452,6 +452,8 @@ def relist_service_broker(kwargs):
                        base64.b64encode("{0}:{1}".format(kwargs['basic_auth_username'],
                                                          kwargs['basic_auth_password']))
                        }
+        elif kwargs['auth_token'] is not None:
+            headers = {'Authorization': kwargs['auth_token']}
         else:
             headers = {'Authorization': token}
 
@@ -777,6 +779,8 @@ def broker_request(broker, service_route, method, **kwargs):
                        base64.b64encode("{0}:{1}".format(kwargs['basic_auth_username'],
                                                          kwargs['basic_auth_password']))
                        }
+        elif kwargs['auth_token'] is not None:
+            headers = {'Authorization': kwargs['auth_token']}
         else:
             token = openshift_client.Configuration().get_api_key_with_prefix('authorization')
             headers = {'Authorization': token}
@@ -793,7 +797,8 @@ def cmdrun_list(**kwargs):
     response = broker_request(kwargs['broker'], "/v2/catalog", "get",
                               verify=kwargs["verify"],
                               basic_auth_username=kwargs.get("basic_auth_username"),
-                              basic_auth_password=kwargs.get("basic_auth_password"))
+                              basic_auth_password=kwargs.get("basic_auth_password"),
+                              auth_token=kwargs.get("auth_token"))
 
     if response.status_code != 200:
         print("Error: Attempt to list APBs in the broker returned status: %d" % response.status_code)
@@ -959,15 +964,21 @@ def delete_old_images(image_name):
     return
 
 
-def push_apb(registry, tag):
+def push_apb(registry, tag, **kwargs):
     try:
         client = create_docker_client()
         openshift_config.load_kube_config()
-        api_key = openshift_client.Configuration().get_api_key_with_prefix('authorization')
-        if api_key is None:
-            raise Exception("No api key found in kubeconfig. NOTE: system:admin " +
-                            "*cannot* be used with apb, since it does not have a token.")
-        token = api_key.split(" ")[1]
+        if kwargs['auth_token'] is not None:
+            token = kwargs['auth_token']
+        else:
+            api_key = openshift_client.Configuration().get_api_key_with_prefix('authorization')
+            if api_key is None:
+                raise Exception(
+                    "No api key found in kubeconfig. NOTE: " +
+                    "system:admin *cannot* be used with apb, since it " +
+                    "does not have a token."
+                )
+            token = api_key.split(" ")[1]
         username = "developer" if is_minishift() else "unused"
         client.login(username=username, password=token, registry=registry, reauth=True)
         delete_old_images(tag)
@@ -1149,7 +1160,8 @@ def cmdrun_push(**kwargs):
         response = broker_request(broker, "/v2/apb", "post", data=data_spec,
                                   verify=kwargs["verify"],
                                   basic_auth_username=kwargs.get("basic_auth_username"),
-                                  basic_auth_password=kwargs.get("basic_auth_password"))
+                                  basic_auth_password=kwargs.get("basic_auth_password"),
+                                  auth_token=kwargs.get("auth_token"))
 
         if response.status_code != 200:
             print("Error: Attempt to add APB to the Broker returned status: %d" % response.status_code)
@@ -1163,11 +1175,12 @@ def cmdrun_push(**kwargs):
     tag = registry + "/" + kwargs['namespace'] + "/" + dict_spec['name']
 
     build_apb(project, kwargs['dockerfile'], tag)
-    push_apb(registry, tag)
+    push_apb(registry, tag, **kwargs)
     bootstrap(
         broker,
         kwargs.get("basic_auth_username"),
         kwargs.get("basic_auth_password"),
+        kwargs.get("auth_token"),
         kwargs["verify"]
     )
 
@@ -1199,6 +1212,7 @@ def cmdrun_remove(**kwargs):
             kwargs["broker"],
             kwargs.get("basic_auth_username"),
             kwargs.get("basic_auth_password"),
+            kwargs.get("auth_token"),
             kwargs["verify"]
         )
         exit()
@@ -1208,7 +1222,8 @@ def cmdrun_remove(**kwargs):
     response = broker_request(kwargs["broker"], route, "delete",
                               verify=kwargs["verify"],
                               basic_auth_username=kwargs.get("basic_auth_username"),
-                              basic_auth_password=kwargs.get("basic_auth_password"))
+                              basic_auth_password=kwargs.get("basic_auth_password"),
+                              auth_token=kwargs.get("auth_token"))
 
     if response.status_code == 404:
         print("Received a 404 trying to remove APB with id: %s" % kwargs["id"])
@@ -1216,7 +1231,8 @@ def cmdrun_remove(**kwargs):
         response = broker_request(kwargs["broker"], old_route, "delete",
                                   verify=kwargs["verify"],
                                   basic_auth_username=kwargs.get("basic_auth_username"),
-                                  basic_auth_password=kwargs.get("basic_auth_password"))
+                                  basic_auth_password=kwargs.get("basic_auth_password"),
+                                  auth_token=kwargs.get("auth_token"))
 
     if response.status_code != 204:
         print("Error: Attempt to remove an APB from Broker returned status: %d" % response.status_code)
@@ -1229,11 +1245,12 @@ def cmdrun_remove(**kwargs):
     print("Successfully deleted APB")
 
 
-def bootstrap(broker, username, password, verify):
+def bootstrap(broker, username, password, token, verify):
     response = broker_request(broker, "/v2/bootstrap", "post", data={},
                               verify=verify,
                               basic_auth_username=username,
-                              basic_auth_password=password)
+                              basic_auth_password=password,
+                              auth_token=token)
 
     if response.status_code != 200:
         print("Error: Attempt to bootstrap Broker returned status: %d" % response.status_code)
@@ -1244,7 +1261,9 @@ def bootstrap(broker, username, password, verify):
 
 
 def cmdrun_bootstrap(**kwargs):
-    bootstrap(kwargs["broker"], kwargs.get("basic_auth_username"), kwargs.get("basic_auth_password"), kwargs["verify"])
+    bootstrap(kwargs["broker"], kwargs.get("basic_auth_username"),
+              kwargs.get("basic_auth_password"), kwargs.get("auth_token"),
+              kwargs["verify"])
 
     if not kwargs['no_relist']:
         relist_service_broker(kwargs)
@@ -1301,7 +1320,7 @@ def cmdrun_test(**kwargs):
     tag = registry + "/" + kwargs['namespace'] + "/" + spec['name']
 
     build_apb(project, kwargs['dockerfile'], tag)
-    push_apb(registry, tag)
+    push_apb(registry, tag, **kwargs)
 
     spec = get_spec(project)
     test_name = 'apb-test-{}-{}'.format(spec['name'], rand_str())
@@ -1345,7 +1364,7 @@ def cmdrun_run(**kwargs):
         kwargs['dockerfile'],
         tag
     )
-    push_apb(registry, tag)
+    push_apb(registry, tag, **kwargs)
 
     plans = [plan['name'] for plan in spec['plans']]
     if len(plans) > 1:
