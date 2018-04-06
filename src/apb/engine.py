@@ -1250,6 +1250,40 @@ def cmdrun_bootstrap(**kwargs):
         relist_service_broker(kwargs)
 
 
+def cmdrun_refresh(**kwargs):
+    delete_classes = "oc get clusterserviceclass --no-headers | awk '{ print $1 }'"
+    class_output = subprocess.check_output(delete_classes, stderr=subprocess.STDOUT, shell=True)
+
+    if "No resources found." in class_output:
+        print "No resources found."
+        print "Run `apb relist` to populate the catalog with clusterserviceclasses"
+    else:
+        print "Deleting clusterserviceclasses"
+        if class_output != None and len(class_output) > 0:
+            for sc in class_output.rstrip('\n').split('\n'):
+                delete_class = "oc delete clusterserviceclass {}".format(sc)
+                output = subprocess.check_output(delete_class, stderr=subprocess.STDOUT, shell=True)
+                print output
+
+    delete_plans = "oc get clusterserviceplan --no-headers | awk '{ print $1 }'"
+    plan_output = subprocess.check_output(delete_plans, stderr=subprocess.STDOUT, shell=True)
+
+    if "No resources found." in plan_output:
+        print "No resources found."
+        print "Run `apb relist` to populate the catalog with clusterserviceplans"
+    else:
+        print "Deleting clusterserviceplans"
+        if plan_output != None and len(plan_output) > 0:
+            for sp in plan_output.rstrip('\n').split('\n'):
+                delete_plan = "oc delete clusterserviceplan {}".format(sp)
+                output = subprocess.check_output(delete_plan, stderr=subprocess.STDOUT, shell=True)
+                print output
+
+    print "Catalog data has be removed. Relisting data.."
+    if not kwargs['no_relist']:
+        relist_service_broker(kwargs)
+
+
 def cmdrun_serviceinstance(**kwargs):
     project = kwargs['base_path']
     spec = get_spec(project)
