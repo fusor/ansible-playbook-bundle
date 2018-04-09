@@ -151,6 +151,11 @@ parameters:
     default: X
     display_type: select
     display_group: Group 1
+  - name: param_validate
+    title: Parameter with validation
+    type: string
+    pattern: "^[a-zA-Z_][a-zA-Z0-9_]*$"
+    maxlength: 63
 ```
 
 * `name`: Unique name of the parameter passed into the APB
@@ -160,6 +165,10 @@ parameters:
 * `default`: Default value assigned to the parameter.
 * `display_type`: Display type for the UI.  For example, you can override a string input as a `password` to hide it in the UI.  Accepted fields include `text`, `textarea`, `password`, `checkbox`, `select`.
 * `display_group`: will cause a parameter to display in groups with adjacent parameters with matching `display_group` fields.  In the above example, adding another field below with `display_group: Group 1` will visually group them together in the UI under the heading "Group 1".
+* `pattern`: RegEx to be used for parameter validation against strings.
+* `maxlength`: Integer value of the max number of characters allowed in the string.
+
+Notice in the above example that the second parameter `param_validate` demonstrates doing RegEx validation on input. This is done with the `pattern` directive and you can also specify the maximum allowable character limit with `maxlength`.
 
 When using a long list of parameters it might be useful to use a shared parameter list. For an example of this, please see [rhscl-postgresql-apb](https://github.com/ansibleplaybookbundle/rhscl-postgresql-apb/blob/master/apb.yml#L4) for an example.
 
