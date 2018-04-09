@@ -1255,31 +1255,31 @@ def cmdrun_refresh(**kwargs):
     class_output = subprocess.check_output(delete_classes, stderr=subprocess.STDOUT, shell=True)
 
     if "No resources found." in class_output:
-        print "No resources found."
-        print "Run `apb relist` to populate the catalog with clusterserviceclasses"
+        print("No resources found.")
+        print("Run `apb relist` to populate the catalog with clusterserviceclasses")
     else:
-        print "Deleting clusterserviceclasses"
-        if class_output != None and len(class_output) > 0:
+        print("Deleting clusterserviceclasses")
+        if class_output is not None and len(class_output) > 0:
             for sc in class_output.rstrip('\n').split('\n'):
                 delete_class = "kubectl delete clusterserviceclass {}".format(sc)
                 output = subprocess.check_output(delete_class, stderr=subprocess.STDOUT, shell=True)
-                print output
+                print(output)
 
     delete_plans = "kubectl get clusterserviceplan --no-headers | awk '{ print $1 }'"
     plan_output = subprocess.check_output(delete_plans, stderr=subprocess.STDOUT, shell=True)
 
     if "No resources found." in plan_output:
-        print "No resources found."
-        print "Run `apb relist` to populate the catalog with clusterserviceplans"
+        print("No resources found.")
+        print("Run `apb relist` to populate the catalog with clusterserviceplans")
     else:
-        print "Deleting clusterserviceplans"
-        if plan_output != None and len(plan_output) > 0:
+        print("Deleting clusterserviceplans")
+        if plan_output is not None and len(plan_output) > 0:
             for sp in plan_output.rstrip('\n').split('\n'):
                 delete_plan = "kubectl delete clusterserviceplan {}".format(sp)
                 output = subprocess.check_output(delete_plan, stderr=subprocess.STDOUT, shell=True)
-                print output
+                print(output)
 
-    print "Catalog data has been removed. Relisting data.."
+    print("Catalog data has been removed. Relisting data..")
     if not kwargs['no_relist']:
         relist_service_broker(kwargs)
 

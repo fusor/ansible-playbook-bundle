@@ -535,6 +535,7 @@ def subcmd_relist_parser(subcmd):
     )
     return
 
+
 def subcmd_refresh_parser(subcmd):
     """ version subcommand """
     subcmd.add_argument(
