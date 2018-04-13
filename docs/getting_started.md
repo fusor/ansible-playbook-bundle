@@ -22,7 +22,7 @@ In this tutorial, we'll walk through the creation of some sample APBs.  We will 
 
 Before getting started with APBs, we need to get your system set up to create them.
 
-First, make sure your system is properly running [OpenShift Origin](https://www.openshift.org/).  You should be running both the service catalog and Ansible Service Broker (ASB). Instructions can be found on the ASB repo. for Kubernetes[getting started doc](https://github.com/openshift/ansible-service-broker#getting-started-on-kubernetes) and OpenShift[getting started doc](https://github.com/openshift/ansible-service-broker#getting-started-on-openshift).
+First, make sure your system is properly running [OpenShift Origin](https://www.openshift.org/).  You should be running both the service catalog and Ansible Service Broker (ASB). Instructions can be found on the ASB repo. for Kubernetes [getting started doc](https://github.com/openshift/ansible-service-broker#getting-started-on-kubernetes) and OpenShift [getting started doc](https://github.com/openshift/ansible-service-broker#getting-started-on-openshift).
 
 Next, install the APB tools as documented in the [APB CLI Tooling doc](https://github.com/fusor/ansible-playbook-bundle/blob/master/docs/apb_cli.md#installing-the-apb-tool).  To check, you can run `apb help` and check for a valid response.
 ```
