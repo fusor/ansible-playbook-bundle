@@ -627,6 +627,22 @@ Then, in the APB's provision tasks:
     when: proxy_passthrough
 ```
 
+## Dashboard URL
+
+In order to set the dashboard URL on the deployed service instance, we developed an Ansible module that will annotate the APB pod with the desired dashboard URL. This is so that an APB developer can set the dashboard URL at the end of the provision tasks. In version 3.10, this is considered an alpha feature. In order to enable it on your APB, you can set the following in `apb.yml`:
+```
+alpha:
+  dashboard_redirector: True
+```
+
+This tells the broker that this APB will be using the [asb_dashboard_url](https://github.com/ansibleplaybookbundle/ansible-asb-modules/blob/master/library/asb_dashboard_url.py) Ansible module. The proper way to use this Ansible module is to call `asb_dashboard_url` at the end of your provision tasks like:
+
+```
+- asb_dashboard_url:
+    dashboard_url:
+      "automationbroker.io"
+```
+
 ## Custom Error Message
 
 A custom error message can be displayed when a failure occurs in the APB. This can be achieved by the pod writing out to its *termination log* which is by default `/dev/termination-log`.
