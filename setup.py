@@ -1,18 +1,12 @@
+import os
 from setuptools import setup, find_packages
 
-try: # for pip >= 10
-    from pip._internal.req import parse_requirements
-except ImportError:
-    try: # for pip <= 9.0.3
-        from pip.req import parse_requirements
-    except ImportError:
-        pass
-
-try: # for EL7 RPM builds without pip
-  install_reqs = parse_requirements('src/requirements.txt', session=False)
-  reqs = [str(ir.req) for ir in install_reqs]
-except NameError:
-  reqs = ""
+with open(os.path.join(current_directory, "requirements.txt"), "r") as f:
+    requirements = [
+        line.strip()
+        for line in f.read().splitlines()
+        if line.strip()
+    ]
 
 setup(
     name="apb",
@@ -25,7 +19,7 @@ setup(
     keywords=['ansible', 'playbook', 'bundle'],
     package_dir={'': 'src'},
     packages=find_packages('src'),
-    install_requires=reqs,
+    install_requires=requirements,
     package_data={'apb': [
         'dat/Dockerfile.j2',
         'dat/apb.yml.j2',
