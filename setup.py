@@ -1,7 +1,8 @@
 import os
 from setuptools import setup, find_packages
 
-with open(os.path.join(current_directory, "requirements.txt"), "r") as f:
+current_directory = os.path.dirname(__file__)
+with open(os.path.join(current_directory, "src/requirements.txt"), "r") as f:
     requirements = [
         line.strip()
         for line in f.read().splitlines()
