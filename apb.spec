@@ -71,7 +71,6 @@ containers scripts for apb
 
 %prep
 %setup -q -n %{name}-%{version}
-sed -i '/req/d' setup.py
 
 %build
 %{pythonbin} setup.py build
