@@ -1069,7 +1069,8 @@ def cmdrun_init(**kwargs):
         'description': description,
         'bindable': bindable,
         'async': async,
-        'dockerhost': dockerhost
+        'dockerhost': dockerhost,
+        'dependencies': kwargs['dependencies']
     }
 
     project = os.path.join(current_path, apb_name)

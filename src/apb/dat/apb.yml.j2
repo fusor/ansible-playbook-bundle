@@ -5,6 +5,7 @@ bindable: {{ apb_dict['bindable'] }}
 async: {{ apb_dict['async'] or 'optional' }}
 metadata:
   displayName: {{ apb_dict['app_name'] }}
+  dependencies: {{ apb_dict['dependencies'] or '[]' }}
 plans:
   - name: default
     description: This default plan deploys {{ apb_dict['name'] }}
