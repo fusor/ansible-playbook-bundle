@@ -333,28 +333,6 @@ def touch(fname, force):
         open(fname, 'a').close()
 
 
-def update_deps(project):
-    spec = get_spec(project)
-    spec_path = os.path.join(project, SPEC_FILE)
-    roles_path = os.path.join(project, ROLES_DIR)
-
-    expected_deps = load_source_dependencies(roles_path)
-    if 'metadata' not in spec:
-        spec['metadata'] = {}
-    if 'dependencies' not in spec['metadata']:
-        spec['metadata']['dependencies'] = []
-    current_deps = spec['metadata']['dependencies']
-    for dep in expected_deps:
-        if dep not in current_deps:
-            spec['metadata']['dependencies'].append(dep)
-
-    if not is_valid_spec(spec):
-        fmtstr = 'ERROR: Spec file: [ %s ] failed validation'
-        raise Exception(fmtstr % spec_path)
-
-    return ruamel.yaml.dump(spec, Dumper=ruamel.yaml.RoundTripDumper)
-
-
 def update_dockerfile(project, dockerfile):
     spec_path = os.path.join(project, SPEC_FILE)
     dockerfile_path = os.path.join(os.path.join(project, dockerfile))
@@ -1108,15 +1086,9 @@ def cmdrun_prepare(**kwargs):
     project = kwargs['base_path']
     spec_path = os.path.join(project, SPEC_FILE)
     dockerfile = DOCKERFILE
-    include_deps = kwargs['include_deps']
 
     if kwargs['dockerfile']:
         dockerfile = kwargs['dockerfile']
-
-    # Removing dependency work for now
-    if include_deps:
-        spec = update_deps(project)
-        write_file(spec, spec_path, True)
 
     if not is_valid_spec(get_spec(project)):
         print("Error! Spec failed validation check. Not updating Dockerfile.")

@@ -170,14 +170,6 @@ def subcmd_prepare_parser(subcmd):
     )
 
     subcmd.add_argument(
-        '--include-dependencies',
-        action='store_true',
-        dest='include_deps',
-        help=u'Include smart dependency tracking',
-        default=False
-    )
-
-    subcmd.add_argument(
         '--dockerfile',
         '-f',
         action='store',
