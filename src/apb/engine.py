@@ -1051,6 +1051,8 @@ def cmdrun_init(**kwargs):
         'unbind': kwargs['skip-unbind'] or not kwargs['bindable'],
         'roles': kwargs['skip-roles']
     }
+    if kwargs['tag'].endswith("/"):
+        kwargs['tag'] = kwargs['tag'][:-1]
 
     apb_tag_arr = kwargs['tag'].split('/')
     apb_name = apb_tag_arr[-1]
