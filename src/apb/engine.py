@@ -1084,7 +1084,6 @@ def cmdrun_init(**kwargs):
 
 def cmdrun_prepare(**kwargs):
     project = kwargs['base_path']
-    spec_path = os.path.join(project, SPEC_FILE)
     dockerfile = DOCKERFILE
 
     if kwargs['dockerfile']:
