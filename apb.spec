@@ -41,7 +41,7 @@ Requires: python3-PyYAML >= 3.10
 Requires: python3-PyYAML < 4
 Requires: python3-docker >= 2.1.0
 Requires: python3-docker < 3.0.0
-Requires: python-openshift >= 1:0.4.0
+Requires: python-openshift >= 1:0.5.0
 Requires: python3-jinja2 >= 2.7.2
 Requires: python3-requests >= 2.6.0
 %else
@@ -51,7 +51,7 @@ Requires: PyYAML >= 3.10
 Requires: PyYAML < 4
 Requires: python-docker >= 2.1.0
 Requires: python-docker < 3.0.0
-Requires: python-openshift >= 1:0.4.0
+Requires: python-openshift >= 1:0.5.0
 Requires: python-jinja2 >= 2.7.2
 Requires: python-requests >= 2.6.0
 %endif
