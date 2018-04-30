@@ -1,7 +1,7 @@
 PyYAML>=3.10,<4.0
 docker>=2.1.0,<3.0.0
-openshift>=0.4.*
+openshift>=0.5.*
 Jinja2>=2.7.2
 requests>=2.6.0
 ruamel.yaml>=0.15
-websocket-client>=0.32.0,<=0.40.0
+websocket-client>=0.32.0
