@@ -4,4 +4,4 @@ openshift>=0.4.*
 Jinja2>=2.7.2
 requests>=2.6.0
 ruamel.yaml>=0.15
-websocket-client>=0.32.0,<=0.40.0
+websocket-client>=0.32.0,<=0.47.0
