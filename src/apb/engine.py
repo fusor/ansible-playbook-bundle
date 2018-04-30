@@ -893,6 +893,18 @@ def build_apb(project, dockerfile=None, tag=None):
     return tag
 
 
+def get_registry_images():
+    try:
+        openshift_config.load_kube_config()
+        oapi = openshift_client.OapiApi()
+        image_list = oapi.list_image(_preload_content=False)
+        image_list = json.loads(image_list.data)
+    except Exception as e:
+        print("Exception retrieving list of images: %s" % e)
+        raise Exception("Unable to retrieve images in local registry")
+    return image_list
+
+
 def get_registry(kwargs):
     namespace = kwargs['reg_namespace']
     service = kwargs['reg_svc_name']
@@ -914,10 +926,8 @@ def delete_old_images(image_name):
     # Let's ignore the registry prefix for now because sometimes our tag doesn't match the registry
     registry, image_name = image_name.split('/', 1)
     try:
-        openshift_config.load_kube_config()
         oapi = openshift_client.OapiApi()
-        image_list = oapi.list_image(_preload_content=False)
-        image_list = json.loads(image_list.data)
+        image_list = get_registry_images()
         for image in image_list['items']:
             image_fqn, image_sha = image['dockerImageReference'].split("@")
             if image_name in image_fqn:
@@ -1150,25 +1160,37 @@ def cmdrun_push(**kwargs):
 
 
 def cmdrun_remove(**kwargs):
-    if kwargs["all"]:
+    images = []
+    if kwargs["all"] and not kwargs["local"]:
         route = "/v2/apb"
         old_route = "/apb/spec"
     elif kwargs["id"] is not None:
         route = "/v2/apb/" + kwargs["id"]
         old_route = "/apb/spec/" + kwargs["id"]
     elif kwargs["local"] is True:
-        print("Attempting to delete associated registry image.")
-        project = kwargs['base_path']
-        spec = get_spec(project, 'dict')
-        kwargs['reg_namespace'] = "default"
-        kwargs['reg_svc_name'] = "docker-registry"
-        kwargs['reg_route'] = None
-        kwargs['namespace'] = "openshift"
+        if kwargs["all"]:
+            print("Attempting to remove all registry images ending in: *-apb")
+            image_list = get_registry_images()
+            for image in image_list['items']:
+                image_fqn, image_sha = image['dockerImageReference'].split("@")
+                if "-apb" in image_fqn:
+                    images.append(image_fqn)
+        else:
+            print("Attempting to delete associated registry image.")
+            project = kwargs['base_path']
+            spec = get_spec(project, 'dict')
+            kwargs['reg_namespace'] = "default"
+            kwargs['reg_svc_name'] = "docker-registry"
+            kwargs['reg_route'] = None
+            kwargs['namespace'] = "openshift"
 
-        registry = get_registry(kwargs)
-        tag = registry + "/" + kwargs['namespace'] + "/" + spec['name']
-        print("Image: [%s]" % tag)
-        delete_old_images(tag)
+            registry = get_registry(kwargs)
+            tag = registry + "/" + kwargs['namespace'] + "/" + spec['name']
+            images.append(tag)
+
+        for image in images:
+            delete_old_images(image)
+
         bootstrap(
             kwargs["broker"],
             kwargs.get("basic_auth_username"),
