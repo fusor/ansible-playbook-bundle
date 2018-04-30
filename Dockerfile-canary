@@ -11,7 +11,6 @@ RUN source /opt/apb/bin/activate && python get-pip.py
 RUN git clone https://github.com/ansibleplaybookbundle/ansible-playbook-bundle
 RUN source /opt/apb/bin/activate \
  && cd ansible-playbook-bundle \
- && pip install websocket-client==0.40.0 \
  && pip install -r src/requirements.txt \
  && python setup.py install
 RUN echo -ne "#!/bin/bash\nsource /opt/apb/bin/activate\napb \$@" > /usr/local/bin/apb-wrapper
