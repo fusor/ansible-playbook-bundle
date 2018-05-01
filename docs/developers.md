@@ -518,8 +518,17 @@ sha256:bfaa73a5e15bf90faec343c7d5f8cc4f952987afdbc3f11a24c54c037528d2ed   172.30
 
 Now in order to provision, we can use `oc run` to launch the Bundle:
 ```
-$ oc new-project run-test
-$ oc run --image 172.30.1.1:5000/openshift/<bundle_name> provision-<bundle_name> provision
+$ oc new-project <target_namespace>
+$ oc create serviceaccount apb
+$ oc create rolebinding apb --clusterrole=admin --serviceaccount=<target_namespace>:apb
+$ oc run <pod_name> \
+      --env="POD_NAME=<pod_name>" \
+      --env="POD_NAMESPACE=<target_namespace>" \
+      --image=172.30.1.1:5000/openshift/<bundle_name> \
+      --restart=Never \
+      --attach=true \
+      --serviceaccount=apb \
+      -- <action> -e namespace=<target_namespace> -e cluster=$CLUSTER```
 ```
 
 ### Working with the restricted scc
