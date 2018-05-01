@@ -509,6 +509,19 @@ $ curl -H "Authorization: Bearer $(oc whoami -t)" -k https://asb-1338-ansible-se
 
 You should see a list of all bootstrapped specs and one that is labeled `localregistry-<bundle_name>`. I recommend using `|grep <bundle_name>` to help find it since the output is in JSON.
 
+### Alternative to using `apb run`
+Because of the limitations described above, it may be desired for a user to want the same functionality as `apb run` without having to rely on `apb push` being successful. This is because `apb run` implicitly performs `apb push` first before attempting to provision the application. In order to work around this, a user must first follow the above workaround to push their image onto the internal OpenShift registry. Once the image exists, you should be able to see the image with:
+```
+$ oc get images | grep <bundle_name>
+sha256:bfaa73a5e15bf90faec343c7d5f8cc4f952987afdbc3f11a24c54c037528d2ed   172.30.1.1:5000/openshift/<bundle_name>@sha256:bfaa73a5e15bf90faec343c7d5f8cc4f952987afdbc3f11a24c54c037528d2ed
+```
+
+Now in order to provision, we can use `oc run` to launch the Bundle:
+```
+$ oc new-project run-test
+$ oc run --image 172.30.1.1:5000/openshift/<bundle_name> provision-<bundle_name> provision
+```
+
 ### Working with the restricted scc
 
 When building an OpenShift image, it is important that we do not have our application running as the root user when at all possible. When running under the restriced security context, the application image is launched with a random UID. This will cause problems if your application folder is owned by the root user. A good way to work around this is to add a user to the root group and make the application folder owned by the root group. A very good article on how to support Arbitrary User IDs is shown [here](https://docs.openshift.org/latest/creating_images/guidelines.html#openshift-origin-specific-guidelines). The following is a Dockerfile example of a node app running in `/usr/src`. This command would be run after the application is installed in `/usr/src` and the associated environment variables set.
