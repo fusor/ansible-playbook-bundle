@@ -36,13 +36,6 @@ def subcmd_list_parser(subcmd):
         help=u'Route to the Ansible Service Broker'
     )
     subcmd.add_argument(
-        '--secure',
-        action='store_true',
-        dest='verify',
-        help=u'Use secure connection to Ansible Service Broker',
-        default=False
-    )
-    subcmd.add_argument(
         '--verbose',
         '-v',
         action='store_true',
@@ -224,13 +217,6 @@ def subcmd_push_parser(subcmd):
         default=u'Dockerfile'
     )
     subcmd.add_argument(
-        '--secure',
-        action='store_true',
-        dest='verify',
-        help=u'Use secure connection to Ansible Service Broker',
-        default=False
-    )
-    subcmd.add_argument(
         '--username',
         '-u',
         action='store',
@@ -299,13 +285,6 @@ def subcmd_remove_parser(subcmd):
         help=u'ID of APB to remove'
     )
     subcmd.add_argument(
-        '--secure',
-        action='store_true',
-        dest='verify',
-        help=u'Use secure connection to Ansible Service Broker',
-        default=False
-    )
-    subcmd.add_argument(
         '--username',
         '-u',
         action='store',
@@ -345,13 +324,6 @@ def subcmd_bootstrap_parser(subcmd):
         action='store',
         dest='broker',
         help=u'Route to the Ansible Service Broker'
-    )
-    subcmd.add_argument(
-        '--secure',
-        action='store_true',
-        dest='verify',
-        help=u'Use secure connection to Ansible Service Broker',
-        default=False
     )
     subcmd.add_argument(
         '--no-relist',
@@ -503,13 +475,6 @@ def subcmd_relist_parser(subcmd):
         default=u'ansible-service-broker'
     )
     subcmd.add_argument(
-        '--secure',
-        action='store_true',
-        dest='verify',
-        help=u'Use secure connection to Ansible Service Broker',
-        default=False
-    )
-    subcmd.add_argument(
         '--username',
         '-u',
         action='store',
@@ -530,13 +495,6 @@ def subcmd_relist_parser(subcmd):
 
 def subcmd_refresh_parser(subcmd):
     """ version subcommand """
-    subcmd.add_argument(
-        '--secure',
-        action='store_true',
-        dest='verify',
-        help=u'Use secure connection to Ansible Service Broker',
-        default=False
-    )
     subcmd.add_argument(
         '--username',
         '-u',
