@@ -722,6 +722,25 @@ oc get route
 
 If you are running the Broker manually, you must include the Port as well as IP address the Broker is running.
 
+#### Helpful aliases
+For automation-broker >= 3.10 ```get-bundle``` will return the list of bundle
+CustomResourceDefinitions.
+```bash
+alias get-bundle='oc get bundle -o custom-columns=Name:spec.fq_name,ID:metadata.name'
+```
+
+Return a list of clusterserviceclasses with name, uuid, and the broker they
+belong to with ```csc```.
+```bash
+alias csc='oc get clusterserviceclass -o custom-columns=Name:spec.externalName,externalID:spec.externalID,Broker:spec.clusterServiceBrokerName'
+```
+
+```csp``` will return a list of clusterserviceplans with name, uuid, and the
+broker they are associated with.
+```bash
+alias csp='oc get clusterserviceplan -o custom-columns=Name:spec.externalName,externalID:spec.externalID,Broker:spec.clusterServiceBrokerName,ClusterServiceClass:spec.clusterServiceClassRef.name'
+```
+
 ### More information
 * [Design](design.md) - overall design of Ansible Playbook Bundles
 * [Developers](developers.md) - in-depth explanation of Ansible Playbook Bundles
