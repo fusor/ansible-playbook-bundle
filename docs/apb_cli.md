@@ -553,6 +553,7 @@ apb remove [OPTIONS]
 | --broker BROKER_URL | Route to the Ansible Service Broker|
 | --secure            | Use secure connection to Ansible Service Broker |
 | --all               | Remove all stored APBs |
+| --local, -l         | Remove APB from internal registry (apb push'ed APB) |
 | --id ID             | ID of APB to remove |
 | --secure            | Use secure connection to Ansible Service Broker |
 | --username BASIC_AUTH_USERNAME, -u BASIC_AUTH_USERNAME | Specify the basic auth username to be used |
@@ -561,7 +562,18 @@ apb remove [OPTIONS]
 
 
 ##### Examples                                                                                                                                         
-Remove an APB using an ID
+Remove an APB that was pushed to the internal registry using `apb push`
+```bash
+$ pwd
+/home/user/my-test-apb
+$ apb remove -l
+```
+Remove all APBs from internal registry (assumes all APBs are named `*-apb`)
+```bash
+$ apb remove -l --all
+```
+
+Remove an APB using an ID (This only removes the spec from the broker. It does *not* remove the image itself from the remote registry.)
 ```bash
 apb remove --id ca91b61da8476984f18fc13883ae2fdb
 oc delete clusterserviceclass ca91b61da8476984f18fc13883ae2fdb
@@ -575,7 +587,7 @@ ID                                NAME                     DESCRIPTION
 ca91b61da8476984f18fc13883ae2fdb  dh-etherpad-apb          Note taking web application
 ```  
 
-Remove all APBs
+Remove all APB specs from the broker
 ```bash
 apb remove --all
 ```

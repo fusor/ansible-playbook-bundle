@@ -437,7 +437,7 @@ If a developer meets any of these criteria, then we suggest the following workfl
 
 This is usually done via `apb prepare`. If you do not have the `apb` tooling installed, you can run:
 ```
-$ cat apb.yml | grep base64
+$ cat apb.yml | base64
 ```
 This will return the base64 encoded `apb.yml` which you can copy and paste into the `Dockerfile` under the `LABEL` `com.redhat.apb.spec` like:
 ```
