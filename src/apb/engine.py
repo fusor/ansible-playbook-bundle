@@ -431,7 +431,7 @@ def relist_service_broker(kwargs):
                                                          kwargs['basic_auth_password']))
                        }
         elif kwargs['auth_token'] is not None:
-            headers = {'Authorization': kwargs['auth_token']}
+            headers = {'Authorization': "Bearer " + kwargs['auth_token']}
         else:
             headers = {'Authorization': token}
 
@@ -758,7 +758,7 @@ def broker_request(broker, service_route, method, **kwargs):
                                                          kwargs['basic_auth_password']))
                        }
         elif kwargs['auth_token'] is not None:
-            headers = {'Authorization': kwargs['auth_token']}
+            headers = {'Authorization': "Bearer " + kwargs['auth_token']}
         else:
             token = openshift_client.Configuration().get_api_key_with_prefix('authorization')
             headers = {'Authorization': token}
