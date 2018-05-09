@@ -746,6 +746,12 @@ def broker_request(broker, service_route, method, **kwargs):
     if not broker.startswith('http'):
         broker = 'https://' + broker
 
+    if kwargs["verify"] is True and kwargs["cert"] is not None:
+        verify = kwargs["cert"]
+    else:
+        verify = kwargs["verify"]
+    print(verify)
+
     url = broker + service_route
     print("Contacting the ansible-service-broker at: %s" % url)
 
@@ -762,7 +768,7 @@ def broker_request(broker, service_route, method, **kwargs):
         else:
             token = openshift_client.Configuration().get_api_key_with_prefix('authorization')
             headers = {'Authorization': token}
-        response = requests.request(method, url, verify=kwargs["verify"],
+        response = requests.request(method, url, verify=verify,
                                     headers=headers, data=kwargs.get("data"))
     except Exception as e:
         print("ERROR: Failed broker request (%s) %s" % (method, url))
@@ -773,7 +779,7 @@ def broker_request(broker, service_route, method, **kwargs):
 
 def cmdrun_list(**kwargs):
     response = broker_request(kwargs['broker'], "/v2/catalog", "get",
-                              verify=kwargs["verify"],
+                              verify=kwargs["verify"], cert=kwargs["cert"],
                               basic_auth_username=kwargs.get("basic_auth_username"),
                               basic_auth_password=kwargs.get("basic_auth_password"),
                               auth_token=kwargs.get("auth_token"))
@@ -1142,7 +1148,7 @@ def cmdrun_push(**kwargs):
     print(spec)
     if kwargs['broker_push']:
         response = broker_request(broker, "/v2/apb", "post", data=data_spec,
-                                  verify=kwargs["verify"],
+                                  verify=kwargs["verify"], cert=kwargs["cert"],
                                   basic_auth_username=kwargs.get("basic_auth_username"),
                                   basic_auth_password=kwargs.get("basic_auth_password"),
                                   auth_token=kwargs.get("auth_token"))
@@ -1165,7 +1171,7 @@ def cmdrun_push(**kwargs):
         kwargs.get("basic_auth_username"),
         kwargs.get("basic_auth_password"),
         kwargs.get("auth_token"),
-        kwargs["verify"]
+        kwargs["verify"], kwargs["cert"]
     )
 
     if not kwargs['no_relist']:
@@ -1209,14 +1215,14 @@ def cmdrun_remove(**kwargs):
             kwargs.get("basic_auth_username"),
             kwargs.get("basic_auth_password"),
             kwargs.get("auth_token"),
-            kwargs["verify"]
+            kwargs["verify"], cert=kwargs["cert"]
         )
         exit()
     else:
         raise Exception("No flag specified.  Use --id or --local.")
 
     response = broker_request(kwargs["broker"], route, "delete",
-                              verify=kwargs["verify"],
+                              verify=kwargs["verify"], cert=kwargs["cert"],
                               basic_auth_username=kwargs.get("basic_auth_username"),
                               basic_auth_password=kwargs.get("basic_auth_password"),
                               auth_token=kwargs.get("auth_token"))
@@ -1225,7 +1231,7 @@ def cmdrun_remove(**kwargs):
         print("Received a 404 trying to remove APB with id: %s" % kwargs["id"])
         print("Attempting to contact 3.7 endpoint before erroring out.")
         response = broker_request(kwargs["broker"], old_route, "delete",
-                                  verify=kwargs["verify"],
+                                  verify=kwargs["verify"], cert=kwargs["cert"],
                                   basic_auth_username=kwargs.get("basic_auth_username"),
                                   basic_auth_password=kwargs.get("basic_auth_password"),
                                   auth_token=kwargs.get("auth_token"))
@@ -1241,9 +1247,9 @@ def cmdrun_remove(**kwargs):
     print("Successfully deleted APB")
 
 
-def bootstrap(broker, username, password, token, verify):
+def bootstrap(broker, username, password, token, verify, cert):
     response = broker_request(broker, "/v2/bootstrap", "post", data={},
-                              verify=verify,
+                              verify=verify, cert=cert,
                               basic_auth_username=username,
                               basic_auth_password=password,
                               auth_token=token)
@@ -1259,7 +1265,7 @@ def bootstrap(broker, username, password, token, verify):
 def cmdrun_bootstrap(**kwargs):
     bootstrap(kwargs["broker"], kwargs.get("basic_auth_username"),
               kwargs.get("basic_auth_password"), kwargs.get("auth_token"),
-              kwargs["verify"])
+              kwargs["verify"], kwargs["cert"])
 
     if not kwargs['no_relist']:
         relist_service_broker(kwargs)

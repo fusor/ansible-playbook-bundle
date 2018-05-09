@@ -36,9 +36,16 @@ def subcmd_list_parser(subcmd):
         help=u'Route to the Ansible Service Broker'
     )
     subcmd.add_argument(
+        '--secure',
+        action='store_true',
+        dest='verify',
+        help=u'Verify SSL connection to Ansible Service Broker',
+        default=False
+    )
+    subcmd.add_argument(
         '--ca-path',
         action='store',
-        dest='verify',
+        dest='cert',
         help=u'CA cert to use for verifying SSL connection to Ansible Service Broker',
         default=False
     )
@@ -224,9 +231,16 @@ def subcmd_push_parser(subcmd):
         default=u'Dockerfile'
     )
     subcmd.add_argument(
+        '--secure',
+        action='store_true',
+        dest='verify',
+        help=u'Verify SSL connection to Ansible Service Broker',
+        default=False
+    )
+    subcmd.add_argument(
         '--ca-path',
         action='store',
-        dest='verify',
+        dest='cert',
         help=u'CA cert to use for verifying SSL connection to Ansible Service Broker',
         default=False
     )
@@ -299,9 +313,16 @@ def subcmd_remove_parser(subcmd):
         help=u'ID of APB to remove'
     )
     subcmd.add_argument(
+        '--secure',
+        action='store_true',
+        dest='verify',
+        help=u'Verify SSL connection to Ansible Service Broker',
+        default=False
+    )
+    subcmd.add_argument(
         '--ca-path',
         action='store',
-        dest='verify',
+        dest='cert',
         help=u'CA cert to use for verifying SSL connection to Ansible Service Broker',
         default=False
     )
@@ -347,9 +368,16 @@ def subcmd_bootstrap_parser(subcmd):
         help=u'Route to the Ansible Service Broker'
     )
     subcmd.add_argument(
+        '--secure',
+        action='store_true',
+        dest='verify',
+        help=u'Verify SSL connection to Ansible Service Broker',
+        default=False
+    )
+    subcmd.add_argument(
         '--ca-path',
         action='store',
-        dest='verify',
+        dest='cert',
         help=u'CA cert to use for verifying SSL connection to Ansible Service Broker',
         default=False
     )
@@ -503,9 +531,16 @@ def subcmd_relist_parser(subcmd):
         default=u'ansible-service-broker'
     )
     subcmd.add_argument(
+        '--secure',
+        action='store_true',
+        dest='verify',
+        help=u'Verify SSL connection to Ansible Service Broker',
+        default=False
+    )
+    subcmd.add_argument(
         '--ca-path',
         action='store',
-        dest='verify',
+        dest='cert',
         help=u'CA cert to use for verifying SSL connection to Ansible Service Broker',
         default=False
     )
@@ -531,9 +566,16 @@ def subcmd_relist_parser(subcmd):
 def subcmd_refresh_parser(subcmd):
     """ version subcommand """
     subcmd.add_argument(
+        '--secure',
+        action='store_true',
+        dest='verify',
+        help=u'Verify SSL connection to Ansible Service Broker',
+        default=False
+    )
+    subcmd.add_argument(
         '--ca-path',
         action='store',
-        dest='verify',
+        dest='cert',
         help=u'CA cert to use for verifying SSL connection to Ansible Service Broker',
         default=False
     )
