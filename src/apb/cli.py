@@ -47,7 +47,7 @@ def subcmd_list_parser(subcmd):
         action='store',
         dest='cert',
         help=u'CA cert to use for verifying SSL connection to Ansible Service Broker',
-        default=False
+        default=None
     )
     subcmd.add_argument(
         '--verbose',
@@ -242,7 +242,7 @@ def subcmd_push_parser(subcmd):
         action='store',
         dest='cert',
         help=u'CA cert to use for verifying SSL connection to Ansible Service Broker',
-        default=False
+        default=None
     )
     subcmd.add_argument(
         '--username',
@@ -324,7 +324,7 @@ def subcmd_remove_parser(subcmd):
         action='store',
         dest='cert',
         help=u'CA cert to use for verifying SSL connection to Ansible Service Broker',
-        default=False
+        default=None
     )
     subcmd.add_argument(
         '--username',
@@ -379,7 +379,7 @@ def subcmd_bootstrap_parser(subcmd):
         action='store',
         dest='cert',
         help=u'CA cert to use for verifying SSL connection to Ansible Service Broker',
-        default=False
+        default=None
     )
     subcmd.add_argument(
         '--no-relist',
@@ -542,7 +542,7 @@ def subcmd_relist_parser(subcmd):
         action='store',
         dest='cert',
         help=u'CA cert to use for verifying SSL connection to Ansible Service Broker',
-        default=False
+        default=None
     )
     subcmd.add_argument(
         '--username',
@@ -577,7 +577,7 @@ def subcmd_refresh_parser(subcmd):
         action='store',
         dest='cert',
         help=u'CA cert to use for verifying SSL connection to Ansible Service Broker',
-        default=False
+        default=None
     )
     subcmd.add_argument(
         '--username',

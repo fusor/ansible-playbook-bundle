@@ -746,11 +746,10 @@ def broker_request(broker, service_route, method, **kwargs):
     if not broker.startswith('http'):
         broker = 'https://' + broker
 
-    if kwargs["verify"] is True and kwargs["cert"] is not None:
+    if kwargs["cert"] is not None:
         verify = kwargs["cert"]
     else:
         verify = kwargs["verify"]
-    print(verify)
 
     url = broker + service_route
     print("Contacting the ansible-service-broker at: %s" % url)
