@@ -41,6 +41,7 @@ For completed Service Bundle examples, take a look at some of the Bundles in the
 * [rhscl-mariadb-apb](https://github.com/ansibleplaybookbundle/rhscl-mariadb-apb)
 * [rhscl-mysql-apb](https://github.com/ansibleplaybookbundle/rhscl-mysql-apb)
 * [rds-postgres-apb](https://github.com/ansibleplaybookbundle/rds-postgres-apb)
+* [kubevirt-apb](https://github.com/ansibleplaybookbundle/kubevirt-apb)
 
 ## Directory Structure
 
