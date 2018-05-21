@@ -67,7 +67,7 @@ example-apb/
 The Service Bundle Spec File (`apb.yml`) is where the outline of your application is declared.  The following is an example Bundle spec
 
 ```yaml
-version: 1.0
+version: 1.1
 name: example-apb
 description: A short description of what this Bundle does
 bindable: True
@@ -99,6 +99,28 @@ plans:
         default: true
         title: Parameter Two
         type: boolean
+      - name: parameter_three
+        type: enum
+        title: Conditional Example
+        default: "Yes"
+        enum: ["Yes", "No", "Maybe"]
+      - name: eg_conditional_one
+        title: Example Shown If 'Yes' or 'Maybe'
+        type: string
+        dependencies:
+        - key: parameter_three
+          value: ["Yes", "Maybe"]
+      - name: eg_conditional_two
+        title: Example Shown if 'No'
+        type: string
+        dependencies:
+        - key: parameter_three
+          value: "No"
+      - name: eg_conditional_three
+        title: Example Shown When True
+        type: string
+        dependencies:
+        - key: parameter_two
 ```
 
 ### Top level structure
@@ -166,8 +188,18 @@ parameters:
 * `display_group`: will cause a parameter to display in groups with adjacent parameters with matching `display_group` fields.  In the above example, adding another field below with `display_group: Group 1` will visually group them together in the UI under the heading "Group 1".
 * `pattern`: RegEx to be used for parameter validation against strings.
 * `maxlength`: Integer value of the max number of characters allowed in the string.
+* `dependencies`: List of conditions whic decide if this parameter should be displayed
 
 Notice in the above example that the second parameter `param_validate` demonstrates doing RegEx validation on input. This is done with the `pattern` directive and you can also specify the maximum allowable character limit with `maxlength`.
+
+**Dependency Limitations**
+Currently, there are some limitations in regards to the `dependencies` field on parameters:
+
+* Although, it takes a list, currently, providing more than a single dependency is not supported. In the case where multiple dependencies are provided, only the first will be validated against.
+* Only `enum` types provided as a dependency key can have a related conditonal `value`. Value's provided for other types will
+be ignored.
+* Types other than `enum` provided as dependency keys will default to the "truthy" condition. For example, in the case of a string
+type, the parameter will become available if the dependent string is not empty. For `boolean` types, parameter will be available when the `boolean` key is set to `true`.
 
 When using a long list of parameters it might be useful to use a shared parameter list. For an example of this, please see [rhscl-postgresql-apb](https://github.com/ansibleplaybookbundle/rhscl-postgresql-apb/blob/master/apb.yml#L4) for an example.
 
@@ -492,7 +524,7 @@ $ oc get route -n ansible-service-broker
 NAME       HOST/PORT                                           PATH      SERVICES   PORT        TERMINATION   WILDCARD
 asb-1338   asb-1338-ansible-service-broker.172.17.0.1.nip.io             asb        port-1338   reencrypt     None
 
-$ curl -H "Authorization: Bearer $(oc whoami -t)" -k -X POST https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/bootstrap                                 
+$ curl -H "Authorization: Bearer $(oc whoami -t)" -k -X POST https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/bootstrap
 {
   "spec_count": 38,
   "image_count": 109
@@ -774,7 +806,7 @@ The below shows how this can be achieved in a Service Bundle. It captures the ta
 
 We are using semantic versioning with the format of x.y where x is a major release and y is a minor release.
 
-The current spec version is 1.0.
+The current spec version is 1.1.
 
 ### Major Version Bump
 
