@@ -524,6 +524,12 @@ def subcmd_serviceinstance_parser(subcmd):
 def subcmd_relist_parser(subcmd):
     """ relist subcommand """
     subcmd.add_argument(
+        '--broker',
+        action='store',
+        dest='broker',
+        help=u'Route to the Ansible Service Broker'
+    )
+    subcmd.add_argument(
         '--broker-name',
         action='store',
         dest='broker_name',
