@@ -407,7 +407,7 @@ def get_asb_route():
         print("Error finding a route to the OpenShift Automation Broker.")
         return None
 
-    url = asb_route + "/ansible-service-broker"
+    url = asb_route + "/openshift-automation-service-broker"
     if url.find("http") < 0:
         url = "https://" + url
 
@@ -742,11 +742,6 @@ def broker_request(broker, service_route, method, **kwargs):
     if broker is None:
         raise Exception("Could not find route to ansible-service-broker. "
                         "Use --broker or log into the cluster using \"oc login\"")
-
-    if not broker.endswith('/ansible-service-broker'):
-        if not broker.endswith('/'):
-            broker = broker + '/'
-        broker = broker + 'ansible-service-broker'
 
     if not broker.startswith('http'):
         broker = 'https://' + broker
