@@ -464,7 +464,6 @@ def relist_service_broker(kwargs):
 
         inc_relist_requests = relist_requests + 1
 
-
         headers['Content-Type'] = 'application/strategic-merge-patch+json'
         response = requests.request(
             "patch",
