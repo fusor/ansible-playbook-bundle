@@ -435,10 +435,15 @@ def relist_service_broker(kwargs):
         else:
             headers = {'Authorization': token}
 
+        if kwargs["cert"] is not None:
+            verify = kwargs["cert"]
+        else:
+            verify = kwargs["verify"]
+
         response = requests.request(
             "get",
             broker_resource_url(cluster_host, broker_name),
-            verify=kwargs['verify'], headers=headers)
+            verify=verify, headers=headers)
 
         if response.status_code != 200:
             errMsg = "Received non-200 status code while retrieving broker: {}\n".format(broker_name) + \
@@ -459,10 +464,6 @@ def relist_service_broker(kwargs):
 
         inc_relist_requests = relist_requests + 1
 
-        if kwargs["cert"] is not None:
-            verify = kwargs["cert"]
-        else:
-            verify = kwargs["verify"]
 
         headers['Content-Type'] = 'application/strategic-merge-patch+json'
         response = requests.request(
