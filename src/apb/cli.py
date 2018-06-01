@@ -22,7 +22,6 @@ AVAILABLE_COMMANDS = {
     'bootstrap': 'Tell Ansible Service Broker to reload APBs from the container repository',
     'test': 'Test the APB',
     'run': 'Run APB',
-    'refresh': 'Refresh all the service-catalog data',
     'version': 'Get current version of APB tool'
 }
 
@@ -559,61 +558,6 @@ def subcmd_relist_parser(subcmd):
         default=None,
         dest='basic_auth_password',
         help=u'Specify the basic auth password to be used'
-    )
-    return
-
-
-def subcmd_refresh_parser(subcmd):
-    """ version subcommand """
-    subcmd.add_argument(
-        '--secure',
-        action='store_true',
-        dest='verify',
-        help=u'Verify SSL connection to Ansible Service Broker',
-        default=False
-    )
-    subcmd.add_argument(
-        '--ca-path',
-        action='store',
-        dest='cert',
-        help=u'CA cert to use for verifying SSL connection to Ansible Service Broker',
-        default=None
-    )
-    subcmd.add_argument(
-        '--username',
-        '-u',
-        action='store',
-        default=None,
-        dest='basic_auth_username',
-        help=u'Specify the basic auth username to be used'
-    )
-    subcmd.add_argument(
-        '--password',
-        '-p',
-        action='store',
-        default=None,
-        dest='basic_auth_password',
-        help=u'Specify the basic auth password to be used'
-    )
-    subcmd.add_argument(
-        '--broker',
-        action='store',
-        dest='broker',
-        help=u'Route to the Ansible Service Broker'
-    )
-    subcmd.add_argument(
-        '--no-relist',
-        action='store_true',
-        dest='no_relist',
-        help=u'Do not relist the catalog after pushing an apb to the broker',
-        default=False
-    )
-    subcmd.add_argument(
-        '--broker-name',
-        action='store',
-        dest='broker_name',
-        help=u'Name of the ServiceBroker k8s resource',
-        default=u'ansible-service-broker'
     )
     return
 
