@@ -407,7 +407,7 @@ def get_asb_route():
         print("Error finding a route to the OpenShift Automation Broker.")
         return None
 
-    url = asb_route + "/openshift-automation-service-broker"
+    url = asb_route + "/ansible-service-broker"
     if url.find("http") < 0:
         url = "https://" + url
 
