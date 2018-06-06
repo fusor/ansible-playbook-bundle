@@ -743,6 +743,11 @@ def broker_request(broker, service_route, method, **kwargs):
         raise Exception("Could not find route to ansible-service-broker. "
                         "Use --broker or log into the cluster using \"oc login\"")
 
+    if not broker.endswith('/ansible-service-broker'):
+        if not broker.endswith('/'):
+            broker = broker + '/'
+        broker = broker + 'ansible-service-broker'
+
     if not broker.startswith('http'):
         broker = 'https://' + broker
 
