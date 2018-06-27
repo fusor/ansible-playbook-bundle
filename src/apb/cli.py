@@ -4,6 +4,8 @@ import sys
 import argparse
 import pkg_resources
 
+from kubernetes.config import kube_config
+
 import apb.engine
 
 SKIP_OPTIONS = ['provision', 'deprovision', 'bind', 'unbind', 'roles']
@@ -707,6 +709,14 @@ def main():
         dest='base_path',
         help=u'Specify a path to your project. Defaults to CWD.',
         default=os.getcwd()
+    )
+
+    parser.add_argument(
+        '--kubeconfig',
+        action='store',
+        dest='kubeconfig',
+        help=u'OpenShift/Kubernetes configuration file path.',
+        default=kube_config.KUBE_CONFIG_DEFAULT_LOCATION
     )
 
     parser.add_argument(

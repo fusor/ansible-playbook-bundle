@@ -358,10 +358,10 @@ def load_source_dependencies(roles_path):
     return output.split('\n')[:-1]
 
 
-def get_registry_service_ip(namespace, svc_name):
+def get_registry_service_ip(namespace, svc_name, kwargs):
     ip = None
     try:
-        openshift_config.load_kube_config()
+        openshift_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
         api = kubernetes_client.CoreV1Api()
         service = api.read_namespaced_service(namespace=namespace, name=svc_name)
         if service is None:
@@ -379,14 +379,14 @@ def get_registry_service_ip(namespace, svc_name):
     return ip
 
 
-def get_asb_route():
+def get_asb_route(kwargs):
     asb_route = None
     route_list = None
     possible_namespaces = ["ansible-service-broker", "openshift-ansible-service-broker",
                            "openshift-automation-service-broker"]
     for namespace in possible_namespaces:
         try:
-            openshift_config.load_kube_config()
+            openshift_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
             oapi = openshift_client.OapiApi()
             route_list = oapi.list_namespaced_route(namespace)
             if route_list.items != []:
@@ -420,7 +420,7 @@ def broker_resource_url(host, broker_name):
 
 def relist_service_broker(kwargs):
     try:
-        openshift_config.load_kube_config()
+        openshift_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
         token = openshift_client.Configuration().get_api_key_with_prefix('authorization')
         cluster_host = openshift_client.Configuration().host
         broker_name = kwargs['broker_name']
@@ -482,10 +482,10 @@ def relist_service_broker(kwargs):
         print("Relist failure: {}".format(e))
 
 
-def create_project(project):
+def create_project(project, kwargs):
     print("Creating project {}".format(project))
     try:
-        openshift_config.load_kube_config()
+        openshift_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
         api = openshift_client.OapiApi()
         api.create_project_request({
             'apiVersion': 'v1',
@@ -506,10 +506,10 @@ def create_project(project):
             raise e
 
 
-def delete_project(project):
+def delete_project(project, kwargs):
     print("Deleting project {}".format(project))
     try:
-        openshift_config.load_kube_config()
+        openshift_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
         api = openshift_client.OapiApi()
         api.delete_project(project)
         print("Project deleted")
@@ -518,10 +518,10 @@ def delete_project(project):
         raise e
 
 
-def create_service_account(name, namespace):
+def create_service_account(name, namespace, kwargs):
     print("Creating service account in {}".format(namespace))
     try:
-        kubernetes_config.load_kube_config()
+        kubernetes_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
         api = kubernetes_client.CoreV1Api()
         api.create_namespaced_service_account(
             namespace,
@@ -543,10 +543,10 @@ def create_service_account(name, namespace):
         raise e
 
 
-def create_cluster_role_binding(name, user_name, role="cluster-admin"):
+def create_cluster_role_binding(name, user_name, kwargs, role="cluster-admin"):
     print("Creating role binding of {} for {}".format(role, user_name))
     try:
-        kubernetes_config.load_kube_config()
+        kubernetes_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
         api = openshift_client.OapiApi()
         # TODO: Use generateName when it doesn't throw an exception
         api.create_cluster_role_binding(
@@ -575,10 +575,10 @@ def create_cluster_role_binding(name, user_name, role="cluster-admin"):
     return name
 
 
-def create_role_binding(name, namespace, service_account, role="admin"):
+def create_role_binding(name, namespace, service_account, kwargs, role="admin"):
     print("Creating role binding for {} in {}".format(service_account, namespace))
     try:
-        kubernetes_config.load_kube_config()
+        kubernetes_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
         api = openshift_client.OapiApi()
         # TODO: Use generateName when it doesn't throw an exception
         api.create_namespaced_role_binding(
@@ -616,10 +616,10 @@ def create_role_binding(name, namespace, service_account, role="admin"):
     return name
 
 
-def create_pod(image, name, namespace, command, service_account):
+def create_pod(image, name, namespace, command, service_account, kwargs):
     print("Creating pod with image {} in {}".format(image, namespace))
     try:
-        kubernetes_config.load_kube_config()
+        kubernetes_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
         api = kubernetes_client.CoreV1Api()
         pod = api.create_namespaced_pod(
             namespace,
@@ -663,8 +663,8 @@ def create_pod(image, name, namespace, command, service_account):
         return ("", "")
 
 
-def watch_pod(name, namespace):
-    kubernetes_config.load_kube_config()
+def watch_pod(name, namespace, kwargs):
+    kubernetes_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
     api = kubernetes_client.CoreV1Api()
 
     while True:
@@ -685,10 +685,10 @@ def watch_pod(name, namespace):
                 raise ApiException("APB failed {} - check name".format(reason))
 
 
-def run_apb(project, image, name, action, parameters={}):
-    ns = create_project(project)
-    sa = create_service_account(name, ns)
-    create_role_binding(name, ns, sa)
+def run_apb(project, image, name, action, kwargs, parameters={}):
+    ns = create_project(project, kwargs)
+    sa = create_service_account(name, ns, kwargs)
+    create_role_binding(name, ns, sa, kwargs)
 
     parameters['namespace'] = ns
     command = ['entrypoint.sh', action, "--extra-vars", json.dumps(parameters)]
@@ -698,14 +698,15 @@ def run_apb(project, image, name, action, parameters={}):
         name=name,
         namespace=ns,
         command=command,
-        service_account=sa
+        service_account=sa,
+        kwargs=kwargs
     )
 
 
-def retrieve_test_result(name, namespace):
+def retrieve_test_result(name, namespace, kwargs):
     count = 0
     try:
-        openshift_config.load_kube_config()
+        openshift_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
         api = kubernetes_client.CoreV1Api()
     except Exception as e:
         print("Failed to get api client: {}".format(e))
@@ -737,7 +738,7 @@ def retrieve_test_result(name, namespace):
 
 def broker_request(broker, service_route, method, **kwargs):
     if broker is None:
-        broker = get_asb_route()
+        broker = get_asb_route(kwargs)
 
     if broker is None:
         raise Exception("Could not find route to ansible-service-broker. "
@@ -755,7 +756,7 @@ def broker_request(broker, service_route, method, **kwargs):
     print("Contacting the ansible-service-broker at: %s" % url)
 
     try:
-        openshift_config.load_kube_config()
+        openshift_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
         headers = {}
         if kwargs['basic_auth_username'] is not None and kwargs['basic_auth_password'] is not None:
             headers = {'Authorization': "Basic " +
@@ -781,7 +782,8 @@ def cmdrun_list(**kwargs):
                               verify=kwargs["verify"], cert=kwargs["cert"],
                               basic_auth_username=kwargs.get("basic_auth_username"),
                               basic_auth_password=kwargs.get("basic_auth_password"),
-                              auth_token=kwargs.get("auth_token"))
+                              auth_token=kwargs.get("auth_token"),
+                              kubeconfig=kwargs.get("kubeconfig"))
 
     if response.status_code != 200:
         print("Error: Attempt to list APBs in the broker returned status: %d" % response.status_code)
@@ -903,9 +905,9 @@ def build_apb(project, dockerfile=None, tag=None):
     return tag
 
 
-def get_registry_images():
+def get_registry_images(kwargs):
     try:
-        openshift_config.load_kube_config()
+        openshift_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
         oapi = openshift_client.OapiApi()
         image_list = oapi.list_image(_preload_content=False)
         image_list = json.loads(image_list.data)
@@ -925,19 +927,19 @@ def get_registry(kwargs):
     elif is_minishift():
         return get_minishift_registry()
     else:
-        registry = get_registry_service_ip(namespace, service)
+        registry = get_registry_service_ip(namespace, service, kwargs)
         if registry is None:
             print("Failed to find registry service IP address.")
             raise Exception("Unable to get registry IP from namespace %s" % namespace)
         return registry
 
 
-def delete_old_images(image_name):
+def delete_old_images(image_name, kwargs):
     # Let's ignore the registry prefix for now because sometimes our tag doesn't match the registry
     registry, image_name = image_name.split('/', 1)
     try:
         oapi = openshift_client.OapiApi()
-        image_list = get_registry_images()
+        image_list = get_registry_images(kwargs)
         for image in image_list['items']:
             image_fqn, image_sha = image['dockerImageReference'].split("@")
             if image_name in image_fqn:
@@ -960,7 +962,7 @@ def delete_old_images(image_name):
 def push_apb(registry, tag, **kwargs):
     try:
         client = create_docker_client()
-        openshift_config.load_kube_config()
+        openshift_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
         if kwargs['auth_token'] is not None:
             token = kwargs['auth_token']
         else:
@@ -974,7 +976,7 @@ def push_apb(registry, tag, **kwargs):
             token = api_key.split(" ")[1]
         username = "developer" if is_minishift() else "unused"
         client.login(username=username, password=token, registry=registry, reauth=True)
-        delete_old_images(tag)
+        delete_old_images(tag, kwargs)
 
         print("Pushing the image, this could take a minute...")
         client.images.push(tag)
@@ -995,7 +997,7 @@ def cmdrun_setup(**kwargs):
         exit(1)
 
     try:
-        openshift_config.load_kube_config()
+        openshift_config.load_kube_config(os.path.expanduser(kwargs['kubeconfig']))
 
 #        base64.b64decode(username = kubernetes_client.configuration.get_basic_auth_token().split(' ')[1]))
 #        print(kubernetes_client.configuration.password)
@@ -1015,7 +1017,7 @@ def cmdrun_setup(**kwargs):
         print("\nError! Failed to create APB developer user. Exception: %s" % e)
 
     try:
-        crb = create_cluster_role_binding('apb-development', 'apb-developer')
+        crb = create_cluster_role_binding('apb-development', 'apb-developer', kwargs)
         print(crb)
     except Exception as e:
         print("\nError! %s" % e)
@@ -1143,14 +1145,15 @@ def cmdrun_push(**kwargs):
     data_spec = {'apbSpec': blob}
     broker = kwargs["broker"]
     if broker is None:
-        broker = get_asb_route()
+        broker = get_asb_route(kwargs)
     print(spec)
     if kwargs['broker_push']:
         response = broker_request(broker, "/v2/apb", "post", data=data_spec,
                                   verify=kwargs["verify"], cert=kwargs["cert"],
                                   basic_auth_username=kwargs.get("basic_auth_username"),
                                   basic_auth_password=kwargs.get("basic_auth_password"),
-                                  auth_token=kwargs.get("auth_token"))
+                                  auth_token=kwargs.get("auth_token"),
+                                  kubeconfig=kwargs.get("kubeconfig"))
 
         if response.status_code != 200:
             print("Error: Attempt to add APB to the Broker returned status: %d" % response.status_code)
@@ -1170,7 +1173,8 @@ def cmdrun_push(**kwargs):
         kwargs.get("basic_auth_username"),
         kwargs.get("basic_auth_password"),
         kwargs.get("auth_token"),
-        kwargs["verify"], kwargs["cert"]
+        kwargs["verify"], kwargs["cert"],
+        kwargs["kubeconfig"]
     )
 
     if not kwargs['no_relist']:
@@ -1188,7 +1192,7 @@ def cmdrun_remove(**kwargs):
     elif kwargs["local"] is True:
         if kwargs["all"]:
             print("Attempting to remove all registry images ending in: *-apb")
-            image_list = get_registry_images()
+            image_list = get_registry_images(kwargs)
             for image in image_list['items']:
                 image_fqn, image_sha = image['dockerImageReference'].split("@")
                 if "-apb" in image_fqn:
@@ -1207,14 +1211,15 @@ def cmdrun_remove(**kwargs):
             images.append(tag)
 
         for image in images:
-            delete_old_images(image)
+            delete_old_images(image, kwargs)
 
         bootstrap(
             kwargs["broker"],
             kwargs.get("basic_auth_username"),
             kwargs.get("basic_auth_password"),
             kwargs.get("auth_token"),
-            kwargs["verify"], cert=kwargs["cert"]
+            kwargs["verify"], cert=kwargs["cert"],
+            kubeconfig=kwargs["kubeconfig"]
         )
         exit()
     else:
@@ -1224,7 +1229,8 @@ def cmdrun_remove(**kwargs):
                               verify=kwargs["verify"], cert=kwargs["cert"],
                               basic_auth_username=kwargs.get("basic_auth_username"),
                               basic_auth_password=kwargs.get("basic_auth_password"),
-                              auth_token=kwargs.get("auth_token"))
+                              auth_token=kwargs.get("auth_token"),
+                              kubeconfig=kwargs.get("kubeconfig"))
 
     if response.status_code == 404:
         print("Received a 404 trying to remove APB with id: %s" % kwargs["id"])
@@ -1233,7 +1239,8 @@ def cmdrun_remove(**kwargs):
                                   verify=kwargs["verify"], cert=kwargs["cert"],
                                   basic_auth_username=kwargs.get("basic_auth_username"),
                                   basic_auth_password=kwargs.get("basic_auth_password"),
-                                  auth_token=kwargs.get("auth_token"))
+                                  auth_token=kwargs.get("auth_token"),
+                                  kubeconfig=kwargs.get("kubeconfig"))
 
     if response.status_code != 204:
         print("Error: Attempt to remove an APB from Broker returned status: %d" % response.status_code)
@@ -1246,12 +1253,13 @@ def cmdrun_remove(**kwargs):
     print("Successfully deleted APB")
 
 
-def bootstrap(broker, username, password, token, verify, cert):
+def bootstrap(broker, username, password, token, verify, cert, kubeconfig):
     response = broker_request(broker, "/v2/bootstrap", "post", data={},
                               verify=verify, cert=cert,
                               basic_auth_username=username,
                               basic_auth_password=password,
-                              auth_token=token)
+                              auth_token=token,
+                              kubeconfig=kubeconfig)
 
     if response.status_code != 200:
         print("Error: Attempt to bootstrap Broker returned status: %d" % response.status_code)
@@ -1264,7 +1272,8 @@ def bootstrap(broker, username, password, token, verify, cert):
 def cmdrun_bootstrap(**kwargs):
     bootstrap(kwargs["broker"], kwargs.get("basic_auth_username"),
               kwargs.get("basic_auth_password"), kwargs.get("auth_token"),
-              kwargs["verify"], kwargs["cert"])
+              kwargs["verify"], kwargs["cert"],
+              kwargs.get("kubeconfig"))
 
     if not kwargs['no_relist']:
         relist_service_broker(kwargs)
@@ -1363,17 +1372,18 @@ def cmdrun_test(**kwargs):
         project=test_name,
         image=tag,
         name=test_name,
+        kwargs=kwargs,
         action='test'
     )
     if not name or not namespace:
         print("Failed to run apb")
         return
 
-    test_result = retrieve_test_result(name, namespace)
+    test_result = retrieve_test_result(name, namespace, kwargs)
     test_results = []
     if test_result is None:
         print("Unable to retrieve test result.")
-        delete_project(test_name)
+        delete_project(test_name, kwargs)
         return
     else:
         test_results = test_result.splitlines()
@@ -1385,7 +1395,7 @@ def cmdrun_test(**kwargs):
     else:
         print(test_result)
 
-    delete_project(test_name)
+    delete_project(test_name, kwargs)
 
 
 def cmdrun_run(**kwargs):
@@ -1445,6 +1455,7 @@ def cmdrun_run(**kwargs):
         image=image,
         name='apb-run-{}-{}'.format(kwargs['action'], spec['name']),
         action=kwargs['action'],
+        kwargs=kwargs,
         parameters=parameters
     )
     if not name or not namespace:
@@ -1453,7 +1464,7 @@ def cmdrun_run(**kwargs):
 
     print("APB run started")
     try:
-        pod_completed = watch_pod(name, namespace)
+        pod_completed = watch_pod(name, namespace, kwargs)
         print("APB run complete: {}".format(pod_completed))
     except Exception as e:
         print("APB run failed: {}".format(e))
