@@ -382,6 +382,7 @@ def get_registry_service_ip(namespace, svc_name):
 def get_asb_route():
     asb_route = None
     route_list = None
+    suffix = None
     possible_namespaces = ["ansible-service-broker", "openshift-ansible-service-broker",
                            "openshift-automation-service-broker"]
     for namespace in possible_namespaces:
@@ -390,6 +391,7 @@ def get_asb_route():
             oapi = openshift_client.OapiApi()
             route_list = oapi.list_namespaced_route(namespace)
             if route_list.items != []:
+                suffix = namespace
                 break
         except ApiException as e:
             print("Didn't find OpenShift Automation Broker route in namespace: %s.\
@@ -406,8 +408,10 @@ def get_asb_route():
     if asb_route is None:
         print("Error finding a route to the OpenShift Automation Broker.")
         return None
+    if suffix is None:
+        suffx = "openshift-automation-service-broker"
 
-    url = asb_route + "/openshift-automation-service-broker"
+    url = asb_route + "/" + suffix
     if url.find("http") < 0:
         url = "https://" + url
 
