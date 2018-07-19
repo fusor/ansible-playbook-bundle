@@ -409,7 +409,7 @@ def get_asb_route():
         print("Error finding a route to the OpenShift Automation Broker.")
         return None
     if suffix is None:
-        suffx = "openshift-automation-service-broker"
+        suffix = "openshift-automation-service-broker"
 
     url = asb_route + "/" + suffix
     if url.find("http") < 0:
