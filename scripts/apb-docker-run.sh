@@ -16,6 +16,7 @@ if ! [[ -z "${DOCKER_CERT_PATH}" ]] && [[ ${DOCKER_CERT_PATH} = *"minishift"* ]]
 fi
 
 KUBECONFIG_ENV="${KUBECONFIG:+-v ${KUBECONFIG}:${KUBECONFIG} -e KUBECONFIG=${KUBECONFIG}}"
+[[ -z $KUBECONFIG ]] && KUBECONFIG_ENV="${KUBECONFIG:--v $HOME/.kube:/.kube -e KUBECONFIG=/.kube/config}"
 
 if [[ $IS_MINISHIFT = true ]]; then
   # If targetting minishift, there are some unique issues with using the apb
@@ -36,7 +37,7 @@ if [[ $IS_MINISHIFT = true ]]; then
   unset DOCKER_CERT_PATH
 
   docker run --rm --privileged \
-    -v $PWD:/mnt -v $HOME/.kube:/.kube \
+    -v $PWD:/mnt \
     -v $MINISHIFT_DOCKER_CERT_SRC:$MINISHIFT_DOCKER_CERT_DEST \
     -e DOCKER_TLS_VERIFY="1" \
     -e DOCKER_HOST="${MINISHIFT_DOCKER_HOST}" \
@@ -46,7 +47,7 @@ if [[ $IS_MINISHIFT = true ]]; then
     -u $UID $APB_IMAGE "$@"
 else
   docker run --rm --privileged \
-    -v $PWD:/mnt -v $HOME/.kube:/.kube \
+    -v $PWD:/mnt \
     -v /var/run/docker.sock:/var/run/docker.sock \
     ${KUBECONFIG_ENV} \
     -u $UID $APB_IMAGE "$@"
