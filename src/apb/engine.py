@@ -1335,7 +1335,8 @@ def cmdrun_serviceinstance(**kwargs):
     serviceInstance = dict(apiVersion="servicecatalog.k8s.io/v1beta1",
                            kind="ServiceInstance",
                            metadata=dict(
-                               name=spec['name']
+                               name=spec['name'],
+                               labels=dict(spec['labels'])
                            ),
                            spec=dict(
                                clusterServiceClassExternalName="dh-" + spec['name'],
