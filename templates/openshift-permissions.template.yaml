@@ -18,7 +18,7 @@ objects:
     name: ${USER}
   roleRef:
     kind: ClusterRole
-    name: access-asb-role
+    name: asb-access
     apiGroup: rbac.authorization.k8s.io
 ################################################################################
 # apb must be able to view the ansible-service-broker project
